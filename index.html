@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bryan Falkowski</title>
+  <meta name="description" content="Bryan Falkowski. Principal Software Developer working on enterprise AI platforms, LLM evaluation, and observability.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fbfbfa;
+      --fg: #1c1c1a;
+      --muted: #62625e;
+      --line: #e4e4e0;
+      --accent: #2f5fd0;
+      --card: #ffffff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #121212;
+        --fg: #ececea;
+        --muted: #9a9a95;
+        --line: #2a2a28;
+        --accent: #7fa2ff;
+        --card: #1a1a19;
+      }
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font: 16px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    main { max-width: 720px; margin: 0 auto; padding: 64px 20px 80px; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header h1 { font-size: 2rem; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
+    header p.role { margin: 0; color: var(--muted); }
+    nav { margin-top: 16px; display: flex; gap: 18px; flex-wrap: wrap; font-size: 0.95rem; }
+    section { margin-top: 56px; }
+    h2 {
+      font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--muted); margin: 0 0 16px;
+    }
+    ul.tags { list-style: none; padding: 0; margin: 16px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
+    ul.tags li {
+      font: 0.8rem "JetBrains Mono", ui-monospace, monospace;
+      border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; color: var(--muted);
+    }
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+      padding: 18px 20px; margin-bottom: 12px;
+    }
+    .card h3 { margin: 0 0 4px; font-size: 1.05rem; font-weight: 600; }
+    .card p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+    .card .links { margin-top: 10px; font-size: 0.9rem; }
+    footer { margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Bryan Falkowski</h1>
+      <p class="role">Principal Software Developer, enterprise AI platform engineering</p>
+      <nav>
+        <a href="https://github.com/bfalkowski">GitHub</a>
+        <a href="#">LinkedIn</a>
+        <a href="#projects">Projects</a>
+        <a href="#writing">Writing</a>
+      </nav>
+    </header>
+
+    <section id="about">
+      <h2>About</h2>
+      <p>I build AI features for enterprise applications at Appian, including generative AI workflows for requirements capture, application planning, test generation, and developer assistance.</p>
+      <p>Most of my work is about making AI behavior testable and ready for production. That means instrumentation, evals, error analysis, and quality gates. Recent work includes distributed tracing with OpenTelemetry, model behavior analysis, trace-based cost optimization, and repeatable LLM-as-a-judge workflows.</p>
+      <p>I have an M.S. in Data Science from Rochester Institute of Technology, where my graduate work focused on machine learning, NLP, and evaluation reliability.</p>
+      <ul class="tags">
+        <li>LLM evaluation</li>
+        <li>LLM-as-a-judge</li>
+        <li>Observability</li>
+        <li>OpenTelemetry</li>
+        <li>AI agents</li>
+        <li>Production readiness</li>
+      </ul>
+    </section>
+
+    <section id="projects">
+      <h2>Projects</h2>
+
+      <div class="card">
+        <h3>Evaluation-driven design platform</h3>
+        <p>A platform for building and testing AI agents with evals in the loop from the start.</p>
+        <div class="links"><a href="#">Repo</a></div>
+      </div>
+
+      <div class="card">
+        <h3>LLM-as-a-judge repeat stability</h3>
+        <p>RIT capstone. Measures how consistent LLM judges are when the same item is graded repeatedly.</p>
+        <div class="links"><a href="#">Repo</a></div>
+      </div>
+
+      <div class="card">
+        <h3>LLM evaluation service stack</h3>
+        <p>Containerized evaluation service with a FastAPI base, Helm and Kubernetes deployment, a Streamlit console, and an A2A judge demo agent.</p>
+        <div class="links"><a href="#">Repo</a></div>
+      </div>
+    </section>
+
+    <section id="writing">
+      <h2>Writing</h2>
+      <p>Notes on evals and AI observability. Coming soon.</p>
+    </section>
+
+    <footer>
+      &copy; <span id="year">2026</span> Bryan Falkowski
+    </footer>
+  </main>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
