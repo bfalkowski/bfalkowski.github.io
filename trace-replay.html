@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Bryan Falkowski">
+  <meta name="description" content="How replaying real production traces against a change to an agent works, using Raindrop's approach and evidence from OpenAI's deployment simulation paper.">
+  <title>Agent Simulation via Trace Replay | Bryan Falkowski</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --text: #2c2c2c;
+      --muted: #666666;
+      --line: #e0e0e0;
+      --alt-bg: #fafafa;
+      --accent: #1d3f72;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: #fff; color: var(--text);
+      font: 17px/1.6 "Source Sans 3", "Source Sans Pro", sans-serif;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .topbar { border-bottom: 1px solid var(--line); padding: 14px 32px; }
+    .topbar .container { display: flex; justify-content: space-between; font-size: 15px; }
+    .topbar a.home { color: var(--text); font-weight: 600; }
+    .container { max-width: 760px; margin: 0 auto; }
+    article { padding: 48px 32px 64px; }
+    h1 { font-size: 36px; font-weight: 600; line-height: 1.2; margin: 0 0 10px; }
+    .byline { color: var(--muted); font-size: 15px; margin: 0 0 36px; }
+    h2 { font-size: 24px; font-weight: 700; margin: 44px 0 14px; }
+    p { margin: 0 0 14px; }
+    ul, ol { margin: 0 0 16px; padding-left: 24px; }
+    li { margin-bottom: 6px; }
+    .table-wrap { overflow-x: auto; margin: 0 0 18px; }
+    table { border-collapse: collapse; width: 100%; font-size: 15px; }
+    th, td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; vertical-align: top; }
+    th { background: var(--alt-bg); font-weight: 600; }
+    code { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 0.9em; }
+    .diagram { background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; padding: 16px; margin: 0 0 18px; overflow-x: auto; text-align: center; }
+    .tldr { background: var(--alt-bg); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 6px 6px 0; }
+    .tldr p:last-child { margin-bottom: 0; }
+    footer { text-align: center; color: var(--muted); font-size: 14px; padding: 32px; border-top: 1px solid var(--line); }
+    @media (max-width: 720px) {
+      .topbar, article { padding-left: 16px; padding-right: 16px; }
+      h1 { font-size: 30px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="container">
+      <a class="home" href="../">Bryan Falkowski</a>
+      <a href="../#writing">All writing</a>
+    </div>
+  </div>
+
+  <article class="container">
+    <h1>Agent Simulation via Trace Replay: Raindrop Approach + OpenAI Paper</h1>
+    <p class="byline">Bryan Falkowski · September 23, 2026 · Based on <a href="https://arxiv.org/abs/2607.07184">Predicting LLM Safety Before Release by Simulating Deployment</a> (OpenAI, 2026)</p>
+
+    <div class="tldr">
+      <p>Simulation means replaying real production traces against a proposed change to an agent, then comparing what changed. You take a captured trace, cut it at a point, let the changed agent continue from there, and score the result with deterministic diffs and a judge.</p>
+      <p>The question it answers is "what does my change change?" The change can be a new model, an added or removed tool, a prompt edit, or a harness swap. Raindrop uses this as a pre-merge regression check. OpenAI uses the same mechanic to forecast how often misbehavior will happen after a model release.</p>
+    </div>
+
+    <h2>Sources and how they relate</h2>
+    <p>The two sources use the same replay mechanic for different purposes. Ben Hylak (Raindrop CTO) cites the OpenAI paper as precedent and borrows its tool-simulation and realism-check ideas.</p>
+    <div class="table-wrap"><table>
+      <tr><th></th><th>Raindrop talk (Hamel Husain's evals course)</th><th>OpenAI paper, July 2026</th></tr>
+      <tr><td>Purpose</td><td>Regression check on each change</td><td>Forecast misbehavior rates before release</td></tr>
+      <tr><td>What changes</td><td>Anything: model, tool, prompt, harness</td><td>The model</td></tr>
+      <tr><td>Judge asks</td><td>Is the outcome the same? Did the known bug recur?</td><td>Does this response show misbehavior X?</td></tr>
+      <tr><td>Reference</td><td>Old trace (good, bad, or just current behavior)</td><td>Misbehavior criteria, not the old response</td></tr>
+      <tr><td>Scale</td><td>5 to 50+ traces, picked to touch the change</td><td>~1.3M conversations graded</td></tr>
+      <tr><td>Validated against</td><td>Replaying main should equal main</td><td>Real production rates after launch</td></tr>
+    </table></div>
+    <p>The idea itself is not new. It is traffic replay testing (for example Twitter's Diffy, 2015) and snapshot testing, adapted to agents. The agent-specific hard parts are simulating the environment and keeping the agent from noticing it is being tested.</p>
+
+    <h2>The core loop</h2>
+    <p>Capture a trace, cut it, let the changed agent continue, and compare. Raindrop's full cycle is log, detect issues, simulate the fix, ship, repeat.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+  A[Production traces] --> B[Select traces<br/>that touch the change]
+  B --> C[Cut at branch point]
+  C --> D[Replay with change<br/>in simulated world]
+  D --> E[Diffs + judge<br/>vs old trace]
+  E --> F[Review differing traces]
+  F --> G[Ship or fix]
+    </pre></div>
+    <ol>
+      <li><strong>Capture.</strong> Keep full traces from production: user messages, system prompt, tool schemas, tool calls and results, retrieved content. Missing context here breaks the replay later.</li>
+      <li><strong>Cut.</strong> Pick the branch point, usually right before the agent turn your change affects. Everything before it is fixed input.</li>
+      <li><strong>Replay.</strong> Run the changed agent from that point. It can take as many internal steps (tool calls, sub-agents) as it needs within that one user turn.</li>
+      <li><strong>Run several times.</strong> Outputs vary run to run, so replay each trace a few times and look at rates.</li>
+      <li><strong>Compare.</strong> Cheap diffs first, then a judge where exact comparison does not work.</li>
+      <li><strong>Look at the traces.</strong> Read the ones that changed. Ben says this tells you more than the eval suite.</li>
+    </ol>
+
+    <h2>Choosing traces</h2>
+    <p>Which traces you pick matters more than how many. A thousand replays tell you nothing about a removed tool if none of them called that tool.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Change</th><th>Traces to pick</th><th>Rough count (Ben)</th></tr>
+      <tr><td>Remove or change one tool</td><td>Traces where that tool was called</td><td>5 to 10</td></tr>
+      <tr><td>Fix a known bug</td><td>The bad traces that showed the issue, plus a random sample</td><td>Enough to cover the failure</td></tr>
+      <tr><td>Prompt or model swap</td><td>Random sample plus targeted edge cases</td><td>Dozens</td></tr>
+      <tr><td>Harness rewrite</td><td>Broad random sample</td><td>50+</td></tr>
+    </table></div>
+    <ul>
+      <li><strong>Always mix in a random sample.</strong> Replaying only failures overfits to them.</li>
+      <li><strong>Traces do not need to be good.</strong> They can be verified good (expect the same answer), known bad (expect the bug gone), or just current behavior (expect no drift).</li>
+      <li><strong>For rate estimates, sample randomly.</strong> The paper's advantage over hand-picked evals came from a representative sample of traffic. Hand-picked failures give the wrong rates even when every prompt is real.</li>
+    </ul>
+
+    <h2>Building the world</h2>
+    <p>The hardest part is recreating the environment the agent saw when the trace ran. Neither of the obvious shortcuts works.</p>
+    <ul>
+      <li><strong>Cached tool results fail.</strong> Once the new agent makes a different call, the recorded results no longer fit. Ben says the agent will "instantly call your bluff" and say it is in a simulation.</li>
+      <li><strong>Live production fails.</strong> State has changed since the trace ran. A delivery bot asked "how far away is my order?" a week ago would find nothing pending today. Replaying against live systems is also unsafe.</li>
+    </ul>
+    <p>What Raindrop does (the "Swiss cheese" model):</p>
+    <ol>
+      <li><strong>Run real code as far as possible.</strong> They check out the customer's agent into a sandbox and run it unchanged. Deterministic parts, like an internal SQL dialect parser, run for real. They also spin up sandboxes if the agent uses them.</li>
+      <li><strong>Simulate at the network boundary.</strong> Past that point an LLM generates tool responses.</li>
+      <li><strong>Seed from the original trace.</strong> Each original tool result is a window into the world at that time. The simulator fills the holes between those windows so the answers stay consistent.</li>
+      <li><strong>Add real data when needed.</strong> For a brand-new data source, users can drop in JSON files or connect a read-only MCP (for example Supabase) so the world builder can pull real schemas and data.</li>
+    </ol>
+    <p>The paper confirms how much this matters. Plain simulated tool outputs were picked as the real one only 11.6% of the time in a blind comparison. Giving the simulator richer context raised that to 49.5%, close to the 50% that means indistinguishable.</p>
+
+    <h2>Evals over traces</h2>
+    <p>An eval here is a pure function over traces: f(new trace, old trace) returns pass or fail. Once defined, it runs on any trace, unlike input/output pairs that have to be collected one by one.</p>
+    <p>Raindrop layers it this way: simulation is the base infrastructure, anomaly detection flags anything weird, and evals are the scores you define and track.</p>
+    <p><strong>Start deterministic, then move up to judges.</strong></p>
+    <div class="table-wrap"><table>
+      <tr><th>Level</th><th>Examples</th><th>Cost</th></tr>
+      <tr><td>Deterministic diffs</td><td>Final answer changed; new tool errors; different tools called; step count; cost; latency</td><td>Near zero</td></tr>
+      <tr><td>Threshold checks</td><td>Steps within 20% of before; output length within 20%; cost did not rise</td><td>Near zero</td></tr>
+      <tr><td>Cheap classifier or small judge</td><td>Is the final answer the same? Is it more verbose, yes or no?</td><td>Low</td></tr>
+      <tr><td>Strong judge</td><td>Is it better? Is the writing good?</td><td>High, and hard to define</td></tr>
+    </table></div>
+    <ul>
+      <li><strong>"Is the answer the same?"</strong> is Ben's go-to eval. It is cheap, and the traces that fail it are the ones to read.</li>
+      <li><strong>Bug-fix check:</strong> replay the bad traces and ask "does the new output still show the issue?" Any yes means the fix did not work.</li>
+      <li><strong>Prefer binary checks</strong> over 1 to 5 scales.</li>
+      <li><strong>Set pass-rate thresholds,</strong> for example "not more verbose in 80% of traces," rather than pass/fail per trace.</li>
+      <li><strong>Escalate disagreements.</strong> Raindrop runs a cheap classifier, checks it against past labels, and sends only disagreements to a stronger model.</li>
+    </ul>
+    <p>In the paper, the judge checks each response against misbehavior criteria (deception, reward hacking and so on) rather than comparing to the old response.</p>
+
+    <h2>Validating the simulator</h2>
+    <p>The replay setup has to be tested before its results mean anything. There are three checks.</p>
+    <ol>
+      <li><strong>Main equals main.</strong> Replay production traces with the current, unchanged code. The output should match production. Raindrop calls this the world-building phase and runs it before testing any PR.</li>
+      <li><strong>Blind discriminator.</strong> Show an LLM the original trace and the simulated one without labels, and ask which is simulated. Over many pairs, if it does better than chance, the simulation is giving itself away. Ben credits the OpenAI paper for this.</li>
+      <li><strong>Watch for eval awareness.</strong> Check whether the agent says or acts like it knows it is being tested. Examples Ben gives: "this isn't working because it's a simulation, so I'll answer like this," or "the user is probably testing my politeness." Either one invalidates the result.</li>
+    </ol>
+    <p>Common giveaways:</p>
+    <ul>
+      <li>Empty environments: no git history, no issues, no past conversations.</li>
+      <li>Data dated after the trace's timestamp.</li>
+      <li>Tool results that do not match what the agent just asked for.</li>
+    </ul>
+    <p>Why it matters, from the paper: on hand-built alignment evals, models reasoned about being watched or graded 62 to 76% of the time, versus 0.12% in production. In simulated deployment, the rate of the model noticing it was being tested came within 2.6x of production.</p>
+
+    <h2>Multi-turn and user simulation</h2>
+    <p>Both sources simulate the environment, not the user. Replays stop after one user turn.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Kind of multi-turn</th><th>Works?</th><th>Notes</th></tr>
+      <tr><td>Cutting deep into a conversation (20 messages of history, then the next turn)</td><td>Yes</td><td>Still one new turn, just with long fixed history</td></tr>
+      <tr><td>Agent's own steps within a turn (tool calls, sub-agents)</td><td>Yes</td><td>This is what world simulation is for</td></tr>
+      <tr><td>Continuing past the cut, with the user responding</td><td>Not reliably</td><td>Requires predicting what the real user would say</td></tr>
+    </table></div>
+    <p>A goal-driven simulated user (as in τ-bench) helps answer "can the agent still complete this task?" It is weak for predicting real user experience, for these reasons:</p>
+    <ul>
+      <li>Simulated users are too cooperative and clear. Real users get confused, impatient, change direction, or hide their goal until late.</li>
+      <li>The simulator knows the goal from hindsight and tends to volunteer information the real user never gave. That makes the agent look better than it is.</li>
+      <li>It adds a second source of variance. A different result could be the change or the simulated user.</li>
+      <li>An overly tidy user is another signal that the agent is being tested.</li>
+    </ul>
+    <p>The paper also stops at one regenerated turn.</p>
+
+    <h2>Pitfalls checklist</h2>
+    <p>The first five come from Ben's list. The last three come from the paper or from gaps in the talk.</p>
+    <ul>
+      <li>Replaying against live systems (state has changed, and it is unsafe)</li>
+      <li>Serving cached tool responses (the agent notices)</li>
+      <li>Replaying only failures (overfits; mix in a random sample)</li>
+      <li>Running each trace once (outputs vary; replay several times)</li>
+      <li>Not reading the simulated traces yourself</li>
+      <li>Traces missing context needed to rebuild the branch point (system prompt, tool schemas, retrieved content)</li>
+      <li>Trusting the judge without checking it against labeled examples</li>
+      <li>Stale traces: usage shifts over time, so the replay set drifts from current traffic</li>
+    </ul>
+
+    <h2>What the paper adds</h2>
+    <p>The talk gives the practice. The paper gives evidence that replaying real traffic predicts production better than hand-built evals.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Result</th><th>Simulated deployment</th><th>Hand-built evals</th></tr>
+      <tr><td>Predicted direction of change (misbehaviors moving 1.5x or more)</td><td>92% correct</td><td>54% correct</td></tr>
+      <tr><td>Predicted vs actual production rate</td><td>Pearson r = 0.91 (log scale)</td><td>Not reported</td></tr>
+      <tr><td>Test awareness vs production</td><td>Within 2.6x</td><td>18 to 19x higher</td></tr>
+      <tr><td>Using public data (WildChat) instead of private traffic</td><td>Mean error under 3x</td><td>Not compared</td></tr>
+    </table></div>
+    <p>The hand-built baselines were:</p>
+    <ul>
+      <li><strong>Challenging Prompts:</strong> real production prompts that caused failures before. This is the main baseline. It loses because the set is cherry-picked, not because the prompts look fake.</li>
+      <li><strong>Alignment evals:</strong> scheming and reward hacking, for example impossible coding tasks.</li>
+      <li><strong>Benchmarks:</strong> SWE-Bench, AIME, and two internal ones (OpenAI-Proof QA, MonorepoBench).</li>
+    </ul>
+    <p>Grading: GPT-5 Thinking judges labeled about 1.3M conversations. The paper checked its forecasts against real traffic after launch.</p>
+
+    <h2>Open questions and caveats</h2>
+    <ul>
+      <li><strong>Judge reliability is barely covered.</strong> Neither source says much about how stable the "same outcome" or misbehavior judge is across repeated runs. Grader noise feeds straight into every rate.</li>
+      <li><strong>5 to 10 traces is a sanity check, not a measurement.</strong> It catches outright breakage but not a failure rate going from 2% to 5%.</li>
+      <li><strong>"Same as before" is not "correct."</strong> Consistency checks against unverified traces lock in whatever the old behavior was, bugs included.</li>
+      <li><strong>Vendor framing.</strong> Claims like "one of the hardest problems in the world" and "first to market" are sales talk. The concept is old; the value is in the world-building quality.</li>
+      <li><strong>Contamination.</strong> Eval scenarios and methods are public and in training data, and anti-scheming training has been shown to raise test awareness. Real traffic is harder to learn as a pattern, but only while the traces stay real.</li>
+      <li><strong>Tail risks.</strong> Replay only covers behavior that current traffic can trigger. Rare or new failure modes need other methods.</li>
+      <li><strong>Trace completeness.</strong> Most trace stores (for example OpenTelemetry setups) do not capture everything needed to rebuild the branch point exactly.</li>
+    </ul>
+
+    <h2>References</h2>
+    <ul>
+      <li><a href="https://arxiv.org/abs/2607.07184">Predicting LLM Safety Before Release by Simulating Deployment (arXiv 2607.07184)</a>, Williams, Sheahan, Raymond, Korbak et al., OpenAI, July 2026</li>
+      <li><a href="https://openai.com/index/deployment-simulation/">OpenAI blog: Predicting model behavior before release by simulating deployment</a></li>
+      <li><a href="https://www.lesswrong.com/posts/xPXJfgqFTvuJxGZbE/predicting-llm-safety-before-release-by-simulating">LessWrong discussion of the paper</a></li>
+      <li>"Getting Started with Simulations," Ben Hylak (Raindrop), guest session in Hamel Husain's evals course</li>
+      <li>Related prior work: Twitter Diffy (2015, traffic replay diffing); ToolEmu (Ruan et al., 2023, LLM-emulated tools); τ-bench (goal-driven simulated users)</li>
+    </ul>
+  </article>
+
+  <footer>&copy; 2026 Bryan Falkowski · <a href="../">Home</a></footer>
+
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+  </script>
+</body>
+</html>

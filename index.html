@@ -27,7 +27,8 @@
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
     section { padding: 56px 32px; }
-    section.alt { background: var(--alt-bg); border-top: 1px solid var(--line); }
+    section.alt { background: var(--alt-bg); }
+    section + section { border-top: 1px solid var(--line); }
     .container { max-width: 760px; margin: 0 auto; }
 
     /* About */
@@ -109,10 +110,9 @@
           <li><a href="https://github.com/bfalkowski" title="GitHub" aria-label="GitHub">
             <svg viewBox="0 0 24 24"><path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5Z"/></svg>
           </a></li>
-          <li><a href="#" title="LinkedIn" aria-label="LinkedIn">
+          <li><a href="https://www.linkedin.com/in/bryan-f-8136521b5" title="LinkedIn" aria-label="LinkedIn">
             <svg viewBox="0 0 24 24"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg>
           </a></li>
-          <li><a href="#" class="cv" title="CV">CV</a></li>
         </ul>
       </div>
       <div class="bio">
@@ -123,7 +123,32 @@
     </div>
   </section>
 
-  <section class="alt" id="projects">
+  <section class="alt" id="writing">
+    <div class="container">
+      <h2>Writing</h2>
+      <div class="item-list">
+        <div class="item">
+          <h3 class="item-title"><a href="writing/trace-replay.html">Agent Simulation via Trace Replay: Raindrop Approach + OpenAI Paper</a></h3>
+          <p class="item-desc">How replaying real production traces against a change to an agent works in practice, using Raindrop's approach and evidence from OpenAI's deployment simulation paper.</p>
+          <p class="item-meta">Notes, September 2026</p>
+          <div class="item-links">
+            <a class="item-link" href="writing/trace-replay.html">Read</a>
+          </div>
+        </div>
+        <div class="item">
+          <h3 class="item-title"><a href="https://github.com/bfalkowski/dsci-799-llm-judge-repeat-stability/blob/main/DSCI799_Repeat_Stability_Submission.pdf">LLM-as-a-Judge Repeat Stability with MT-Bench</a></h3>
+          <p class="item-desc">How consistently LLM judges reproduce the same score on the same response. Seven frontier judge models, three prompting conditions, and five repeats per item on an MT-Bench subset.</p>
+          <p class="item-meta">M.S. capstone, Rochester Institute of Technology</p>
+          <div class="item-links">
+            <a class="item-link" href="https://github.com/bfalkowski/dsci-799-llm-judge-repeat-stability/blob/main/DSCI799_Repeat_Stability_Submission.pdf">PDF</a>
+            <a class="item-link" href="https://github.com/bfalkowski/dsci-799-llm-judge-repeat-stability">Code</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="projects">
     <div class="container">
       <h2>Projects</h2>
 
@@ -138,47 +163,38 @@
 
       <div class="item-list">
         <div class="item" data-tags="evals agents">
-          <h3 class="item-title"><a href="#">Evaluation-Driven Design Platform</a></h3>
-          <p class="item-desc">A platform for building and testing AI agents with evals in the loop from the start.</p>
-          <p class="item-meta">Personal project</p>
+          <h3 class="item-title"><a href="https://github.com/bfalkowski/edd-platform">Evaluation-Driven Design Platform</a></h3>
+          <p class="item-desc">A deployable evaluation-driven design system for building, testing, and improving AI agents.</p>
+          <p class="item-meta">Python</p>
           <div class="item-links">
-            <a class="item-link" href="#">Code</a>
+            <a class="item-link" href="https://github.com/bfalkowski/edd-platform">Code</a>
+            <a class="item-link" href="https://github.com/bfalkowski/edd-platform-docs">Docs</a>
           </div>
         </div>
-
-        <div class="item" data-tags="evals judges">
-          <h3 class="item-title"><a href="#">LLM-as-a-Judge Repeat Stability</a></h3>
-          <p class="item-desc">Measures how consistent LLM judges are when the same item is graded repeatedly.</p>
-          <p class="item-meta">RIT capstone</p>
+        <div class="item" data-tags="evals">
+          <h3 class="item-title"><a href="https://github.com/bfalkowski/ab-experiment-console">A/B Experiment Console</a></h3>
+          <p class="item-desc">Runs a baseline vs. candidate comparison stratified across segments, with statistical significance testing and a plain-language readout.</p>
+          <p class="item-meta">Python</p>
           <div class="item-links">
-            <a class="item-link" href="#">Code</a>
-            <a class="item-link" href="#">Paper</a>
+            <a class="item-link" href="https://github.com/bfalkowski/ab-experiment-console">Code</a>
           </div>
         </div>
-
-        <div class="item" data-tags="evals judges agents infra">
-          <h3 class="item-title"><a href="#">LLM Evaluation Service Stack</a></h3>
-          <p class="item-desc">Containerized evaluation service with a FastAPI base, Helm and Kubernetes deployment, a Streamlit console, and an A2A judge demo agent.</p>
-          <p class="item-meta">Personal project</p>
+        <div class="item" data-tags="evals agents">
+          <h3 class="item-title"><a href="https://github.com/bfalkowski/edd-agent-lab">EDD Agent Lab</a></h3>
+          <p class="item-desc">A local workspace for building LangGraph agents through evaluation-driven design: targets, rules, eval contracts, runs, failure evidence, and verified fixes.</p>
+          <p class="item-meta">Python, LangGraph</p>
           <div class="item-links">
-            <a class="item-link" href="#">Code</a>
+            <a class="item-link" href="https://github.com/bfalkowski/edd-agent-lab">Code</a>
           </div>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="writing">
-    <div class="container">
-      <h2>Writing</h2>
-      <div class="item-list">
-        <div class="item">
-          <h3 class="item-title"><a href="https://claude.ai/code/artifact/40de33bd-74f0-4285-84a6-789d813f9bfe">Agent Simulation via Trace Replay: Raindrop Approach + OpenAI Paper</a></h3>
-          <p class="item-desc">How replaying real production traces against a change to an agent works in practice, using Raindrop's approach and evidence from OpenAI's deployment simulation paper.</p>
-          <p class="item-meta">Notes, September 2026</p>
+        <div class="item" data-tags="evals judges infra">
+          <h3 class="item-title"><a href="https://github.com/bfalkowski/llm-evaluation-service-base">LLM Evaluation Service Stack</a></h3>
+          <p class="item-desc">Containerized service for running LLM evaluation jobs: a FastAPI base with async processing, tracing, and persistence, a Streamlit operator console, and a Helm/Kubernetes deployment.</p>
+          <p class="item-meta">Python, Helm</p>
           <div class="item-links">
-            <a class="item-link" href="https://claude.ai/code/artifact/40de33bd-74f0-4285-84a6-789d813f9bfe">Read</a>
-            <a class="item-link" href="https://arxiv.org/abs/2607.07184">Paper</a>
+            <a class="item-link" href="https://github.com/bfalkowski/llm-evaluation-service-base">Service</a>
+            <a class="item-link" href="https://github.com/bfalkowski/llm-evaluation-service-console">Console</a>
+            <a class="item-link" href="https://github.com/bfalkowski/llm-evaluation-service-deploy">Deploy</a>
           </div>
         </div>
       </div>
