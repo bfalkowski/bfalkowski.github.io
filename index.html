@@ -3,123 +3,196 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Bryan Falkowski">
+  <meta name="description" content="Principal Software Developer working on enterprise AI platforms, LLM evaluation, and observability.">
   <title>Bryan Falkowski</title>
-  <meta name="description" content="Bryan Falkowski. Principal Software Developer working on enterprise AI platforms, LLM evaluation, and observability.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #fbfbfa;
-      --fg: #1c1c1a;
-      --muted: #62625e;
-      --line: #e4e4e0;
-      --accent: #2f5fd0;
-      --card: #ffffff;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #121212;
-        --fg: #ececea;
-        --muted: #9a9a95;
-        --line: #2a2a28;
-        --accent: #7fa2ff;
-        --card: #1a1a19;
-      }
+      --text: #2c2c2c;
+      --muted: #666666;
+      --line: #e0e0e0;
+      --alt-bg: #fafafa;
+      --accent: #1d3f72;   /* change this one value to recolor the site */
     }
     * { box-sizing: border-box; }
-    html { -webkit-text-size-adjust: 100%; }
     body {
       margin: 0;
-      background: var(--bg);
-      color: var(--fg);
-      font: 16px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #ffffff;
+      color: var(--text);
+      font: 17px/1.6 "Source Sans 3", "Source Sans Pro", sans-serif;
     }
-    main { max-width: 720px; margin: 0 auto; padding: 64px 20px 80px; }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
-    header h1 { font-size: 2rem; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
-    header p.role { margin: 0; color: var(--muted); }
-    nav { margin-top: 16px; display: flex; gap: 18px; flex-wrap: wrap; font-size: 0.95rem; }
-    section { margin-top: 56px; }
-    h2 {
-      font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--muted); margin: 0 0 16px;
+    section { padding: 56px 32px; }
+    section.alt { background: var(--alt-bg); border-top: 1px solid var(--line); }
+    .container { max-width: 760px; margin: 0 auto; }
+
+    /* About */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 48px;
+      align-items: center;
     }
-    ul.tags { list-style: none; padding: 0; margin: 16px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
-    ul.tags li {
-      font: 0.8rem "JetBrains Mono", ui-monospace, monospace;
-      border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; color: var(--muted);
+    .profile-col { text-align: center; }
+    .avatar {
+      width: 200px; height: 200px; border-radius: 50%;
+      object-fit: cover; margin: 0 auto 20px; background: var(--line); display: block;
     }
-    .card {
-      background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-      padding: 18px 20px; margin-bottom: 12px;
+    .social-links {
+      list-style: none; padding: 0; margin: 0;
+      display: flex; gap: 12px; justify-content: center; align-items: center;
     }
-    .card h3 { margin: 0 0 4px; font-size: 1.05rem; font-weight: 600; }
-    .card p { margin: 0; color: var(--muted); font-size: 0.95rem; }
-    .card .links { margin-top: 10px; font-size: 0.9rem; }
-    footer { margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.85rem; }
+    .social-links a { color: var(--muted); display: inline-flex; }
+    .social-links a:hover { color: var(--accent); text-decoration: none; }
+    .social-links svg { width: 22px; height: 22px; fill: currentColor; }
+    .social-links .cv { font-weight: 700; font-size: 17px; }
+    .bio-name { font-size: 40px; font-weight: 600; line-height: 1.2; margin: 0 0 16px; }
+    .bio p { margin: 0 0 12px; }
+    .bio a { font-weight: 600; }
+
+    /* Section headings */
+    h2 { font-size: 28.8px; font-weight: 700; margin: 0 0 32px; }
+
+    /* Filters */
+    .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 24px; }
+    .filter-label {
+      font-size: 13.6px; font-weight: 600; letter-spacing: 0.05em;
+      text-transform: uppercase; color: var(--muted); margin-right: 4px;
+    }
+    .filter-btn {
+      font: inherit; font-size: 13.6px; cursor: pointer;
+      border: 1px solid var(--line); border-radius: 20px; padding: 3px 12px;
+      background: #fff; color: var(--text);
+    }
+    .filter-btn:hover { border-color: var(--accent); }
+    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    /* Items */
+    .item-list { display: flex; flex-direction: column; gap: 16px; }
+    .item {
+      background: #fff; border: 1px solid var(--line); border-radius: 6px;
+      padding: 17.6px 20px;
+    }
+    .item[hidden] { display: none; }
+    .item-title { font-size: 17.6px; font-weight: 600; line-height: 1.4; margin: 0 0 5px; }
+    .item-title a { color: var(--text); }
+    .item-desc { color: var(--muted); font-size: 14.7px; margin: 0 0 5px; }
+    .item-meta { color: var(--muted); font-size: 14.4px; font-style: italic; margin: 0; }
+    .item-links { display: flex; gap: 8px; margin-top: 10px; }
+    .item-link {
+      font-size: 12.8px; font-weight: 600; color: var(--accent);
+      border: 1px solid var(--accent); border-radius: 3px; padding: 1px 9px;
+    }
+    .item-link:hover { background: var(--accent); color: #fff; text-decoration: none; }
+
+    footer { text-align: center; color: var(--muted); font-size: 14px; padding: 32px; border-top: 1px solid var(--line); }
+
+    @media (max-width: 720px) {
+      section { padding: 40px 16px; }
+      .about-grid { grid-template-columns: 1fr; gap: 24px; }
+      .bio-name { text-align: center; }
+    }
   </style>
 </head>
 <body>
-  <main>
-    <header>
-      <h1>Bryan Falkowski</h1>
-      <p class="role">Principal Software Developer, enterprise AI platform engineering</p>
-      <nav>
-        <a href="https://github.com/bfalkowski">GitHub</a>
-        <a href="#">LinkedIn</a>
-        <a href="#projects">Projects</a>
-        <a href="#writing">Writing</a>
-      </nav>
-    </header>
 
-    <section id="about">
-      <h2>About</h2>
-      <p>I build AI features for enterprise applications at Appian, including generative AI workflows for requirements capture, application planning, test generation, and developer assistance.</p>
-      <p>Most of my work is about making AI behavior testable and ready for production. That means instrumentation, evals, error analysis, and quality gates. Recent work includes distributed tracing with OpenTelemetry, model behavior analysis, trace-based cost optimization, and repeatable LLM-as-a-judge workflows.</p>
-      <p>I have an M.S. in Data Science from Rochester Institute of Technology, where my graduate work focused on machine learning, NLP, and evaluation reliability.</p>
-      <ul class="tags">
-        <li>LLM evaluation</li>
-        <li>LLM-as-a-judge</li>
-        <li>Observability</li>
-        <li>OpenTelemetry</li>
-        <li>AI agents</li>
-        <li>Production readiness</li>
-      </ul>
-    </section>
+  <section>
+    <div class="container about-grid">
+      <div class="profile-col">
+        <!-- Uses your GitHub profile photo. Swap for avatar.jpg in the repo if you want a different one. -->
+        <img class="avatar" src="https://github.com/bfalkowski.png" alt="Bryan Falkowski">
+        <ul class="social-links">
+          <li><a href="https://github.com/bfalkowski" title="GitHub" aria-label="GitHub">
+            <svg viewBox="0 0 24 24"><path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5Z"/></svg>
+          </a></li>
+          <li><a href="#" title="LinkedIn" aria-label="LinkedIn">
+            <svg viewBox="0 0 24 24"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg>
+          </a></li>
+          <li><a href="#" class="cv" title="CV">CV</a></li>
+        </ul>
+      </div>
+      <div class="bio">
+        <h1 class="bio-name">Bryan Falkowski</h1>
+        <p>I'm a Principal Software Developer at <a href="https://appian.com">Appian</a>, where I build AI features for enterprise applications. That includes generative AI workflows for requirements capture, application planning, test generation, and developer assistance.</p>
+        <p>Most of my work is about making AI behavior testable and ready for production through instrumentation, evals, error analysis, and quality gates. I have an M.S. in Data Science from <a href="https://www.rit.edu">RIT</a>, where my graduate work focused on machine learning, NLP, and evaluation reliability.</p>
+      </div>
+    </div>
+  </section>
 
-    <section id="projects">
+  <section class="alt" id="projects">
+    <div class="container">
       <h2>Projects</h2>
 
-      <div class="card">
-        <h3>Evaluation-driven design platform</h3>
-        <p>A platform for building and testing AI agents with evals in the loop from the start.</p>
-        <div class="links"><a href="#">Repo</a></div>
+      <div class="filters">
+        <span class="filter-label">Topic:</span>
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="evals">Evals</button>
+        <button class="filter-btn" data-filter="judges">LLM-as-a-judge</button>
+        <button class="filter-btn" data-filter="agents">Agents</button>
+        <button class="filter-btn" data-filter="infra">Infrastructure</button>
       </div>
 
-      <div class="card">
-        <h3>LLM-as-a-judge repeat stability</h3>
-        <p>RIT capstone. Measures how consistent LLM judges are when the same item is graded repeatedly.</p>
-        <div class="links"><a href="#">Repo</a></div>
-      </div>
+      <div class="item-list">
+        <div class="item" data-tags="evals agents">
+          <h3 class="item-title"><a href="#">Evaluation-Driven Design Platform</a></h3>
+          <p class="item-desc">A platform for building and testing AI agents with evals in the loop from the start.</p>
+          <p class="item-meta">Personal project</p>
+          <div class="item-links">
+            <a class="item-link" href="#">Code</a>
+          </div>
+        </div>
 
-      <div class="card">
-        <h3>LLM evaluation service stack</h3>
-        <p>Containerized evaluation service with a FastAPI base, Helm and Kubernetes deployment, a Streamlit console, and an A2A judge demo agent.</p>
-        <div class="links"><a href="#">Repo</a></div>
-      </div>
-    </section>
+        <div class="item" data-tags="evals judges">
+          <h3 class="item-title"><a href="#">LLM-as-a-Judge Repeat Stability</a></h3>
+          <p class="item-desc">Measures how consistent LLM judges are when the same item is graded repeatedly.</p>
+          <p class="item-meta">RIT capstone</p>
+          <div class="item-links">
+            <a class="item-link" href="#">Code</a>
+            <a class="item-link" href="#">Paper</a>
+          </div>
+        </div>
 
-    <section id="writing">
+        <div class="item" data-tags="evals judges agents infra">
+          <h3 class="item-title"><a href="#">LLM Evaluation Service Stack</a></h3>
+          <p class="item-desc">Containerized evaluation service with a FastAPI base, Helm and Kubernetes deployment, a Streamlit console, and an A2A judge demo agent.</p>
+          <p class="item-meta">Personal project</p>
+          <div class="item-links">
+            <a class="item-link" href="#">Code</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="writing">
+    <div class="container">
       <h2>Writing</h2>
-      <p>Notes on evals and AI observability. Coming soon.</p>
-    </section>
+      <div class="item-list">
+        <div class="item">
+          <h3 class="item-title"><a href="#">Notes on evals and AI observability</a></h3>
+          <p class="item-meta">Coming soon</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <footer>
-      &copy; <span id="year">2026</span> Bryan Falkowski
-    </footer>
-  </main>
-  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+  <footer>&copy; <span id="year">2026</span> Bryan Falkowski</footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    const buttons = document.querySelectorAll('.filter-btn');
+    const items = document.querySelectorAll('#projects .item');
+    buttons.forEach(btn => btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.toggle('active', b === btn));
+      const f = btn.dataset.filter;
+      items.forEach(it => {
+        it.hidden = f !== 'all' && !it.dataset.tags.split(' ').includes(f);
+      });
+    }));
+  </script>
 </body>
 </html>
