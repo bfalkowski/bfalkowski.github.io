@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Bryan Falkowski">
+  <meta name="description" content="An empirical study of whether LLM-based browser test agents refuse when the element they are asked to act on is missing or cannot be told apart from look-alikes.">
+  <title>Can a Browser Test Agent Tell When It Can't Tell? | Bryan Falkowski</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root { --text: #2c2c2c; --muted: #666666; --line: #e0e0e0; --alt-bg: #fafafa; --accent: #1d3f72; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #fff; color: var(--text); font: 17px/1.6 "Source Sans 3", "Source Sans Pro", sans-serif; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .topbar { border-bottom: 1px solid var(--line); padding: 14px 32px; }
+    .topbar .container { display: flex; justify-content: space-between; font-size: 15px; }
+    .topbar a.home { color: var(--text); font-weight: 600; }
+    .container { max-width: 760px; margin: 0 auto; }
+    article { padding: 48px 32px 64px; }
+    h1 { font-size: 34px; font-weight: 600; line-height: 1.2; margin: 0 0 10px; }
+    .byline { color: var(--muted); font-size: 15px; margin: 0 0 32px; }
+    h2 { font-size: 24px; font-weight: 700; margin: 44px 0 14px; }
+    h3 { font-size: 19px; font-weight: 600; margin: 28px 0 10px; }
+    p { margin: 0 0 14px; }
+    ul, ol { margin: 0 0 16px; padding-left: 24px; }
+    li { margin-bottom: 6px; }
+    .table-wrap { overflow-x: auto; margin: 0 0 8px; }
+    table { border-collapse: collapse; width: 100%; font-size: 15px; }
+    th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+    th { background: var(--alt-bg); font-weight: 600; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .caption { color: var(--muted); font-size: 14px; margin: 0 0 22px; }
+    figure { margin: 8px 0 22px; }
+    figure img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; }
+    figcaption { color: var(--muted); font-size: 14px; margin-top: 6px; }
+    code { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 0.88em; }
+    pre { background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; overflow-x: auto; font-size: 13px; }
+    .abstract { background: var(--alt-bg); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 6px 6px 0; margin-bottom: 8px; }
+    .abstract p:last-child { margin-bottom: 0; }
+    .note { border: 1px dashed var(--line); padding: 10px 14px; border-radius: 6px; color: var(--muted); font-size: 15px; }
+    footer { text-align: center; color: var(--muted); font-size: 14px; padding: 32px; border-top: 1px solid var(--line); }
+    @media (max-width: 720px) { .topbar, article { padding-left: 16px; padding-right: 16px; } h1 { font-size: 28px; } }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="container">
+      <a class="home" href="../">Bryan Falkowski</a>
+      <a href="../#writing">All writing</a>
+    </div>
+  </div>
+
+  <article class="container">
+    <h1>Can a Browser Test Agent Tell When It Can't Tell? Ambiguity and Calibration in Element Selection</h1>
+    <p class="byline">Bryan Falkowski · September 2026 · Code and data: <a href="https://github.com/bfalkowski/browser-agent-abstention">github.com/bfalkowski/browser-agent-abstention</a></p>
+
+    <div class="abstract">
+      <p><strong>Abstract.</strong> LLM-driven browser tests pick an element and act on it. When the element is missing, or several look-alike elements fit and nothing on the page separates them, the safe response is to refuse. A test agent that guesses instead produces a false pass or a false fail. I measured how often three engines refuse in those cases: TypeSafe's Jev, a narrow decision model, and Claude Haiku 4.5 and Claude Opus 5.5, each asked the same constrained question with an explicit "none" option. Across 42 recorded decision points shown five ways, all three were 100% correct when the answer was knowable. When the target was missing, Jev and Opus always refused and Haiku acted anyway 10% of the time. When the target could not be told apart, Jev refused 79% of the time, Opus 77% and Haiku 49%. The remaining guesses from Jev and Opus relied on list order and disappeared when the list was shuffled. Confidence scores were useful: a threshold would have blocked every wrong pick from Jev and Haiku with few or no correct picks lost. Jev matched Opus at about 1% of the cost and one tenth of the latency. In a live study on a local app, a Claude Opus agent driving the browser through playwright-mcp also refused every missing target and could act on elements our scraper never listed, at about $0.15 and 11 seconds per task against $0.0001 and 0.25 seconds for Jev.</p>
+    </div>
+
+    <h2>1. The problem</h2>
+    <p>Testing an AI-generated business app with a browser agent comes down to many small decisions: which of these elements is the one the test step means? Generated apps make this harder than hand-built ones. They repeat identical controls on every row of a grid, they ship icon buttons with no accessible name, and they hide actions by role. A test that says "edit the ticket for Marcus Webb" can face three buttons all named "Edit".</p>
+    <p>Picking the right element is only part of the job. The other part is knowing when not to pick. If the Delete button is hidden for the current role, the correct test outcome is "this cannot be done", not a click on the nearest button in the right row. An agent that always acts turns an ambiguous page into a confident, wrong test result.</p>
+    <p>This paper asks: when the information needed is missing, do these engines refuse, or do they guess? And when they guess, can their confidence tell us?</p>
+
+    <h2>2. Related work</h2>
+    <p>Mind2Web frames web element selection as multiple choice over a filtered list of candidate elements, the same setup used here (<a href="https://arxiv.org/abs/2306.06070">Deng et al., 2023</a>). It measures accuracy, not refusal. Argus benchmarks uncertainty estimates for screenshot-based GUI grounding across open-weight vision models (<a href="https://arxiv.org/abs/2606.25760">Kumar et al., 2026</a>); this study uses DOM and accessibility-tree candidate lists and adds missing targets and an explicit refusal option. Agentic Abstention studies whether agents stop when a whole task cannot be done (<a href="https://pith.science/paper/2606.28733">Wen, Luo and Wang, 2026</a>); this study looks at the single element decision inside a test step. Work on clarification for coding and search agents asks when to ask rather than assume (<a href="https://arxiv.org/abs/2502.13069">Ambig-SWE</a>, <a href="https://arxiv.org/abs/2603.00187">ClarEval</a>, <a href="https://arxiv.org/abs/2511.08798">Structured Uncertainty guided Clarification</a>). I did not find prior work that measures refusal and calibration for element selection in browser testing specifically.</p>
+
+    <h2>3. Setup</h2>
+    <h3>Engines</h3>
+    <div class="table-wrap"><table>
+      <tr><th>Engine</th><th>Who reads the page</th><th>What the model answers</th><th>Who acts</th></tr>
+      <tr><td>Jev (<code>jev-latest</code>)</td><td>Our Playwright scraper</td><td>A typed <code>choice</code>: one index, or "none", with a confidence</td><td>Our Playwright code</td></tr>
+      <tr><td>Constrained Claude Haiku 4.5</td><td>Our Playwright scraper</td><td>Structured output: an index limited to valid positions, or -1, plus a confidence from 0 to 1</td><td>Our Playwright code</td></tr>
+      <tr><td>Constrained Claude Opus 5.5</td><td>Our Playwright scraper</td><td>Same as Haiku</td><td>Our Playwright code</td></tr>
+      <tr><td>Claude Opus 5.5 agent (Study 3 only)</td><td>Its own playwright-mcp snapshots</td><td>Any browser tool call, or a <code>CANNOT_FIND</code> reply</td><td>playwright-mcp</td></tr>
+    </table></div>
+    <p class="caption">Jev and the constrained Claude engines see identical text for every candidate. Only the model differs.</p>
+    <p>"Constrained" means the model gets the same single question Jev gets and can only answer by choosing from the list. Opus 5.5 rejects forced tool calls, so every Claude condition uses structured output with a JSON schema instead. The Anthropic SDK used (1.7) no longer accepts sampling parameters, so no temperature was set; repeats measure how stable the answers are.</p>
+
+    <h3>Where the data comes from</h3>
+    <p>Every decision point starts from a real page loaded in a real Chromium browser by Playwright. The candidate list is what our scraper (<code>get_interactive_elements</code>) found on that page: each button, link, field and dropdown by ARIA role, its accessible name, and text from the element's surrounding containers. The correct answer is found by DOM identity (the candidate's node is the target node), never by a model. Screenshots of every page are in the repository.</p>
+    <p>The pages are my own ticket-admin test app (3, 10 and 25 identical rows), a self-hosted build of SauceDemo from its public source (<code>saucelabs/sample-app-web@e0948dd</code>), and, for Study 3, a small order-management app. All run on localhost so nothing external can change during a run.</p>
+
+    <h2>4. Study 1: picking from a list is easy once the context is there</h2>
+    <p>63 decision points, 3 goal phrasings each, 3 repeats, no refusal option. With the text around each element included, Jev was correct on 99.5% of picks and Haiku on 100%. Jev's only misses were one phrasing, "create the ticket", where it picked the New Ticket button instead of the open form's Submit.</p>
+    <figure>
+      <img src="cant-tell/fig-study1-accuracy.png" alt="Bar chart. With row context: Jev 99% and Haiku 100% correct. Names only: Jev 65% and Haiku 67%.">
+      <figcaption>Figure 1. Correct picks with and without the text around each element. Whiskers are 95% bootstrap intervals over decision points.</figcaption>
+    </figure>
+    <p>Without that text, accuracy fell to 65% for Jev and 67% for Haiku, and on the ticket app's repeated rows to 13% and 18%. That drop is expected, since the information is simply not there. What matters is how they failed: they never said they could not tell. Jev picked the first matching button in 100% of its matching picks on those rows, and Haiku in 61%. That is the classic flaky-test failure: "click Edit" silently lands on the first row.</p>
+    <p>Study 1 showed accuracy is not the interesting question once context is present. Study 2 gives every engine a way to refuse and asks when it uses it.</p>
+
+    <h2>5. Study 2: does it refuse when it should?</h2>
+    <h3>Design</h3>
+    <p>42 decision points: 31 where the target is on the page and 11 where it is not. The missing cases are realistic: a Delete button hidden for the current role, a customer who is not among the rows shown, a product the store does not sell, a Remove button for an item that is not in the cart, a promo-code field that does not exist. Some goals refer to an element by its content, such as "edit the ticket for the Atlas Stationery store" or "add the $7.99 item to the cart".</p>
+    <p>Each point is shown five ways, which changes how much the engine can know:</p>
+    <div class="table-wrap"><table>
+      <tr><th>View</th><th>What each candidate shows</th><th class="num">Answerable points (of 31 present)</th></tr>
+      <tr><td>none</td><td>Role and name, in page order</td><td class="num">3</td></tr>
+      <tr><td>none-shuffled</td><td>Role and name, order shuffled</td><td class="num">3</td></tr>
+      <tr><td>parent</td><td>Plus the text of the element's immediate container</td><td class="num">4</td></tr>
+      <tr><td>grand</td><td>Plus two containers up, first 120 characters (the scraper's default)</td><td class="num">30</td></tr>
+      <tr><td>wide</td><td>Plus three containers up, first 250 characters</td><td class="num">12</td></tr>
+    </table></div>
+    <p class="caption">"Answerable" is computed from the text alone: the target's name is unique, or the key text (a customer name, product, price) appears in the target's line and in no look-alike's line. Missing targets are never answerable.</p>
+    <p>The table already shows one finding before any model runs. Too little context and too much context both make the page unanswerable. Three containers up, the text around each Edit button is the whole table, so every row's line contains every customer's name. And the price in "add the $7.99 item" falls past the 120-character cut of the default view, but is inside the immediate container. Which slice of the page the scraper hands the model decides more than which model reads it.</p>
+    <p>Every engine answered every point in every view twice: 420 calls per engine, 1,260 in total, no errors.</p>
+
+    <h3>Results</h3>
+    <div class="table-wrap"><table>
+      <tr><th></th><th class="num">Jev</th><th class="num">Haiku 4.5</th><th class="num">Opus 5.5</th></tr>
+      <tr><td>Correct when the answer was knowable</td><td class="num">100%</td><td class="num">100%</td><td class="num">100%</td></tr>
+      <tr><td>Refused when it could have answered</td><td class="num">0%</td><td class="num">0%</td><td class="num">0%</td></tr>
+      <tr><td>Refused when the target was missing</td><td class="num">100%</td><td class="num">90% (81 to 98)</td><td class="num">100%</td></tr>
+      <tr><td>Refused when look-alikes could not be told apart</td><td class="num">79% (68 to 89)</td><td class="num">49% (34 to 64)</td><td class="num">77% (66 to 88)</td></tr>
+      <tr><td>Guessed wrong when they could not be told apart</td><td class="num">2%</td><td class="num">14%</td><td class="num">0%</td></tr>
+      <tr><td>Same answer on both repeats</td><td class="num">99.5%</td><td class="num">98.1%</td><td class="num">98.6%</td></tr>
+      <tr><td>Median latency per decision</td><td class="num">0.25 s</td><td class="num">0.92 s</td><td class="num">2.34 s</td></tr>
+      <tr><td>Cost for all 420 calls</td><td class="num">$0.03</td><td class="num">$0.44</td><td class="num">$2.55</td></tr>
+    </table></div>
+    <p class="caption">Rates are averaged per decision point; parentheses are 95% bootstrap intervals over points.</p>
+    <figure>
+      <img src="cant-tell/fig-study2-refusal.png" alt="Grouped bar chart. Answerable, correct pick: all three engines 100%. Target missing, refused: Jev 100%, Haiku 90%, Opus 100%. Can't tell which, refused: Jev 79%, Haiku 49%, Opus 77%.">
+      <figcaption>Figure 2. The three things a test agent must get right. Whiskers are 95% bootstrap intervals over points.</figcaption>
+    </figure>
+    <p>No engine was over-cautious: none refused a question it could answer. The differences are all on the other side. Haiku acted on 10% of missing targets. Its false actions were plausible neighbors: the Checkout button for "apply a promo code", the Status dropdown for a customer who was not on the page, the "Cart" button for removing an item that was not in the cart. Its confidence on those was 0.35 to 0.85.</p>
+
+    <h3>List order leaks answers</h3>
+    <p>Jev and Opus did not refuse every unanswerable case. With candidates in page order, they guessed on 25% and 29% of them, and those guesses were nearly always right. They were not reading the text: they matched the Nth "Add to cart" to the Nth product name elsewhere in the list. With the same list shuffled, both refused every time. Haiku guessed at the same rate either way, and after shuffling many of its guesses were wrong.</p>
+    <figure>
+      <img src="cant-tell/fig-study2-order.png" alt="Grouped bar chart of guessing instead of refusing on unanswerable points. Page order: Jev 25%, Haiku 45%, Opus 29%. Shuffled: Jev 0%, Haiku 46%, Opus 0%.">
+      <figcaption>Figure 3. Share of unanswerable points where the engine picked instead of refusing, with the candidate list in page order and shuffled. Names-only view.</figcaption>
+    </figure>
+    <p>Whether an order-based guess is acceptable depends on the harness. Page order is real information, but it is fragile: a scraper change, a lazy-loaded row, or a re-sorted grid breaks the alignment silently. A shuffled control is a cheap way to find out whether an engine's accuracy depends on it.</p>
+
+    <h3>Confidence as a gate</h3>
+    <p>A test harness can act only when the engine's confidence clears a threshold, and treat anything lower as "cannot tell". Among the picks each engine made:</p>
+    <ul>
+      <li><strong>Jev</strong> made 4 wrong picks, all with confidence below 0.5. A threshold of 0.5 blocks all of them and keeps every correct pick.</li>
+      <li><strong>Haiku</strong> made 39 wrong picks (wrong guesses and false actions), all below 0.9. A threshold of 0.9 blocks every one of them and still keeps all 104 correct picks.</li>
+      <li><strong>Opus</strong> made no wrong picks. Its confidence on its correct picks was high enough that a threshold up to 0.9 keeps 99% of them.</li>
+    </ul>
+    <figure>
+      <img src="cant-tell/fig-study2-threshold.png" alt="Two line charts against a confidence threshold from 0.5 to 0.99. Left, wrong picks blocked: Jev at 100% throughout; Haiku rises from 49% at 0.5 to 100% at 0.9. Right, correct picks kept: all near 100% up to 0.85; Jev falls to 71% at 0.95, Haiku drops sharply above 0.95, Opus drops above 0.95.">
+      <figcaption>Figure 4. Acting only above a confidence threshold. Left: share of wrong picks that would be blocked. Right: share of correct picks that would still go through.</figcaption>
+    </figure>
+    <p>These thresholds were chosen on the same data they are evaluated on, and Haiku's confidence values cluster at a few round numbers, so the exact cut points should not be reused as-is. The direction is the useful part: for these engines, a low confidence on a pick was a reliable warning.</p>
+
+    <h2>6. Study 3: live runs on a local app</h2>
+    <p>Studies 1 and 2 measure the decision on a frozen page. Study 3 runs the whole loop live: load the page, read it, decide, act, and check what actually changed. It also adds the setup most teams use in practice, a Claude agent that drives the browser itself through the playwright-mcp server.</p>
+    <p>The app is a small order-management page served from localhost with fixed data: 25 orders over three pages, an identical "Edit order" icon and "Status" dropdown on every row, a Delete icon with no accessible name, customer names that are not exposed as links, and a Viewer role that hides every row action. Every engine starts from the same URL and page state. Outcomes come from the page's own event log, not from what the engine reported.</p>
+    <p>There are 15 tasks: 6 with the target present and visible to our scraper, 6 with the target missing, 1 for an order on page 2, and 2 where the target is on the page but invisible to our scraper (the unnamed Delete icon and the customer name that is not a link). Those last two are where the agent, reading its own snapshot, can see something the list-based engines cannot.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Tasks</th><th class="num">Jev</th><th class="num">Haiku 4.5</th><th class="num">Opus 5.5</th><th class="num">Opus 5.5 agent</th></tr>
+      <tr><td>Target present (12 runs)</td><td class="num">12 correct</td><td class="num">12 correct</td><td class="num">12 correct</td><td class="num">12 correct</td></tr>
+      <tr><td>Target missing (12 runs)</td><td class="num">12 refused</td><td class="num">10 refused, 2 false actions</td><td class="num">12 refused</td><td class="num">12 refused</td></tr>
+      <tr><td>Invisible to our scraper (4 runs)</td><td class="num">4 refused</td><td class="num">4 wrong actions</td><td class="num">4 refused</td><td class="num">3 correct, 1 refused</td></tr>
+      <tr><td>Order on page 2 (2 runs)</td><td class="num">2 refused</td><td class="num">2 refused</td><td class="num">2 refused</td><td class="num">1 correct, 1 refused</td></tr>
+      <tr><td>Median time per task</td><td class="num">0.25 s</td><td class="num">1.0 s</td><td class="num">2.3 s</td><td class="num">11.2 s</td></tr>
+      <tr><td>Cost per task</td><td class="num">$0.0001</td><td class="num">$0.0014</td><td class="num">$0.0086</td><td class="num">$0.15</td></tr>
+    </table></div>
+    <p class="caption">2 repeats per task, 30 runs per engine. Time and cost for the list-based engines cover the model call only; the agent's cover its whole loop, about three tool calls per task.</p>
+    <p>Haiku's six bad outcomes follow one pattern: when the needed control was not in its list, it clicked "Edit order" on the right row. Asked to delete order #1003, whose Delete icon has no name, it opened the editor for #1003. Asked to refund order #1006, a feature the app does not have, it did the same. Each of those would register in a test log as a successful step. Jev and Opus refused all of them.</p>
+    <p>The agent never acted on a missing target, and its refusals named the reason, for example that the user was signed in as a Viewer and the row's actions cell was empty. Because it reads its own snapshot and can inspect the page, it also did things the list-based engines could not: it deleted order #1003 after checking the unnamed icon's HTML to confirm it was the delete button, and it opened Grace Liu's details by clicking her name, which is not exposed as a link. In one of the two runs it paged forward to find order #1017; in the other it reported that the order was probably on page 2 and stopped. Every one of its outcomes was either correct or a refusal. The trade-off is cost: more than 1,000 times Jev's cost and about 45 times its time per task.</p>
+    <p>One agent run on a missing order paged through the whole grid, then reported that the order did not exist. An early version of the scoring counted the paging as a false action. Paging, filtering and searching now count only when the task is about that move.</p>
+
+    <h2>7. What this means for test design</h2>
+    <ol>
+      <li><strong>Always give the engine a way out.</strong> With a forced choice (Study 1), every engine guessed silently and favored the first match. With an explicit "none" option (Study 2), the better engines used it correctly and never over-used it.</li>
+      <li><strong>Gate actions on confidence.</strong> For all three engines, low-confidence picks were where the wrong ones were. A threshold turns a silent wrong click into a flagged step.</li>
+      <li><strong>The scraper matters as much as the model.</strong> The same page was answerable or not depending on how much surrounding text was attached, and too much text hurt as much as too little.</li>
+      <li><strong>Test for order dependence.</strong> Shuffle the candidate list. If accuracy holds, the engine is reading the text; if it collapses, it was aligning positions.</li>
+      <li><strong>Seeing more is not the same as guessing more.</strong> The playwright-mcp agent saw elements our scraper missed and still refused every missing target. Its cost and latency make it a better fit for the hard steps than for every step.</li>
+      <li><strong>A narrow model can be enough.</strong> On these tasks Jev matched Opus on accuracy and refusal at about 1% of the cost and a tenth of the latency. Haiku was cheap but guessed too often without a confidence gate.</li>
+    </ol>
+
+    <h2>8. Limitations</h2>
+    <ul>
+      <li><strong>Small and synthetic.</strong> 42 decision points in Study 2 and 15 tasks (30 runs per engine) in Study 3, on three pages I built or self-hosted. The intervals are wide, and differences of a few points cannot be separated. SauceDemo is a well-known practice site and may appear in training data.</li>
+      <li><strong>Answerability is defined from text alone.</strong> Guesses that used list order are counted as unanswerable guesses, which is a judgment call; Section 5 reports them separately.</li>
+      <li><strong>Confidence is not measured the same way.</strong> Jev returns a native confidence; Claude states one in its answer. Thresholds were picked and evaluated on the same data.</li>
+      <li><strong>Prompt and interface choices.</strong> One prompt per engine, one version of each model, one scraper. The refusal rule text was the same for all engines, but Jev and Claude receive it through different interfaces.</li>
+      <li><strong>A task bug.</strong> One Study 3 task first asked to set an order to Shipped when it already was. The agent noticed and changed nothing; the list-based engines re-selected the same value. The task was replaced and its earlier runs excluded.</li>
+      <li><strong>No affiliation.</strong> I have no relationship with TypeSafe or Anthropic. All calls were paid with my own API keys.</li>
+    </ul>
+
+    <h2>9. Reproducibility</h2>
+    <p>Everything is in <a href="https://github.com/bfalkowski/browser-agent-abstention">bfalkowski/browser-agent-abstention</a>: the recorders, the recorded decision points with screenshots, the runners, every raw result as JSONL, and <code>make_paper_figures.py</code>, which produces every number and figure on this page from those files. Runs were made on September 27 and 28, 2026. Total API spend for all studies, pilots included, was $9.75.</p>
+<pre>uv run python record_ambiguity.py --local-url ... --sauce-url ...
+uv run python run_ambiguity.py --engines jev,haiku,opus --max-usd 4
+uv run python run_live.py --engines jev,haiku,opus,agent --repeats 2 --max-usd 6
+uv run --with matplotlib python make_paper_figures.py --out writing/cant-tell</pre>
+
+    <h2>References</h2>
+    <ul>
+      <li>Deng et al. <a href="https://arxiv.org/abs/2306.06070">Mind2Web: Towards a Generalist Agent for the Web</a>. 2023.</li>
+      <li>Kumar et al. <a href="https://arxiv.org/abs/2606.25760">Argus: Uncertainty Quantification for Computer-Use Agents</a>. 2026.</li>
+      <li>Wen, Luo and Wang. <a href="https://pith.science/paper/2606.28733">Agentic Abstention: Do Agents Know When to Stop Instead of Act?</a> 2026.</li>
+      <li><a href="https://arxiv.org/abs/2502.13069">Ambig-SWE: Interactive Agents to Overcome Underspecificity</a>. ICLR 2026.</li>
+      <li><a href="https://arxiv.org/abs/2603.00187">ClarEval: Evaluating Clarification Skills of Code Agents under Ambiguous Instructions</a>. 2026.</li>
+      <li><a href="https://arxiv.org/abs/2511.08798">Structured Uncertainty guided Clarification for LLM Agents</a>. 2025.</li>
+      <li>TypeSafe. <a href="https://typesafe.ai/blog/introducing-system-one-models-and-jev">Introducing System One models and Jev</a>.</li>
+      <li>Microsoft. <a href="https://github.com/microsoft/playwright-mcp">playwright-mcp</a>.</li>
+      <li>Sauce Labs. <a href="https://github.com/saucelabs/sample-app-web">sample-app-web (SauceDemo)</a>.</li>
+    </ul>
+  </article>
+
+  <footer>&copy; 2026 Bryan Falkowski · <a href="../">Home</a></footer>
+</body>
+</html>
