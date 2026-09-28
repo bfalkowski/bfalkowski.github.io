@@ -40,6 +40,7 @@
     pre { background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; overflow-x: auto; font-size: 13px; }
     .abstract { background: var(--alt-bg); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 6px 6px 0; margin-bottom: 8px; }
     .abstract p:last-child { margin-bottom: 0; }
+    .diagram { background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; padding: 16px; margin: 8px 0 6px; overflow-x: auto; text-align: center; }
     .note { border: 1px dashed var(--line); padding: 10px 14px; border-radius: 6px; color: var(--muted); font-size: 15px; }
     footer { text-align: center; color: var(--muted); font-size: 14px; padding: 32px; border-top: 1px solid var(--line); }
     @media (max-width: 720px) { .topbar, article { padding-left: 16px; padding-right: 16px; } h1 { font-size: 28px; } }
@@ -79,6 +80,27 @@
       <tr><td>Claude Opus 5.5 agent (Study 3 only)</td><td>Its own playwright-mcp snapshots</td><td>Any browser tool call, or a <code>CANNOT_FIND</code> reply</td><td>playwright-mcp</td></tr>
     </table></div>
     <p class="caption">Jev and the constrained Claude engines see identical text for every candidate. Only the model differs.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart TD
+  P["Page in Chromium, same URL and state"]
+  P --> S["Our scraper: role, name, nearby text"]
+  P --> M["playwright-mcp snapshot"]
+  S --> L["Numbered candidate list"]
+  L --> J["Jev"]
+  L --> C["Constrained Claude (Haiku or Opus)"]
+  J --> A{"Index or none?"}
+  C --> A
+  M --> AG["Opus agent"]
+  A -- index --> ACT["Our code clicks or selects"]
+  A -- none --> R["Refused"]
+  AG -- CANNOT_FIND --> R
+  AG -- tool calls --> ACT2["Agent acts itself"]
+  ACT --> LOG["Scored from the page's event log"]
+  R --> LOG
+  ACT2 --> LOG
+    </pre></div>
+    <p class="caption">Figure A. Two ways of reaching a decision. The list-based engines only choose; our code reads the page and acts. The agent reads and acts itself. Every path is scored from what actually changed on the page.</p>
+
     <p>"Constrained" means the model gets the same single question Jev gets and can only answer by choosing from the list. Opus 5.5 rejects forced tool calls, so every Claude condition uses structured output with a JSON schema instead. The Anthropic SDK used (1.7) no longer accepts sampling parameters, so no temperature was set; repeats measure how stable the answers are.</p>
 
     <h3>Where the data comes from</h3>
@@ -107,8 +129,31 @@
       <tr><td>wide</td><td>Plus three containers up, first 250 characters</td><td class="num">12</td></tr>
     </table></div>
     <p class="caption">"Answerable" is computed from the text alone: the target's name is unique, or the key text (a customer name, product, price) appears in the target's line and in no look-alike's line. Missing targets are never answerable.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+  B["Edit button"] --> TD["parent: the table cell<br/>text: 'Edit'<br/>cannot tell rows apart"]
+  TD --> TR["grand: the row<br/>'102 Marcus Webb Atlas Stationery ... Edit'<br/>can tell"]
+  TR --> TB["wide: the whole table<br/>every customer's name<br/>cannot tell rows apart"]
+    </pre></div>
+    <p class="caption">Figure B. How much surrounding text each view attaches to the same Edit button on the ticket app. Only the middle level separates one row from another.</p>
     <p>The table already shows one finding before any model runs. Too little context and too much context both make the page unanswerable. Three containers up, the text around each Edit button is the whole table, so every row's line contains every customer's name. And the price in "add the $7.99 item" falls past the 120-character cut of the default view, but is inside the immediate container. Which slice of the page the scraper hands the model decides more than which model reads it.</p>
     <p>Every engine answered every point in every view twice: 420 calls per engine, 1,260 in total, no errors.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart TD
+  Q{"Is the target<br/>on the page?"} -- no --> M{"Response"}
+  M -- none --> M1["Correct refusal"]
+  M -- picked --> M2["False action"]
+  Q -- yes --> K{"Can it be told apart<br/>from the text shown?"}
+  K -- yes --> A{"Response"}
+  A -- right element --> A1["Correct"]
+  A -- other element --> A2["Wrong"]
+  A -- none --> A3["Over-cautious"]
+  K -- no --> U{"Response"}
+  U -- none --> U1["Correct refusal"]
+  U -- picked --> U2["Guess<br/>lucky or wrong"]
+    </pre></div>
+    <p class="caption">Figure C. How each Study 2 response is scored. The right response depends on whether the answer was knowable from what the engine was shown.</p>
+
 
     <h3>Results</h3>
     <div class="table-wrap"><table>
@@ -209,6 +254,10 @@ uv run --with matplotlib python make_paper_figures.py --out writing/cant-tell</p
     </ul>
   </article>
 
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { htmlLabels: true, curve: 'basis' } });
+  </script>
   <footer>&copy; 2026 Bryan Falkowski · <a href="../">Home</a></footer>
 </body>
 </html>
