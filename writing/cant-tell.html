@@ -41,6 +41,14 @@
     .abstract { background: var(--alt-bg); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 6px 6px 0; margin-bottom: 8px; }
     .abstract p:last-child { margin-bottom: 0; }
     .diagram { background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; padding: 16px; margin: 8px 0 6px; overflow-x: auto; text-align: center; }
+    .diagram-fig { margin: 12px 0 24px; }
+    .diagram-fig svg { width: 100%; height: auto; display: block; }
+    .outcome-grid th, .outcome-grid td { text-align: center; vertical-align: middle; font-size: 14.5px; }
+    .outcome-grid th:first-child, .outcome-grid tr > th { text-align: left; }
+    .outcome-grid td.good { background: #e7f4ec; color: #1f5e3a; font-weight: 600; }
+    .outcome-grid td.bad { background: #fbe9e6; color: #8f2f20; font-weight: 600; }
+    .outcome-grid td.warn { background: #fdf3dd; color: #7a5300; font-weight: 600; }
+    .outcome-grid td.na { color: #999; font-style: italic; }
     .note { border: 1px dashed var(--line); padding: 10px 14px; border-radius: 6px; color: var(--muted); font-size: 15px; }
     footer { text-align: center; color: var(--muted); font-size: 14px; padding: 32px; border-top: 1px solid var(--line); }
     @media (max-width: 720px) { .topbar, article { padding-left: 16px; padding-right: 16px; } h1 { font-size: 28px; } }
@@ -80,26 +88,70 @@
       <tr><td>Claude Opus 5.5 agent (Study 3 only)</td><td>Its own playwright-mcp snapshots</td><td>Any browser tool call, or a <code>CANNOT_FIND</code> reply</td><td>playwright-mcp</td></tr>
     </table></div>
     <p class="caption">Jev and the constrained Claude engines see identical text for every candidate. Only the model differs.</p>
-    <div class="diagram"><pre class="mermaid">
-flowchart TD
-  P["Page in Chromium, same URL and state"]
-  P --> S["Our scraper: role, name, nearby text"]
-  P --> M["playwright-mcp snapshot"]
-  S --> L["Numbered candidate list"]
-  L --> J["Jev"]
-  L --> C["Constrained Claude (Haiku or Opus)"]
-  J --> A{"Index or none?"}
-  C --> A
-  M --> AG["Opus agent"]
-  A -- index --> ACT["Our code clicks or selects"]
-  A -- none --> R["Refused"]
-  AG -- CANNOT_FIND --> R
-  AG -- tool calls --> ACT2["Agent acts itself"]
-  ACT --> LOG["Scored from the page's event log"]
-  R --> LOG
-  ACT2 --> LOG
-    </pre></div>
-    <p class="caption">Figure A. Two ways of reaching a decision. The list-based engines only choose; our code reads the page and acts. The agent reads and acts itself. Every path is scored from what actually changed on the page.</p>
+    <figure class="diagram-fig">
+      <svg viewBox="0 0 760 252" role="img" aria-label="Two paths from the same page. List-based engines: our scraper builds a numbered candidate list, the model answers one index or none, and our code acts. The agent takes its own playwright-mcp snapshot, decides, and acts itself or replies CANNOT_FIND. Both are scored from the page's event log." font-family="Source Sans 3, Source Sans Pro, sans-serif">
+        <defs>
+          <marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#7a8699"/></marker>
+        </defs>
+        <!-- lane labels -->
+        <text x="128" y="30" font-size="12.5" font-weight="700" fill="#1d3f72" letter-spacing=".04em">LIST-BASED: JEV, HAIKU 4.5, OPUS 5.5</text>
+        <text x="128" y="148" font-size="12.5" font-weight="700" fill="#8a5a00" letter-spacing=".04em">AGENT: OPUS 5.5 WITH PLAYWRIGHT-MCP</text>
+        <!-- page -->
+        <rect x="10" y="42" width="98" height="186" rx="8" fill="#ffffff" stroke="#9aa6b8" stroke-width="1.25"/>
+        <text x="59" y="122" text-anchor="middle" font-size="14" font-weight="600" fill="#2c2c2c">Page</text>
+        <text x="59" y="141" text-anchor="middle" font-size="12" fill="#666">same URL,</text>
+        <text x="59" y="156" text-anchor="middle" font-size="12" fill="#666">same state</text>
+        <!-- top lane -->
+        <g>
+          <rect x="128" y="42" width="114" height="70" rx="8" fill="#eef2f8" stroke="#1d3f72" stroke-width="1.25"/>
+          <text x="185" y="68" text-anchor="middle" font-size="13.5" font-weight="600" fill="#2c2c2c">Our scraper</text>
+          <text x="185" y="86" text-anchor="middle" font-size="11.5" fill="#555">role, name,</text>
+          <text x="185" y="100" text-anchor="middle" font-size="11.5" fill="#555">nearby text</text>
+          <rect x="260" y="42" width="114" height="70" rx="8" fill="#eef2f8" stroke="#1d3f72" stroke-width="1.25"/>
+          <text x="317" y="68" text-anchor="middle" font-size="13.5" font-weight="600" fill="#2c2c2c">Candidate list</text>
+          <text x="317" y="86" text-anchor="middle" font-size="11.5" fill="#555">numbered,</text>
+          <text x="317" y="100" text-anchor="middle" font-size="11.5" fill="#555">same for every model</text>
+          <rect x="392" y="42" width="114" height="70" rx="8" fill="#1d3f72"/>
+          <text x="449" y="68" text-anchor="middle" font-size="13.5" font-weight="600" fill="#ffffff">Model answers</text>
+          <text x="449" y="86" text-anchor="middle" font-size="11.5" fill="#dfe6f1">one index,</text>
+          <text x="449" y="100" text-anchor="middle" font-size="11.5" fill="#dfe6f1">or none</text>
+          <rect x="524" y="42" width="114" height="70" rx="8" fill="#eef2f8" stroke="#1d3f72" stroke-width="1.25"/>
+          <text x="581" y="68" text-anchor="middle" font-size="13.5" font-weight="600" fill="#2c2c2c">Our code acts</text>
+          <text x="581" y="86" text-anchor="middle" font-size="11.5" fill="#555">click or select;</text>
+          <text x="581" y="100" text-anchor="middle" font-size="11.5" fill="#555">nothing if none</text>
+        </g>
+        <!-- bottom lane -->
+        <g>
+          <rect x="128" y="158" width="114" height="70" rx="8" fill="#fff6e5" stroke="#b07a10" stroke-width="1.25"/>
+          <text x="185" y="184" text-anchor="middle" font-size="13.5" font-weight="600" fill="#2c2c2c">MCP snapshot</text>
+          <text x="185" y="202" text-anchor="middle" font-size="11.5" fill="#555">the agent's own</text>
+          <text x="185" y="216" text-anchor="middle" font-size="11.5" fill="#555">view of the page</text>
+          <rect x="260" y="158" width="246" height="70" rx="8" fill="#b07a10"/>
+          <text x="383" y="184" text-anchor="middle" font-size="13.5" font-weight="600" fill="#ffffff">Agent reads, decides and acts</text>
+          <text x="383" y="202" text-anchor="middle" font-size="11.5" fill="#fbecd0">any browser tool call,</text>
+          <text x="383" y="216" text-anchor="middle" font-size="11.5" fill="#fbecd0">or replies CANNOT_FIND</text>
+        </g>
+        <!-- scoring -->
+        <rect x="656" y="42" width="94" height="186" rx="8" fill="#ffffff" stroke="#2c2c2c" stroke-width="1.5"/>
+        <text x="703" y="116" text-anchor="middle" font-size="13.5" font-weight="600" fill="#2c2c2c">Scored</text>
+        <text x="703" y="134" text-anchor="middle" font-size="12" fill="#555">from what</text>
+        <text x="703" y="149" text-anchor="middle" font-size="12" fill="#555">changed on</text>
+        <text x="703" y="164" text-anchor="middle" font-size="12" fill="#555">the page</text>
+        <!-- arrows -->
+        <g stroke="#7a8699" stroke-width="1.5" fill="none" marker-end="url(#arA)">
+          <line x1="108" y1="77" x2="126" y2="77"/>
+          <line x1="242" y1="77" x2="258" y2="77"/>
+          <line x1="374" y1="77" x2="390" y2="77"/>
+          <line x1="506" y1="77" x2="522" y2="77"/>
+          <line x1="638" y1="77" x2="654" y2="77"/>
+          <line x1="108" y1="193" x2="126" y2="193"/>
+          <line x1="242" y1="193" x2="258" y2="193"/>
+          <line x1="506" y1="193" x2="654" y2="193"/>
+        </g>
+        <text x="580" y="186" text-anchor="middle" font-size="11.5" fill="#666">event log</text>
+      </svg>
+      <figcaption>Figure A. Two ways of reaching a decision on the same page. The list-based engines only choose from a list our scraper built, and our code acts. The agent reads the page and acts on its own. Both are scored from the page's own event log, not from what the engine said.</figcaption>
+    </figure>
 
     <p>"Constrained" means the model gets the same single question Jev gets and can only answer by choosing from the list. Opus 5.5 rejects forced tool calls, so every Claude condition uses structured output with a JSON schema instead. The Anthropic SDK used (1.7) no longer accepts sampling parameters, so no temperature was set; repeats measure how stable the answers are.</p>
 
@@ -129,30 +181,62 @@ flowchart TD
       <tr><td>wide</td><td>Plus three containers up, first 250 characters</td><td class="num">12</td></tr>
     </table></div>
     <p class="caption">"Answerable" is computed from the text alone: the target's name is unique, or the key text (a customer name, product, price) appears in the target's line and in no look-alike's line. Missing targets are never answerable.</p>
-    <div class="diagram"><pre class="mermaid">
-flowchart LR
-  B["Edit button"] --> TD["parent: the table cell<br/>text: 'Edit'<br/>cannot tell rows apart"]
-  TD --> TR["grand: the row<br/>'102 Marcus Webb Atlas Stationery ... Edit'<br/>can tell"]
-  TR --> TB["wide: the whole table<br/>every customer's name<br/>cannot tell rows apart"]
-    </pre></div>
-    <p class="caption">Figure B. How much surrounding text each view attaches to the same Edit button on the ticket app. Only the middle level separates one row from another.</p>
+    <figure class="diagram-fig">
+      <svg viewBox="0 0 760 262" role="img" aria-label="The same Edit button with three amounts of surrounding text. The table cell contains only the word Edit, so the rows cannot be told apart. The row contains Marcus Webb's details, so it can. The whole table contains every customer's name, so the rows cannot be told apart again." font-family="Source Sans 3, Source Sans Pro, sans-serif">
+        <defs>
+          <marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#7a8699"/></marker>
+        </defs>
+        <!-- wide: table body -->
+        <rect x="10" y="14" width="470" height="236" rx="8" fill="#ffffff" stroke="#9aa6b8" stroke-width="1.25" stroke-dasharray="5 4"/>
+        <text x="24" y="36" font-size="12" font-weight="700" fill="#666" letter-spacing=".04em">TICKETS TABLE</text>
+        <!-- row 1 -->
+        <rect x="24" y="50" width="442" height="54" rx="6" fill="#ffffff" stroke="#e0e0e0"/>
+        <text x="38" y="82" font-size="13" fill="#666">101</text><text x="82" y="82" font-size="13" fill="#2c2c2c">Alice Chen</text><text x="210" y="82" font-size="13" fill="#2c2c2c">Juniper Home Goods</text>
+        <rect x="392" y="64" width="56" height="26" rx="5" fill="#ffffff" stroke="#9aa6b8"/>
+        <text x="420" y="82" text-anchor="middle" font-size="12.5" fill="#2c2c2c">Edit</text>
+        <!-- row 2: the target row -->
+        <rect x="24" y="116" width="442" height="54" rx="6" fill="#eef2f8" stroke="#1d3f72" stroke-width="2"/>
+        <text x="38" y="148" font-size="13" font-weight="600" fill="#666">102</text><text x="82" y="148" font-size="13" font-weight="600" fill="#2c2c2c">Marcus Webb</text><text x="210" y="148" font-size="13" font-weight="600" fill="#2c2c2c">Atlas Stationery</text>
+        <rect x="380" y="122" width="80" height="42" rx="5" fill="none" stroke="#1d3f72" stroke-width="1.25" stroke-dasharray="3 3"/>
+        <rect x="392" y="130" width="56" height="26" rx="5" fill="#1d3f72"/>
+        <text x="420" y="148" text-anchor="middle" font-size="12.5" font-weight="600" fill="#ffffff">Edit</text>
+        <!-- row 3 -->
+        <rect x="24" y="182" width="442" height="54" rx="6" fill="#ffffff" stroke="#e0e0e0"/>
+        <text x="38" y="214" font-size="13" fill="#666">103</text><text x="82" y="214" font-size="13" fill="#2c2c2c">Priya Nair</text><text x="210" y="214" font-size="13" fill="#2c2c2c">Harbor Knits</text>
+        <rect x="392" y="196" width="56" height="26" rx="5" fill="#ffffff" stroke="#9aa6b8"/>
+        <text x="420" y="214" text-anchor="middle" font-size="12.5" fill="#2c2c2c">Edit</text>
+        <!-- leaders -->
+        <g stroke="#7a8699" stroke-width="1.25" fill="none" marker-end="url(#arB)">
+          <path d="M530 40 H484"/>
+          <path d="M530 143 H470"/>
+          <path d="M530 227 H498 V158 H463"/>
+        </g>
+        <!-- annotations -->
+        <text x="538" y="34" font-size="13.5" font-weight="600" fill="#2c2c2c">wide: the whole table</text>
+        <text x="538" y="51" font-size="12" fill="#555">every customer's name</text>
+        <text x="538" y="68" font-size="12" font-weight="600" fill="#b3412e">✕ cannot tell rows apart</text>
+
+        <text x="538" y="130" font-size="13.5" font-weight="600" fill="#2c2c2c">grand: the row</text>
+        <text x="538" y="147" font-size="12" fill="#555">"102 Marcus Webb … Edit"</text>
+        <text x="538" y="164" font-size="12" font-weight="600" fill="#2e7d4f">✓ can tell</text>
+
+        <text x="538" y="210" font-size="13.5" font-weight="600" fill="#2c2c2c">parent: the cell</text>
+        <text x="538" y="227" font-size="12" fill="#555">just "Edit"</text>
+        <text x="538" y="244" font-size="12" font-weight="600" fill="#b3412e">✕ cannot tell rows apart</text>
+      </svg>
+      <figcaption>Figure B. The same Edit button with three amounts of surrounding text. Only the row level separates Marcus Webb's ticket from the others: the cell has too little, and the whole table has every name in it.</figcaption>
+    </figure>
     <p>The table already shows one finding before any model runs. Too little context and too much context both make the page unanswerable. Three containers up, the text around each Edit button is the whole table, so every row's line contains every customer's name. And the price in "add the $7.99 item" falls past the 120-character cut of the default view, but is inside the immediate container. Which slice of the page the scraper hands the model decides more than which model reads it.</p>
     <p>Every engine answered every point in every view twice: 420 calls per engine, 1,260 in total, no errors.</p>
-    <div class="diagram"><pre class="mermaid">
-flowchart TD
-  Q{"Is the target<br/>on the page?"} -- no --> M{"Response"}
-  M -- none --> M1["Correct refusal"]
-  M -- picked --> M2["False action"]
-  Q -- yes --> K{"Can it be told apart<br/>from the text shown?"}
-  K -- yes --> A{"Response"}
-  A -- right element --> A1["Correct"]
-  A -- other element --> A2["Wrong"]
-  A -- none --> A3["Over-cautious"]
-  K -- no --> U{"Response"}
-  U -- none --> U1["Correct refusal"]
-  U -- picked --> U2["Guess<br/>lucky or wrong"]
-    </pre></div>
-    <p class="caption">Figure C. How each Study 2 response is scored. The right response depends on whether the answer was knowable from what the engine was shown.</p>
+    <figure class="diagram-fig">
+      <div class="table-wrap"><table class="outcome-grid" aria-label="How each Study 2 response is scored">
+        <tr><th>Situation</th><th>Picked the right element</th><th>Picked another element</th><th>Answered "none"</th></tr>
+        <tr><th>Target present, can be told apart</th><td class="good">Correct</td><td class="bad">Wrong</td><td class="warn">Over-cautious</td></tr>
+        <tr><th>Target present, cannot be told apart from the text shown</th><td class="warn">Lucky guess</td><td class="bad">Wrong guess</td><td class="good">Correct refusal</td></tr>
+        <tr><th>Target not on the page</th><td class="na">not possible</td><td class="bad">False action</td><td class="good">Correct refusal</td></tr>
+      </table></div>
+      <figcaption>Figure C. How each Study 2 response is scored. The right response depends on whether the answer could be known from what the engine was shown. Green is the right response, red is a wrong action, and amber is neither.</figcaption>
+    </figure>
 
 
     <h3>Results</h3>
@@ -257,10 +341,6 @@ uv run --with matplotlib python make_paper_figures.py --out writing/cant-tell</p
     </ul>
   </article>
 
-  <script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { htmlLabels: true, curve: 'basis' } });
-  </script>
   <footer>&copy; 2026 Bryan Falkowski · <a href="../">Home</a></footer>
 </body>
 </html>
