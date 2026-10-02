@@ -326,6 +326,8 @@ uv run python run_ambiguity.py --engines jev,haiku,opus --max-usd 4
 uv run python run_live.py --engines jev,haiku,opus,agent --repeats 2 --max-usd 6
 uv run --with matplotlib python make_paper_figures.py --out writing/cant-tell</pre>
 
+    <p><strong>Model versions.</strong> Every call is recorded with its model ID in the result files. Jev was called through the alias <code>jev-latest</code> on TypeSafe's System One API; Claude through <code>claude-haiku-4-5</code> and <code>claude-opus-5-5</code> on the Anthropic API, with the playwright-mcp agent also on <code>claude-opus-5-5</code> and the browser server started as <code>@playwright/mcp@latest</code>. All runs were on September 27 and 28, 2026. An alias such as <code>jev-latest</code> or <code>@latest</code> can later point to a newer version, so a rerun may not reproduce these exact numbers.</p>
+
     <h2>References</h2>
     <ul>
       <li>Deng et al. <a href="https://arxiv.org/abs/2306.06070">Mind2Web: Towards a Generalist Agent for the Web</a>. 2023.</li>
