@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="author" content="Bryan Falkowski">
-  <meta name="robots" content="noindex">
   <meta name="description" content="Checking whether an LLM eval run worked before scoring it: a failure taxonomy, a run validity gate, and fault-injection experiments on a small agent eval.">
   <title>Is This Run Valid? | Bryan Falkowski</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -42,10 +41,6 @@
     .abstract p:last-child { margin-bottom: 0; }
     .diagram-fig { margin: 12px 0 24px; }
     .diagram-fig svg { width: 100%; height: auto; display: block; }
-    .draft { background: #fdf3dd; border: 1px solid #e8cf8f; color: #6b4b00; border-radius: 6px; padding: 10px 14px; font-size: 15px; margin-bottom: 28px; }
-    .pending { border: 1px dashed #d9b45a; background: #fffaf0; color: #7a5a10; border-radius: 6px; padding: 10px 14px; font-size: 15px; margin: 0 0 16px; }
-    .pending strong { color: #6b4b00; }
-    .pending-inline { background: #fdf3dd; color: #6b4b00; padding: 0 4px; border-radius: 3px; }
     footer { text-align: center; color: var(--muted); font-size: 14px; padding: 32px; border-top: 1px solid var(--line); }
     @media (max-width: 720px) { .topbar, article { padding-left: 16px; padding-right: 16px; } h1 { font-size: 28px; } }
   </style>
@@ -59,7 +54,6 @@
   </div>
 
   <article class="container">
-    <div class="draft"><strong>Draft for review.</strong> All results are in. Not yet linked from the home page.</div>
 
     <h1>Is This Run Valid? Attributing Pipeline Failures Before Scoring LLM Evaluations</h1>
     <p class="byline">Bryan Falkowski · October 2026 · Code and data: <a href="https://github.com/bfalkowski/eval-run-validity">github.com/bfalkowski/eval-run-validity</a></p>
@@ -83,7 +77,6 @@
     <p><strong>Flaky tests.</strong> Software testing has studied this problem for a long time. <a href="https://mir.cs.illinois.edu/lamyaa/publications/fse14.pdf">Luo et al. (2014)</a> built a root-cause taxonomy of flaky tests from fixed issues, and <a href="https://testing.googleblog.com/2016/05/flaky-tests-at-google-and-how-we.html">Google's testing blog (2016)</a> described rerunning and quarantining flaky tests at scale. A <a href="https://www.sciencedirect.com/science/article/pii/S0164121223002327">2023 multivocal review</a> covers causes, detection and responses, and <a href="https://arxiv.org/abs/2504.16777">work on systemic flakiness</a> shows that flaky failures often co-occur from one shared cause, which is close to the run-level view here. I borrow the taxonomy-first approach and the idea that a failure is not automatically a verdict on the code under test. The difference is that an eval produces a score, not a pass or fail, so a fault moves a number instead of turning a test red.</p>
     <p><strong>Infrastructure noise in LLM evals.</strong> <a href="https://www.anthropic.com/engineering/infrastructure-noise">Anthropic (2026)</a> found that resource settings alone moved Terminal-Bench 2.0 scores by about 6 percentage points, with infrastructure error rates falling from 5.8% to 0.5% as limits were raised. That is direct evidence for the problem. It studies one kind of fault on one benchmark; this paper injects six kinds and tests attribution and a gate.</p>
     <p><strong>Reproducible evaluation.</strong> <a href="https://arxiv.org/abs/2405.14782">Biderman et al. (2024)</a>, from the lm-evaluation-harness team, catalog how small setup details change results and argue for sharing exact configurations. The run fingerprint here makes that comparison automatic and per run.</p>
-    <!-- TODO before publishing: read arXiv 2609.30074 (self-audit of LLM-inferred prompt structure) and arXiv 2607.02577 (validity audit of tool-calling evaluation) and position against them. -->
     <p><strong>Benchmark auditing.</strong> <a href="https://arxiv.org/abs/2604.24955">BenchGuard (Tu et al., 2026)</a> uses LLMs to audit agent benchmarks for defects in instructions, ground truth and evaluation scripts, and found 12 confirmed defects in ScienceAgentBench. Audits like this check a benchmark once, before use. This paper checks each run as it happens, and covers infrastructure and judge faults as well as dataset defects.</p>
     <p><strong>Statistics of eval scores.</strong> <a href="https://arxiv.org/abs/2411.00640">Miller (2024)</a> sets out how to put error bars on eval scores and compare models properly. That work assumes the run is valid; this paper checks that first.</p>
     <p><strong>Tooling.</strong> The <a href="https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/">OpenTelemetry GenAI semantic conventions</a> give standard attributes for model calls, which this paper uses and extends. Eval harnesses record logs and configurations but, as far as I found, do not issue a validity verdict on a run.</p>
