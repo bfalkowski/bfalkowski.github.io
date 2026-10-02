@@ -432,6 +432,14 @@
       <tr><td>Judge votes flipped on 25% of calls</td><td>Passed all four jobs, as degraded</td><td>Report marked degraded: the judge score was withheld, and the agent's score, 83.3% on all 60 items, was published, within the clean range. Judge faults do not touch the agent's score.</td><td><a href="https://github.com/bfalkowski/eval-run-validity/actions/runs/37050267138">37050267138</a></td></tr>
     </table></div>
     <p class="caption">Table 13. The reference pipeline on four real runs. A clean run takes about a minute across the four jobs.</p>
+    <figure>
+      <img src="run-valid/pipeline-stop.png" alt="GitHub Actions job graph for the silent-fallback run: preflight passed in 10 seconds, run passed in 1 minute 11 seconds, validate failed after 10 seconds, and report was skipped.">
+      <figcaption>Figure 6. The silent-fallback run in GitHub Actions. The eval job succeeds and every ticket has an answer, but validate fails on coverage and the report never runs, so no score is published.</figcaption>
+    </figure>
+    <figure>
+      <img src="run-valid/pipeline-pass.png" alt="GitHub Actions job graph for the judge-flip run: preflight, run, validate and report all passed.">
+      <figcaption>Figure 7. The judge-flip run passes all four jobs. Its report is marked degraded: the agent's score is published and the judge score is withheld.</figcaption>
+    </figure>
     <p>The silent-fallback run is the case a plain pipeline gets wrong: the run job succeeds, every ticket has an answer, and the score would have been published. Here it stops at validation with the list of missed tickets. The pipeline is specific to this repo's run format (a manifest, item records and OpenTelemetry traces), but the stages only read those three files, so another eval that writes them can use the same checks.</p>
 
     <h2>8. Limitations</h2>
