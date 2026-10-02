@@ -440,7 +440,7 @@
       <img src="run-valid/pipeline-pass.png" alt="GitHub Actions job graph for the judge-flip run: preflight, run, validate and report all passed.">
       <figcaption>Figure 7. The judge-flip run passes all four jobs. Its report is marked degraded: the agent's score is published and the judge score is withheld.</figcaption>
     </figure>
-    <p>The silent-fallback run is the case a plain pipeline gets wrong: the run job succeeds, every ticket has an answer, and the score would have been published. Here it stops at validation with the list of missed tickets. The pipeline is specific to this repo's run format (a manifest, item records and OpenTelemetry traces), but the stages only read those three files, so another eval that writes them can use the same checks.</p>
+    <p>The silent-fallback run is the case a plain pipeline gets wrong: the run job succeeds, every ticket has an answer, and the score would have been published. Here it stops at validation with the list of missed tickets. Every run in this paper can also be browsed in a <a href="../review/">run review page</a>: a queue of runs with the ones the gate stopped first, the reasons, the fingerprint, the excluded tickets and the trace for any ticket. It is the view an investigator would want when a gate stops a run. The pipeline is specific to this repo's run format (a manifest, item records and OpenTelemetry traces), but the stages only read those three files, so another eval that writes them can use the same checks.</p>
 
     <h2>8. Limitations</h2>
     <ul>

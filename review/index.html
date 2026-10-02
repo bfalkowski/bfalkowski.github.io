@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Bryan Falkowski">
+  <meta name="description" content="An investigation view over the 286 eval runs behind 'Is This Run Valid?': a queue of runs the validity gate flagged, why, which tickets were excluded, and the trace for each ticket.">
+  <title>Run Review | Bryan Falkowski</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root { --text: #2c2c2c; --muted: #666; --line: #e0e0e0; --alt-bg: #fafafa; --accent: #1d3f72;
+            --bad: #8f2f20; --bad-bg: #fbe9e6; --warn: #7a5300; --warn-bg: #fdf3dd; --good: #1f5e3a; --good-bg: #e7f4ec; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #fff; color: var(--text); font: 15px/1.5 "Source Sans 3", "Source Sans Pro", sans-serif; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code, .mono { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 12.5px; }
+    .topbar { border-bottom: 1px solid var(--line); padding: 14px 24px; display: flex; justify-content: space-between; font-size: 15px; }
+    .topbar a.home { color: var(--text); font-weight: 600; }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 28px; margin: 0 0 6px; font-weight: 600; }
+    .intro { color: var(--muted); max-width: 820px; margin: 0 0 18px; }
+    .counts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .count { border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; background: #fff; cursor: pointer; font: inherit; }
+    .count b { font-size: 18px; margin-right: 6px; }
+    .count[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+    .filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+    .filters select, .filters input[type=search] { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+    .filters input[type=search] { min-width: 220px; }
+    .filters label { color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+    @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+    .queue { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    .queue-scroll { max-height: 78vh; overflow: auto; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    thead th { position: sticky; top: 0; background: var(--accent); color: #fff; font-weight: 600; font-size: 13px; z-index: 1; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    tbody tr { cursor: pointer; }
+    #rows td:nth-child(2) { min-width: 190px; }
+    tbody tr:hover { background: #f4f7fc; }
+    tbody tr[aria-selected="true"] { background: #e8eef9; }
+    tbody tr:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .runid { font-family: "Roboto Mono", monospace; font-size: 12px; overflow-wrap: anywhere; }
+    .sub { color: var(--muted); font-size: 12.5px; }
+    .chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 12px; padding: 1px 9px 1px 7px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+    .chip.invalid { background: var(--bad-bg); color: var(--bad); }
+    .chip.degraded { background: var(--warn-bg); color: var(--warn); }
+    .chip.valid { background: var(--good-bg); color: var(--good); }
+    .chip.cause { background: #eef1f6; color: #33415c; font-weight: 500; }
+    .chip.label { background: #f2ecfa; color: #4a3a87; font-weight: 500; }
+    .panel { border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; position: sticky; top: 12px; max-height: 92vh; overflow: auto; }
+    .panel h2 { font-size: 18px; margin: 0 0 4px; }
+    .panel h3 { font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 18px 0 6px; }
+    .empty { color: var(--muted); padding: 30px 0; text-align: center; }
+    .reasons { margin: 6px 0 0; padding-left: 18px; }
+    .reasons li { margin-bottom: 3px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+    .stat { background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; }
+    .stat .k { color: var(--muted); font-size: 12px; }
+    .stat .v { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .kv td { border-bottom: 1px solid #f0f0f0; padding: 4px 8px; }
+    .kv td:first-child { color: var(--muted); white-space: nowrap; }
+    .drift-crit { background: var(--bad-bg); }
+    .drift-warn { background: var(--warn-bg); }
+    .small th, .small td { font-size: 13px; padding: 5px 8px; }
+    .small thead th { position: static; }
+    .linkbtn { background: none; border: none; color: var(--accent); cursor: pointer; font: inherit; padding: 0; text-align: left; }
+    .linkbtn:hover { text-decoration: underline; }
+    .trace { background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; margin-top: 8px; }
+    .trace .ticket { margin: 0 0 8px; }
+    .err { color: var(--bad); font-weight: 600; }
+    .ok { color: var(--good); }
+    pre.record { background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; overflow-x: auto; font-size: 12px; margin: 0; }
+    .note { color: var(--muted); font-size: 13px; }
+    footer { text-align: center; color: var(--muted); font-size: 14px; padding: 28px; border-top: 1px solid var(--line); margin-top: 30px; }
+    @media (max-width: 720px) { .wrap { padding: 16px; } .topbar { padding: 12px 16px; } .hide-sm { display: none; } .panel { position: static; max-height: none; } }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <a class="home" href="../">Bryan Falkowski</a>
+    <a href="../writing/run-valid.html">Is This Run Valid? (paper)</a>
+  </div>
+  <div class="wrap">
+    <h1>Run review</h1>
+    <p class="intro">An investigation view over the 286 eval runs behind <a href="../writing/run-valid.html">Is This Run Valid?</a>. Runs the validity gate stopped come first. Open a run to see why it was stopped, what its fingerprint says, which tickets were excluded and why, and the OpenTelemetry trace for any ticket. Verdicts are recomputed with the current gate. The fault each run was given is an experiment label the gate never sees. Run IDs carry the plan name because they were named for the experiment; turn on the labels to see the full fault details.</p>
+
+    <div class="counts" id="counts" role="group" aria-label="Filter by verdict"></div>
+    <div class="filters">
+      <label>Batch <select id="f-batch"><option value="">All</option></select></label>
+      <input type="search" id="f-q" placeholder="Search run ID or ticket" aria-label="Search run ID or ticket">
+      <label><input type="checkbox" id="f-labels"> Show experiment labels</label>
+      <span class="note" id="shown"></span>
+    </div>
+
+    <div class="layout">
+      <div class="queue">
+        <div class="queue-scroll">
+          <table aria-label="Run queue">
+            <thead><tr>
+              <th>Verdict</th><th>Run</th><th class="num">Plain</th><th class="num">Valid items</th><th class="num hide-sm">Excluded</th><th class="hide-sm">Top reason</th>
+            </tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </div>
+      <aside class="panel" id="panel" aria-live="polite"><p class="empty">Select a run from the queue.</p></aside>
+    </div>
+  </div>
+  <footer>Data: <a href="https://github.com/bfalkowski/eval-run-validity/tree/data">eval-run-validity, data branch</a> · Index built by <code>analysis/build_review_index.py</code> · <a href="../">Home</a></footer>
+
+<script>
+const RAW = "https://raw.githubusercontent.com/bfalkowski/eval-run-validity/data/runs/";
+const TREE = "https://github.com/bfalkowski/eval-run-validity/tree/data/runs/";
+const ORDER = { invalid: 0, degraded: 1, valid: 2 };
+const ICON = { invalid: "✕", degraded: "!", valid: "✓" };
+const CAUSE = { infrastructure: "Infrastructure", config_drift: "Config drift", judge_failure: "Judge failure",
+                task_defect: "Task or dataset defect", harness_bug: "Harness or scorer bug",
+                model_failure: "Model failure", ok: "OK" };
+let DATA = null, state = { verdict: "", batch: "", q: "", labels: false, run: null, ticket: null };
+const traceCache = {};
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const pct = (x) => x == null ? "–" : (100 * x).toFixed(1) + "%";
+const chip = (v) => `<span class="chip ${v}"><span aria-hidden="true">${ICON[v]}</span>${v}</span>`;
+const causeChip = (c) => `<span class="chip cause">${esc(CAUSE[c] || c)}</span>`;
+const shortId = (id) => id.replace(/^gh\d+-(v\d-)?/, "");
+const topReason = (r) => (r.reasons[0] || "").replace(/^(invalid|degraded): /, "");
+
+function readHash() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  state.run = h.get("run"); state.ticket = h.get("ticket");
+}
+function writeHash() {
+  const h = new URLSearchParams();
+  if (state.run) h.set("run", state.run);
+  if (state.ticket) h.set("ticket", state.ticket);
+  history.replaceState(null, "", h.toString() ? "#" + h.toString() : location.pathname);
+}
+
+function filtered() {
+  const q = state.q.toLowerCase();
+  return DATA.runs.filter((r) =>
+    (!state.verdict || r.verdict === state.verdict) &&
+    (!state.batch || r.batch === state.batch) &&
+    (!q || r.id.toLowerCase().includes(q) || r.flagged_items.some((f) => f.t.toLowerCase() === q))
+  ).sort((a, b) => ORDER[a.verdict] - ORDER[b.verdict] || (b.excluded_rate || 0) - (a.excluded_rate || 0) || a.id.localeCompare(b.id));
+}
+
+function renderCounts() {
+  const c = { "": DATA.runs.length, invalid: 0, degraded: 0, valid: 0 };
+  DATA.runs.forEach((r) => c[r.verdict]++);
+  $("counts").innerHTML = [["", "All runs"], ["invalid", "invalid"], ["degraded", "degraded"], ["valid", "valid"]]
+    .map(([k, label]) => `<button class="count" data-v="${k}" aria-pressed="${state.verdict === k}"><b>${c[k]}</b>${k ? chip(k) : label}</button>`).join("");
+  document.querySelectorAll(".count").forEach((b) => b.onclick = () => { state.verdict = b.dataset.v; renderCounts(); renderRows(); });
+}
+
+function renderRows() {
+  const rows = filtered();
+  $("shown").textContent = `${rows.length} of ${DATA.runs.length} runs`;
+  $("rows").innerHTML = rows.map((r) => `
+    <tr tabindex="0" data-id="${esc(r.id)}" aria-selected="${r.id === state.run}">
+      <td>${chip(r.verdict)}</td>
+      <td><div class="runid" title="${esc(r.id)}">${esc(shortId(r.id))}</div><div class="sub">${esc(r.batch)}${state.labels && r.experiment.plan ? ` · <span class="chip label">${esc(r.experiment.plan)}${r.experiment.pipeline_fault && r.experiment.pipeline_fault !== "none" ? " + " + esc(r.experiment.pipeline_fault) : ""}</span>` : ""}</div></td>
+      <td class="num">${pct(r.naive)}</td>
+      <td class="num">${r.verdict === "invalid" ? "<span class='sub'>withheld</span>" : pct(r.valid_items)}</td>
+      <td class="num hide-sm">${pct(r.excluded_rate)}</td>
+      <td class="hide-sm sub">${esc(topReason(r))}</td>
+    </tr>`).join("") || `<tr><td colspan="6" class="empty">No runs match.</td></tr>`;
+  document.querySelectorAll("#rows tr[data-id]").forEach((tr) => {
+    const open = () => { state.run = tr.dataset.id; state.ticket = null; writeHash(); renderRows(); renderPanel(); };
+    tr.onclick = open;
+    tr.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
+  });
+}
+
+function renderPanel() {
+  const r = DATA.runs.find((x) => x.id === state.run);
+  if (!r) { $("panel").innerHTML = `<p class="empty">Select a run from the queue.</p>`; return; }
+  const fp = r.fingerprint, crit = new Set(r.drift.critical || []), warn = new Set(r.drift.warn || []);
+  const fpRows = Object.entries(fp).filter(([k, v]) => v != null && !(Array.isArray(v) && !v.length)).map(([k, v]) =>
+    `<tr class="${crit.has(k) ? "drift-crit" : warn.has(k) ? "drift-warn" : ""}"><td>${esc(k)}</td><td class="mono">${esc(typeof v === "object" ? JSON.stringify(v) : v)}${crit.has(k) ? " <b>changed, undeclared</b>" : warn.has(k) ? " <b>differs (environment)</b>" : ""}</td></tr>`).join("");
+  const causes = Object.entries(r.categories).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${causeChip(k)} ${n}`).join(" &nbsp; ");
+  const tRow = (f, kind) => `<tr>
+      <td><button class="linkbtn" data-ticket="${esc(f.t)}" data-i="${f.i}">${esc(f.t)}</button></td>
+      <td>${kind === "flag" ? causeChip(f.p) : causeChip("model_failure")}</td>
+      <td class="hide-sm">${f.j && f.j !== "ok" && kind === "flag" ? causeChip(f.j) : "<span class='sub'>–</span>"}</td>
+      <td class="sub">${esc(kind === "flag" ? (f.r || []).join("; ") || (f.p === "ok" ? "judge only" : "") : `did ${f.a || "nothing"}, expected ${DATA.tickets[f.t]?.expected || "?"}`)}</td>
+    </tr><tr class="trace-row" data-for="${esc(f.t)}" hidden><td colspan="4"></td></tr>`;
+  const record = {
+    run: r.id, verdict: r.verdict, rules_fired: r.reasons, decided_from: ["manifest.json", "preflight.json", "items.jsonl", "traces.jsonl", "baseline " + (r.drift.baseline || "none")],
+    items: `${r.completed} of ${r.planned} completed`, run_started: r.created_at, code: fp.git_commit,
+  };
+  $("panel").innerHTML = `
+    <div>${chip(r.verdict)} <span class="sub">${esc(r.batch)}</span></div>
+    <h2 class="runid" style="font-size:14px;margin-top:6px">${esc(r.id)}</h2>
+    <div class="sub"><a href="${TREE + encodeURIComponent(r.id)}" target="_blank" rel="noopener">Raw run files</a> · started ${esc(r.created_at || "?")}</div>
+    ${state.labels ? `<p style="margin:10px 0 0"><span class="chip label">Experiment label</span> <span class="sub">plan ${esc(r.experiment.plan)}; cause ${esc(r.experiment.category || "none")}; faults ${esc((r.experiment.faults || []).join(", ") || "none")}; pipeline ${esc(r.experiment.pipeline_fault || "none")}; error policy ${esc(r.experiment.error_policy)}. Not seen by the gate.</span></p>` : ""}
+    <h3>Why</h3>
+    ${r.reasons.length ? `<ul class="reasons">${r.reasons.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : `<p class="sub" style="margin:0">No problems found. The score is published as is.</p>`}
+    <h3>Scores</h3>
+    <div class="stats">
+      <div class="stat"><div class="k">Plain score</div><div class="v">${pct(r.naive)}</div></div>
+      <div class="stat"><div class="k">Valid items</div><div class="v">${r.verdict === "invalid" ? "withheld" : pct(r.valid_items)}</div></div>
+      <div class="stat"><div class="k">Excluded</div><div class="v">${pct(r.excluded_rate)}</div></div>
+      <div class="stat"><div class="k">Judge, valid items</div><div class="v">${r.judge_valid == null ? "withheld" : pct(r.judge_valid)}</div></div>
+      <div class="stat"><div class="k">Items finished</div><div class="v">${r.completed}/${r.planned}</div></div>
+      <div class="stat"><div class="k">Retries absorbed</div><div class="v">${r.retries}</div></div>
+    </div>
+    <h3>Causes, agent score</h3>
+    <p style="margin:0">${causes || "<span class='sub'>none</span>"}</p>
+    ${r.missed.length ? `<p class="sub" style="margin:6px 0 0">Missed evals (no successful model call): ${r.missed.map(esc).join(", ")}</p>` : ""}
+    <h3>Flagged tickets (${r.flagged_items.length})</h3>
+    ${r.flagged_items.length ? `<table class="small"><thead><tr><th>Ticket</th><th>Agent score</th><th class="hide-sm">Judge score</th><th>Reason</th></tr></thead><tbody>${r.flagged_items.map((f) => tRow(f, "flag")).join("")}</tbody></table>` : `<p class="sub" style="margin:0">None.</p>`}
+    <h3>Model failures (${r.model_failures.length})</h3>
+    ${r.model_failures.length ? `<table class="small"><thead><tr><th>Ticket</th><th>Cause</th><th class="hide-sm"></th><th>What happened</th></tr></thead><tbody>${r.model_failures.map((f) => tRow(f, "model")).join("")}</tbody></table>` : `<p class="sub" style="margin:0">None.</p>`}
+    <h3>Fingerprint</h3>
+    <p class="sub" style="margin:0 0 6px">Compared with baseline <span class="mono">${esc(r.drift.baseline || "none")}</span>. Red: critical field changed without being declared. Amber: environment differs.</p>
+    <table class="kv small"><tbody>${fpRows}</tbody></table>
+    <h3>Decision record</h3>
+    <pre class="record">${esc(JSON.stringify(record, null, 2))}</pre>`;
+  document.querySelectorAll("#panel button[data-ticket]").forEach((b) => b.onclick = () => openTrace(r, b.dataset.ticket, +b.dataset.i));
+  if (state.ticket) {
+    const b = document.querySelector(`#panel button[data-ticket="${CSS.escape(state.ticket)}"]`);
+    if (b) openTrace(r, state.ticket, +b.dataset.i, true);
+  }
+}
+
+async function loadTraces(r) {
+  if (traceCache[r.id]) return traceCache[r.id];
+  const res = await fetch(RAW + encodeURIComponent(r.id) + "/traces.jsonl");
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const spans = (await res.text()).split("\n").filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+  return (traceCache[r.id] = spans);
+}
+
+async function openTrace(r, ticket, idx, keepScroll) {
+  state.ticket = ticket; writeHash();
+  document.querySelectorAll("#panel .trace-row").forEach((tr) => { tr.hidden = true; });
+  const row = document.querySelector(`#panel .trace-row[data-for="${CSS.escape(ticket)}"]`);
+  if (!row) return;
+  row.hidden = false;
+  const cell = row.firstElementChild, t = DATA.tickets[ticket] || {};
+  const head = `<p class="ticket"><b>${esc(ticket)}</b> · order ${esc(t.order)} · expected <b>${esc(t.expected)}</b><br>“${esc(t.text)}”</p>`;
+  if (!r.has_traces) { cell.innerHTML = `<div class="trace">${head}<p class="err">This run has no traces (they were lost before upload).</p></div>`; return; }
+  cell.innerHTML = `<div class="trace">${head}<p class="sub">Loading trace…</p></div>`;
+  try {
+    const spans = (await loadTraces(r)).filter((s) => s.attributes["eval.item_index"] === idx && s.name !== "eval.item")
+      .sort((a, b) => a.start - b.start);
+    const t0 = spans.length ? spans[0].start : 0;
+    const line = (s) => {
+      const a = s.attributes, err = s.status === "ERROR";
+      const what = s.name === "jev.call" ? `Jev ${a["gen_ai.operation.name"]} (${a["eval.role"]})` : s.name.replace("tool.", "tool ");
+      const detail = [a["http.response.status_code"] && "HTTP " + a["http.response.status_code"], a["jev.attempts"] > 1 && a["jev.attempts"] + " attempts",
+        a["tool.arg.order_id"] && "order " + a["tool.arg.order_id"], a["tool.arg.sku"] && a["tool.arg.sku"], a["jev.parse_ok"] === false && "unparseable answer"].filter(Boolean).join(", ");
+      return `<tr><td class="num mono">+${((s.start - t0) / 1e6).toFixed(0)} ms</td><td>${esc(what)}</td>
+        <td>${err ? `<span class="err">✕ ${esc(a["error.type"] || "error")}</span>` : `<span class="ok">✓</span>`}</td><td class="sub">${esc(detail)}</td>
+        <td class="num mono">${((s.end - s.start) / 1e6).toFixed(0)} ms</td></tr>`;
+    };
+    cell.innerHTML = `<div class="trace">${head}
+      <table class="small"><thead><tr><th class="num">At</th><th>Span</th><th>Status</th><th>Detail</th><th class="num">Took</th></tr></thead>
+      <tbody>${spans.map(line).join("") || `<tr><td colspan="5" class="sub">No spans for this ticket.</td></tr>`}</tbody></table>
+      <p class="sub" style="margin:6px 0 0"><a href="${RAW + encodeURIComponent(r.id)}/traces.jsonl" target="_blank" rel="noopener">Raw traces for this run</a></p></div>`;
+    if (!keepScroll) row.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  } catch (e) {
+    cell.innerHTML = `<div class="trace">${head}<p class="err">Could not load the trace (${esc(e.message)}).</p></div>`;
+  }
+}
+
+async function init() {
+  readHash();
+  try {
+    DATA = await (await fetch("index.json")).json();
+  } catch (e) {
+    $("rows").innerHTML = `<tr><td colspan="6" class="err">Could not load index.json.</td></tr>`;
+    return;
+  }
+  const batches = [...new Set(DATA.runs.map((r) => r.batch))].sort();
+  $("f-batch").innerHTML += batches.map((b) => `<option>${esc(b)}</option>`).join("");
+  $("f-batch").onchange = (e) => { state.batch = e.target.value; renderRows(); };
+  $("f-q").oninput = (e) => { state.q = e.target.value.trim(); renderRows(); };
+  $("f-labels").onchange = (e) => { state.labels = e.target.checked; renderRows(); renderPanel(); };
+  renderCounts(); renderRows(); renderPanel();
+  const sel = document.querySelector(`#rows tr[aria-selected="true"]`);
+  if (sel) sel.scrollIntoView({ block: "center" });
+}
+window.addEventListener("hashchange", () => { readHash(); renderRows(); renderPanel(); });
+init();
+</script>
+</body>
+</html>
