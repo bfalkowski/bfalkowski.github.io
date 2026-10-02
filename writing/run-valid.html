@@ -222,7 +222,7 @@
     <h3>5.6 Runs</h3>
     <p>All paper runs execute in GitHub Actions on Python 3.11 with pinned dependencies, against the real Jev API, on October 2, 2026. Each run is about 180 Jev calls. The baseline fingerprint is a clean run on the final policy. A local stand-in for Jev is used only for the repo's tests.</p>
     <ul>
-      <li><strong>Clean runs:</strong> 10 on the final baseline, which set the noise floor.</li>
+      <li><strong>Clean runs:</strong> 10 on the final policy set the noise floor: the baseline run, the 5 noise-floor runs, and the clean run in each repeat of the development and held-out batches (2 + 2). They score a mean of 83.0% with a standard deviation of 2.2 points; observed range 80.0% to 88.3%, and mean ± 2 standard deviations 78.6% to 87.4%. The three clean runs in the pipeline batch came later; the pipeline's report stage uses all 13, which gives a band of 79.2% to 86.8%.</li>
       <li><strong>Development batch:</strong> each of the 41 fault plans, plus a clean run and the declared control, twice (86 runs). The development split also includes two of the noise-floor clean runs, so it has 88 runs, 82 of them faulted. I tuned against this batch only.</li>
       <li><strong>Freeze:</strong> attribution rules, gate thresholds and the ground-truth definitions were then frozen and tagged (<code>freeze-dev</code>).</li>
       <li><strong>Held-out batch:</strong> the same 43 plans, twice more, with different fault seeds, so faults land on different calls and items (86 runs, plus two noise-floor clean runs: 88).</li>
@@ -340,7 +340,7 @@
       <tr><td>Dependencies resolved to older versions</td><td>82 to 87%</td><td>degraded ×3</td><td>environment differs in <code>packages</code></td></tr>
       <tr><td>Different Python version</td><td>82 to 83%</td><td>degraded ×3</td><td>environment differs in <code>python_version</code></td></tr>
     </table></div>
-    <p class="caption">Table 10. Pipeline faults on a clean eval. Clean runs score 83.0% (range 80.0 to 88.3%). Expected verdicts matched on all 21 runs.</p>
+    <p class="caption">Table 10. Pipeline faults on a clean eval. The ten clean runs score 83.0% (observed range 80.0 to 88.3%). Expected verdicts matched on all 21 runs.</p>
     <p>None of these faults leaves a trace inside the agent, and several leave the plain score inside or near the clean range. Lost traces scored 78 to 85%, which looks like a normal run. Two are worth naming. A missing <code>POLICY_VERSION</code> made the code fall back to an older policy without the refund limit, and the run looked like an ordinary mediocre run. And checking out the previous commit of the agent code, which carries the older policy wording, scored 88 to 90%, at or above the best clean run (88.3%) and well above the clean mean. A plain score comparison would have reported an improvement. Only the fingerprint shows that the code under test was not the code anyone meant to test.</p>
     <p><strong>The collect step.</strong> The last two faults happen after the runs, when results are gathered. Merging a run's results twice leaves the plain score unchanged, because every ticket is counted twice, while the item count doubles and makes any interval look twice as tight as it should. Mixing two runs' results into one folder produces an average of two runs that never happened. The gate marked all 48 invalid: every item record carries its run ID and fingerprint hash, so a repeated item index or a foreign run ID is caught before any score is computed.</p>
 
@@ -353,9 +353,11 @@
       <tr><th>Clean runs, 600 items</th><th>Share of items</th></tr>
       <tr><td>Judge's first vote disagrees with the deterministic score</td><td>24.5%</td></tr>
       <tr><td>Judge's two votes disagree with each other</td><td>3.5%</td></tr>
+      <tr><td>At least one vote is wrong</td><td>26.3% (158 items)</td></tr>
+      <tr><td>Both votes wrong, in the same way</td><td>22.8% (137 items)</td></tr>
     </table></div>
     <p class="caption">Table 11. The judge against the deterministic score in clean runs.</p>
-    <p>The judge was wrong about one time in four, and the repeat check saw roughly one of every seven of those errors. The rest were consistent: the judge gave the same wrong verdict twice. The injected faults show the same thing from the other side. When faultd flipped judge votes, the gate caught every flip that left the two votes disagreeing, and missed every case where both votes were flipped the same way (7 items on dev, 11 on held-out).</p>
+    <p>The judge was wrong about one time in four. Of the 158 items where at least one of its two votes was wrong, the votes disagreed on 21 (13%), so a repeat check would have flagged about one in eight; on the other 137, both votes were wrong in the same way. Counted by the first vote alone, the judge was wrong on 147 items, and the second vote disagreed on only 10 of them (7%). The injected faults show the same thing from the other side. When faultd flipped judge votes, the gate caught every flip that left the two votes disagreeing, and missed every case where both votes were flipped the same way (7 items on dev, 11 on held-out).</p>
     <p>Repeat agreement measures whether a judge is stable, not whether it is right. A judge used to make or check decisions needs a reference that does not come from the judge: a deterministic score where one exists, or a small set of human-labeled items scored on every run, with disagreement against that set tracked as its own metric.</p>
 
     <h2>7. Recommendation: a validity gate as a pipeline stage</h2>
@@ -426,7 +428,7 @@
     <p>I started the pipeline four times on the real API, each with one fault injected, to show where it stops. The runs are public.</p>
     <div class="table-wrap"><table>
       <tr><th>Injected fault</th><th>Where it stopped</th><th>Why</th><th>Run</th></tr>
-      <tr><td>None</td><td>Passed all four jobs</td><td>Report: 81.7% on all 60 items, within the clean range (79.2% to 86.8%)</td><td><a href="https://github.com/bfalkowski/eval-run-validity/actions/runs/37049432289">37049432289</a></td></tr>
+      <tr><td>None</td><td>Passed all four jobs</td><td>Report: 81.7% on all 60 items, within the clean band (mean ± 2 standard deviations of 13 clean runs: 79.2% to 86.8%)</td><td><a href="https://github.com/bfalkowski/eval-run-validity/actions/runs/37049432289">37049432289</a></td></tr>
       <tr><td>Missing <code>POLICY_VERSION</code></td><td>preflight, after 6 seconds</td><td>Fingerprint: <code>policy_hash</code> changed and was not declared</td><td><a href="https://github.com/bfalkowski/eval-run-validity/actions/runs/37049828906">37049828906</a></td></tr>
       <tr><td>Jev down for tickets 20 to 39, silent fallback</td><td>validate</td><td>Coverage: 20 tickets with no successful model call. Gate: invalid, 20 of 60 items excluded (33%)</td><td><a href="https://github.com/bfalkowski/eval-run-validity/actions/runs/37049951030">37049951030</a></td></tr>
       <tr><td>Judge votes flipped on 25% of calls</td><td>Passed all four jobs, as degraded</td><td>Report marked degraded: the judge score was withheld, and the agent's score, 83.3% on all 60 items, was published, within the clean range. Judge faults do not touch the agent's score.</td><td><a href="https://github.com/bfalkowski/eval-run-validity/actions/runs/37050267138">37050267138</a></td></tr>
