@@ -34,6 +34,7 @@
     th { background: var(--alt-bg); font-weight: 600; }
     .caption { color: var(--muted); font-size: 14px; margin: 0 0 22px; }
     figure { margin: 8px 0 22px; }
+    figure img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; }
     figcaption { color: var(--muted); font-size: 14px; margin-top: 6px; }
     code { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 0.88em; }
     pre { background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; overflow-x: auto; font-size: 13px; }
@@ -261,6 +262,10 @@
       <tr><th>All faulted runs</th><th>82</th><th>36 (44%)</th><th>36 (44%)</th><th>61 / 54</th></tr>
     </table></div>
     <p class="caption">Table 4. No faulted run produced a false improvement. Judge faults never move the agent's score, which is why they never look like regressions.</p>
+    <figure>
+      <img src="run-valid/fig-scores-by-verdict.png" alt="Dot plot of every development and held-out run: plain score on the horizontal axis, injected cause on the vertical axis, each dot marked valid, degraded or invalid by the gate. Clean and control runs are all valid. Runs far below the clean band are all invalid. Runs inside the band are a mix, depending on whether the fault actually affected items.">
+      <figcaption>Figure 2. Every development and held-out run (168 plotted; 8 more stopped at preflight and have no score). Shaded: the clean mean ± 2 standard deviations. Many faulted runs sit inside the clean band, where a plain score comparison sees nothing; the gate still marks most of them degraded. The control sits just below the band and passes, as a declared change should.</figcaption>
+    </figure>
     <p>Not every faulted run should be flagged. At a 5% dose most Jev transport faults are absorbed by retries and the run is valid, which is why the gate flags only about half of the infrastructure runs. Of the 72 false regressions, the gate marked 71 degraded or invalid. The one it passed (a scorer off-by-one on held-out) had a single affected item, under the 2% threshold, and still scored 79.7% on its valid items: that run was mostly Jev having a low run.</p>
 
     <h3>6.3 Attribution (RQ2)</h3>
@@ -287,7 +292,11 @@
     <div class="pending"><strong>Pending:</strong> the threshold sweep (runs caught against clean runs rejected as the 2% and 15% thresholds move).</div>
 
     <h3>6.5 Score on valid items (RQ4)</h3>
-    <p>Across runs with item-level faults, the median gap between a run's plain score and the clean mean was 3.0 points. After excluding the items the gate attributed to faults, the median gap was 2.0 points on dev and 1.6 on held-out. The remaining gap is mostly the clean noise floor itself (standard deviation 2.2 points).</p>
+    <p>Across the 136 dev and held-out runs with item-level faults, the plain score sat a median 3.0 points below the clean mean, and as far as 63 points below. After excluding the items the gate attributed to faults, the score on the remaining items sat a median 0.3 points above it, almost all of it inside the clean noise band. Measured as distance in either direction, the median gap fell from 3.0 points to 2.0 on dev and 1.6 on held-out, which is close to the clean runs' own standard deviation of 2.2.</p>
+    <figure>
+      <img src="run-valid/fig-recovery.png" alt="Two rows of dots. Plain score: spread from 63 points below the clean mean up to a few points above, median 3.0 below. Score on valid items: clustered around the clean mean, median 0.3 above, with a few runs 10 to 20 points below.">
+      <figcaption>Figure 3. Distance from the clean mean for runs with item-level faults, before and after excluding the items the gate attributed to faults. Black bars are medians; the shaded band is the clean runs ± 2 standard deviations. The runs still well below are ones where a third or more of the tickets were excluded, so the score is over a different, smaller subset: a wrong key on the last 20 tickets leaves the first 40, which happen to hold more of the hard cases. All of them were marked invalid, so no score was reported.</figcaption>
+    </figure>
     <div class="pending"><strong>Pending:</strong> gap by fault and dose, with bootstrap intervals.</div>
 <h3>6.6 Wrong key, loud and silent</h3>
     <div class="pending"><strong>Pending:</strong> naive score under each policy, missed evals listed, and whether real and simulated 401s leave the same trace.</div>

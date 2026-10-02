@@ -1,0 +1,14 @@
+{
+ "runs_plotted": 168,
+ "stopped_at_preflight": 8,
+ "item_level_runs": 136,
+ "median_gap_plain": -3.0,
+ "median_gap_valid": 0.3333333333333428,
+ "noise_floor": {
+  "n": 10,
+  "mean": 0.83,
+  "sd": 0.0219,
+  "min": 0.8,
+  "max": 0.8833
+ }
+}
