@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Bryan Falkowski">
+  <meta name="robots" content="noindex">
+  <meta name="description" content="Checking whether an LLM eval run worked before scoring it: a failure taxonomy, a run validity gate, and fault-injection experiments on a small agent eval.">
+  <title>Is This Run Valid? | Bryan Falkowski</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root { --text: #2c2c2c; --muted: #666666; --line: #e0e0e0; --alt-bg: #fafafa; --accent: #1d3f72; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #fff; color: var(--text); font: 17px/1.6 "Source Sans 3", "Source Sans Pro", sans-serif; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .topbar { border-bottom: 1px solid var(--line); padding: 14px 32px; }
+    .topbar .container { display: flex; justify-content: space-between; font-size: 15px; }
+    .topbar a.home { color: var(--text); font-weight: 600; }
+    .container { max-width: 760px; margin: 0 auto; }
+    article { padding: 48px 32px 64px; }
+    h1 { font-size: 34px; font-weight: 600; line-height: 1.2; margin: 0 0 10px; }
+    .byline { color: var(--muted); font-size: 15px; margin: 0 0 32px; }
+    h2 { font-size: 24px; font-weight: 700; margin: 44px 0 14px; }
+    h3 { font-size: 19px; font-weight: 600; margin: 28px 0 10px; }
+    p { margin: 0 0 14px; }
+    ul, ol { margin: 0 0 16px; padding-left: 24px; }
+    li { margin-bottom: 6px; }
+    .table-wrap { overflow-x: auto; margin: 0 0 8px; }
+    table { border-collapse: collapse; width: 100%; font-size: 15px; }
+    th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+    th { background: var(--alt-bg); font-weight: 600; }
+    .caption { color: var(--muted); font-size: 14px; margin: 0 0 22px; }
+    figure { margin: 8px 0 22px; }
+    figcaption { color: var(--muted); font-size: 14px; margin-top: 6px; }
+    code { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 0.88em; }
+    pre { background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; overflow-x: auto; font-size: 13px; }
+    .abstract { background: var(--alt-bg); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 6px 6px 0; margin-bottom: 8px; }
+    .abstract p:last-child { margin-bottom: 0; }
+    .diagram-fig { margin: 12px 0 24px; }
+    .diagram-fig svg { width: 100%; height: auto; display: block; }
+    .draft { background: #fdf3dd; border: 1px solid #e8cf8f; color: #6b4b00; border-radius: 6px; padding: 10px 14px; font-size: 15px; margin-bottom: 28px; }
+    .pending { border: 1px dashed #d9b45a; background: #fffaf0; color: #7a5a10; border-radius: 6px; padding: 10px 14px; font-size: 15px; margin: 0 0 16px; }
+    .pending strong { color: #6b4b00; }
+    .pending-inline { background: #fdf3dd; color: #6b4b00; padding: 0 4px; border-radius: 3px; }
+    footer { text-align: center; color: var(--muted); font-size: 14px; padding: 32px; border-top: 1px solid var(--line); }
+    @media (max-width: 720px) { .topbar, article { padding-left: 16px; padding-right: 16px; } h1 { font-size: 28px; } }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="container">
+      <a class="home" href="../">Bryan Falkowski</a>
+      <a href="../#writing">All writing</a>
+    </div>
+  </div>
+
+  <article class="container">
+    <div class="draft"><strong>Draft.</strong> Design and method are written. Results are pending the runs in CI; every place a number is needed is marked.</div>
+
+    <h1>Is This Run Valid? Attributing Pipeline Failures Before Scoring LLM Evaluations</h1>
+    <p class="byline">Bryan Falkowski · October 2026 · Code and data: <a href="https://github.com/bfalkowski/eval-run-validity">github.com/bfalkowski/eval-run-validity</a></p>
+
+    <div class="abstract">
+      <p><strong>Abstract.</strong> An eval score only means something if the run that produced it worked. Most eval pipelines report a number either way, so a rate-limited API, a changed prompt, a stale fixture or a scorer bug shows up as a model regression and costs hours of triage. I propose checking whether a run is valid before scoring it. A run gets a fingerprint and preflight checks, every item is traced with OpenTelemetry, each failed item is assigned one of six causes using rules over its trace, and a gate marks the run valid, degraded or invalid. To test this I built a small support-agent eval on TypeSafe's Jev, a fault API that can break any part of it, and a GitHub Actions pipeline that can break itself. Across <span class="pending-inline">[N]</span> runs with known injected faults, a naive score reported a false regression in <span class="pending-inline">[X%]</span> of faulted runs. The gate caught <span class="pending-inline">[X%]</span> of invalid runs while rejecting <span class="pending-inline">[X%]</span> of clean ones, attribution named the right cause for <span class="pending-inline">[X%]</span> of failed items, and the score on valid items stayed within <span class="pending-inline">[X]</span> points of the clean baseline.</p>
+    </div>
+
+    <h2>1. The problem</h2>
+    <p>While running the experiments for my previous paper, several things broke that had nothing to do with the models being tested. TypeSafe's API returned 503 on 26 of 40 pilot calls. Claude Opus 5.5 rejected forced tool calls, and an SDK update removed the <code>temperature</code> parameter. One task asked the agent to ship an order that was already shipped, so no correct action existed. The scorer counted paging through a table as a false action. Each of these was found by hand, after the fact, by reading results that looked wrong. Each would have looked like a model regression in a dashboard.</p>
+    <p>This is the normal state of LLM evaluation pipelines. A score comes out whether the run worked or not. When the score drops, someone has to work out whether the model got worse, the judge broke, the dataset changed, or the infrastructure had a bad hour. That triage is slow, and when it is skipped, wrong conclusions ship.</p>
+    <p>This paper asks four questions:</p>
+    <ol>
+      <li>How often does a pipeline fault produce a false regression, or a false improvement, in a naive score?</li>
+      <li>Can each failed item be attributed to the right cause automatically, from traces and run metadata alone?</li>
+      <li>Where should a validity gate's threshold sit, trading bad runs caught against good runs wrongly rejected?</li>
+      <li>Once invalid items are excluded, how close is the remaining score to a clean run's score?</li>
+    </ol>
+
+    <h2>2. Related work</h2>
+    <p><strong>Flaky tests.</strong> Software testing has studied this problem for a long time. <a href="https://mir.cs.illinois.edu/lamyaa/publications/fse14.pdf">Luo et al. (2014)</a> built a root-cause taxonomy of flaky tests from fixed issues, and <a href="https://testing.googleblog.com/2016/05/flaky-tests-at-google-and-how-we.html">Google's testing blog (2016)</a> described rerunning and quarantining flaky tests at scale. A <a href="https://www.sciencedirect.com/science/article/pii/S0164121223002327">2023 multivocal review</a> covers causes, detection and responses, and <a href="https://arxiv.org/abs/2504.16777">work on systemic flakiness</a> shows that flaky failures often co-occur from one shared cause, which is close to the run-level view here. I borrow the taxonomy-first approach and the idea that a failure is not automatically a verdict on the code under test. The difference is that an eval produces a score, not a pass or fail, so a fault moves a number instead of turning a test red.</p>
+    <p><strong>Infrastructure noise in LLM evals.</strong> <a href="https://www.anthropic.com/engineering/infrastructure-noise">Anthropic (2026)</a> found that resource settings alone moved Terminal-Bench 2.0 scores by about 6 percentage points, with infrastructure error rates falling from 5.8% to 0.5% as limits were raised. That is direct evidence for the problem. It studies one kind of fault on one benchmark; this paper injects six kinds and tests attribution and a gate.</p>
+    <p><strong>Reproducible evaluation.</strong> <a href="https://arxiv.org/abs/2405.14782">Biderman et al. (2024)</a>, from the lm-evaluation-harness team, catalog how small setup details change results and argue for sharing exact configurations. The run fingerprint here makes that comparison automatic and per run.</p>
+    <!-- TODO before publishing: read arXiv 2609.30074 (self-audit of LLM-inferred prompt structure) and arXiv 2607.02577 (validity audit of tool-calling evaluation) and position against them. -->
+    <p><strong>Benchmark auditing.</strong> <a href="https://arxiv.org/abs/2604.24955">BenchGuard (Tu et al., 2026)</a> uses LLMs to audit agent benchmarks for defects in instructions, ground truth and evaluation scripts, and found 12 confirmed defects in ScienceAgentBench. Audits like this check a benchmark once, before use. This paper checks each run as it happens, and covers infrastructure and judge faults as well as dataset defects.</p>
+    <p><strong>Statistics of eval scores.</strong> <a href="https://arxiv.org/abs/2411.00640">Miller (2024)</a> sets out how to put error bars on eval scores and compare models properly. That work assumes the run is valid; this paper checks that first.</p>
+    <p><strong>Tooling.</strong> The <a href="https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/">OpenTelemetry GenAI semantic conventions</a> give standard attributes for model calls, which this paper uses and extends. Eval harnesses record logs and configurations but, as far as I found, do not issue a validity verdict on a run.</p>
+
+    <h2>3. A taxonomy of failures</h2>
+    <p>Six causes. Only the last should count against the model. The right-hand column is what actually happened in my previous paper.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Cause</th><th>What it looks like</th><th>Signal that detects it</th><th>Seen in paper 1</th></tr>
+      <tr><td>Infrastructure</td><td>Timeouts, restarts, rate limits, outages, auth failures</td><td>Error status, HTTP codes and retries in traces</td><td>503 on 26 of 40 pilot calls</td></tr>
+      <tr><td>Config drift</td><td>Model, prompt, context, code or dependencies changed between runs</td><td>Run fingerprint differs from the baseline</td><td>Forced tool calls rejected; SDK dropped <code>temperature</code></td></tr>
+      <tr><td>Judge failure</td><td>Unparseable verdicts, verdicts that change on repeat</td><td>Parse errors; disagreement between judge repeats</td><td>Not seen</td></tr>
+      <tr><td>Task or dataset defect</td><td>The expected answer is wrong, the record is missing, items are duplicated</td><td>Expected answer inconsistent with its fixture; lookup fails; duplicate IDs</td><td>A task asked to ship an already-shipped order</td></tr>
+      <tr><td>Harness or scorer bug</td><td>The code that scores the output is wrong</td><td>Scorer's view disagrees with the trace; scorer fails known-answer cases</td><td>Paging scored as a false action</td></tr>
+      <tr><td>Model failure</td><td>The model got a valid item wrong in a valid run</td><td>None of the above</td><td>What we want to measure</td></tr>
+    </table></div>
+    <p>A run where only some items finished is a state of the run, not a cause, and has its own rule in the gate.</p>
+
+    <h2>4. The run validity framework</h2>
+    <figure class="diagram-fig">
+      <svg viewBox="0 0 745 240" role="img" aria-label="Flow of the run validity framework">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1d3f72"/></marker>
+          <marker id="arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#999"/></marker>
+        </defs>
+        <g font-family="Source Sans 3, sans-serif" font-size="14" fill="#2c2c2c">
+          <rect x="10" y="120" width="110" height="56" rx="6" fill="#fafafa" stroke="#1d3f72"/>
+          <text x="65" y="144" text-anchor="middle" font-weight="600">Preflight</text>
+          <text x="65" y="162" text-anchor="middle" font-size="12" fill="#666">canary checks</text>
+          <rect x="150" y="120" width="110" height="56" rx="6" fill="#fafafa" stroke="#1d3f72"/>
+          <text x="205" y="144" text-anchor="middle" font-weight="600">Fingerprint</text>
+          <text x="205" y="162" text-anchor="middle" font-size="12" fill="#666">run manifest</text>
+          <rect x="290" y="120" width="110" height="56" rx="6" fill="#fafafa" stroke="#1d3f72"/>
+          <text x="345" y="144" text-anchor="middle" font-weight="600">Traced run</text>
+          <text x="345" y="162" text-anchor="middle" font-size="12" fill="#666">one span per call</text>
+          <rect x="430" y="120" width="110" height="56" rx="6" fill="#fafafa" stroke="#1d3f72"/>
+          <text x="485" y="144" text-anchor="middle" font-weight="600">Attribution</text>
+          <text x="485" y="162" text-anchor="middle" font-size="12" fill="#666">a cause per item</text>
+          <rect x="570" y="120" width="70" height="56" rx="6" fill="#1d3f72"/>
+          <text x="605" y="153" text-anchor="middle" font-weight="600" fill="#fff">Gate</text>
+          <line x1="120" y1="148" x2="148" y2="148" stroke="#1d3f72" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="260" y1="148" x2="288" y2="148" stroke="#1d3f72" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="400" y1="148" x2="428" y2="148" stroke="#1d3f72" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="540" y1="148" x2="568" y2="148" stroke="#1d3f72" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="640" y1="136" x2="668" y2="112" stroke="#1d3f72" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="640" y1="148" x2="668" y2="148" stroke="#1d3f72" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="640" y1="160" x2="668" y2="184" stroke="#1d3f72" stroke-width="1.5" marker-end="url(#arr)"/>
+          <text x="672" y="110" font-size="13" fill="#1f5e3a" font-weight="600">valid</text>
+          <text x="672" y="152" font-size="13" fill="#7a5300" font-weight="600">degraded</text>
+          <text x="672" y="194" font-size="13" fill="#8f2f20" font-weight="600">invalid</text>
+          <line x1="65" y1="176" x2="65" y2="204" stroke="#1d3f72" stroke-width="1.5"/>
+          <line x1="65" y1="204" x2="590" y2="204" stroke="#1d3f72" stroke-width="1.5"/>
+          <line x1="590" y1="204" x2="590" y2="180" stroke="#1d3f72" stroke-width="1.5" marker-end="url(#arr)"/>
+          <text x="330" y="222" text-anchor="middle" font-size="12" fill="#666">a failed preflight stops the run before it spends anything</text>
+          <rect x="200" y="20" width="200" height="50" rx="6" fill="#fff" stroke="#999" stroke-dasharray="5 4"/>
+          <text x="300" y="42" text-anchor="middle" font-weight="600">faultd (experiments only)</text>
+          <text x="300" y="59" text-anchor="middle" font-size="12" fill="#666">breaks calls, data, scorer, config</text>
+          <line x1="300" y1="70" x2="330" y2="118" stroke="#999" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arrg)"/>
+          <line x1="260" y1="70" x2="205" y2="118" stroke="#999" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arrg)"/>
+          <rect x="450" y="20" width="160" height="50" rx="6" fill="#fff" stroke="#999" stroke-dasharray="5 4"/>
+          <text x="530" y="42" text-anchor="middle" font-weight="600">ground-truth log</text>
+          <text x="530" y="59" text-anchor="middle" font-size="12" fill="#666">what was injected</text>
+          <line x1="400" y1="45" x2="448" y2="45" stroke="#999" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arrg)"/>
+          <text x="530" y="98" text-anchor="middle" font-size="12" fill="#8f2f20">never read by attribution or the gate</text>
+        </g>
+      </svg>
+      <figcaption>Figure 1. The five steps around every eval run. The dashed parts exist only for the experiments in this paper.</figcaption>
+    </figure>
+    <ol>
+      <li><strong>Preflight.</strong> Before any scored item: data files match their checksums, Jev answers a trivial canary question, the judge answers a trivial yes/no canary, and the scorer gets twelve known-answer cases right. A failed preflight stops the run.</li>
+      <li><strong>Fingerprint.</strong> A manifest records the model, hashes of the policy prompt, the decision and judge instructions, the context fields sent, the dataset, the agent code and the scorer code, plus package versions, lockfile hash and Python version. Fields are grouped by how much a change matters: a critical field that differs from the baseline without being declared makes the run invalid; a warning field makes it degraded.</li>
+      <li><strong>Traced run.</strong> Every item is an OpenTelemetry trace. Every Jev call and tool call is a span, written to disk as soon as it ends, so a run killed part way still leaves its traces.</li>
+      <li><strong>Attribution.</strong> Rules over each item's spans, its record and the run's fingerprint assign one cause. Items with any cause other than model failure are excluded from the score and listed.</li>
+      <li><strong>Gate.</strong> The run is invalid if preflight failed, a critical field drifted, results from another run are mixed in, fewer than 90% of items finished, or more than 15% of items were excluded. It is degraded for more than 2% excluded, a partial run above 90%, a warning-level drift, or a withheld judge score. Otherwise it is valid. These thresholds are starting values, frozen on a development split before the held-out runs are scored.</li>
+    </ol>
+    <h3>Span attributes</h3>
+    <div class="table-wrap"><table>
+      <tr><th>Attribute</th><th>On</th><th>Used for</th></tr>
+      <tr><td><code>gen_ai.system</code>, <code>gen_ai.request.model</code>, <code>gen_ai.operation.name</code>, <code>gen_ai.usage.input_tokens</code></td><td>Jev calls</td><td>Standard GenAI conventions; cost</td></tr>
+      <tr><td><code>http.response.status_code</code>, <code>error.type</code></td><td>Jev and tool calls</td><td>Infrastructure versus other causes</td></tr>
+      <tr><td><code>jev.attempts</code>, <code>jev.parse_ok</code>, <code>jev.latency_s</code></td><td>Jev calls</td><td>Retries absorbed; unparseable answers</td></tr>
+      <tr><td><code>eval.role</code></td><td>Jev calls</td><td>Separates the agent's decision from the judge</td></tr>
+      <tr><td><code>tool.name</code>, <code>tool.status</code></td><td>Tool calls</td><td>What the agent actually did, independent of the scorer</td></tr>
+      <tr><td><code>eval.item_index</code>, <code>eval.ticket_id</code>, <code>eval.run_id</code></td><td>All</td><td>Grouping spans by item and run</td></tr>
+      <tr><td><code>eval.item.consistent</code></td><td>Item</td><td>Expected answer still matches the fixture</td></tr>
+    </table></div>
+    <p>Nothing in a span says whether a failure was injected. The transport records a failed call even when the agent code swallows it, which is how silent fallbacks are caught (Section 5.4).</p>
+
+    <h2>5. Experimental setup</h2>
+    <h3>5.1 The eval under test</h3>
+    <p>A support agent works 60 customer tickets against a local orders service. For each ticket it looks up the order and the stock, asks Jev which action a five-rule support policy calls for (refund, reship, escalate, or reply only), takes that action and replies. The policy has edge cases on purpose: refunds over $500 must be escalated, damage reported more than 30 days after delivery is escalated, and a lost order is reshipped only if the item is in stock. Expected actions are 20 reply, 18 refund, 12 escalate and 10 reship, generated from a reference policy function with a fixed seed.</p>
+    <p>A deterministic scorer checks the service's side effects against the expected action. A judge asks Jev twice per ticket whether the resolution follows the policy, so the judge-failure category can be exercised and checked against the deterministic score. Jev answers through TypeSafe's typed <code>choice</code> and <code>noul</code> questions. Every decision in the system, the agent's and the judge's, is made by Jev. I chose one cheap model on purpose: the subject of this paper is the pipeline, not the model.</p>
+    <p>Paper 1's harness was built to be stable, so faults could not be switched on cleanly there. This repo builds its own agents and routes every point of failure through one fault API.</p>
+
+    <h3>5.2 The fault API</h3>
+    <p><code>faultd</code> is a small HTTP service. Every component asks it, call by call, whether to misbehave: Jev calls, judge calls, each tool, the fixture loader, the dataset loader, the scorer and the run configuration. A fault has a kind, a target, a rate, an item range and a seed, so any faulted run can be replayed exactly. faultd writes what it injected to a ground-truth log. Attribution and the gate never read that log; a test fails if anything in the validity code imports faultd or names its log, and another test checks that a verdict is identical with the log deleted. Injected faults raise the same exceptions or return the same malformed bodies as real ones.</p>
+
+    <h3>5.3 Faults inside a run</h3>
+    <div class="table-wrap"><table>
+      <tr><th>Cause</th><th>Faults</th></tr>
+      <tr><td>Infrastructure</td><td>Jev 503, 429, timeout, connection refused, malformed body, out-of-range answer; tool 500; judge 503; Jev down for a window of tickets, down for the whole run, or flapping; slow responses</td></tr>
+      <tr><td>Config drift</td><td>Policy prompt edited (refund limit dropped), stock removed from the context, decision instructions reworded; each undeclared</td></tr>
+      <tr><td>Judge failure</td><td>Malformed judge answers; judge verdicts flipped</td></tr>
+      <tr><td>Task or dataset defect</td><td>Stale fixture (order status changed), order record removed, ticket duplicated</td></tr>
+      <tr><td>Harness or scorer bug</td><td>Scorer compares against the next ticket's expected answer; service state not reset between tickets; an always-on scorer bug</td></tr>
+      <tr><td>Control</td><td>Stock removed from the context, declared in the manifest. A real regression that the gate should let through.</td></tr>
+    </table></div>
+    <p class="caption">Table 2. Item-level faults. Per-call faults run at two doses, 5% and 25% of calls.</p>
+
+    <h3>5.4 Wrong key and silent fallbacks</h3>
+    <p>One fault is real rather than simulated. For part of a run the agent sends an invalid key, and TypeSafe returns a real 401; then it switches to the correct key. This is run under two error policies. With a <strong>loud</strong> policy, the failed call raises and the item is marked errored. With a <strong>silent</strong> policy, the agent falls back to replying only and the judge votes "fail". Silent fallbacks are the realistic bug: the items look like ordinary wrong answers. The check that catches both is coverage. Every ticket must have a successful decision span and successful judge spans; a ticket without them is a missed eval, not a wrong answer. Comparing the traces of a real 401 with a faultd 401 also tests whether the simulated faults look like real ones.</p>
+
+    <h3>5.5 Faults in the pipeline</h3>
+    <div class="table-wrap"><table>
+      <tr><th>Cause</th><th>Pipeline fault</th><th>How it is injected</th></tr>
+      <tr><td>Infrastructure</td><td>Runner killed mid-run</td><td>A step kills the run process</td></tr>
+      <tr><td>Infrastructure</td><td>Job timeout</td><td>The run step is cut off after a few seconds</td></tr>
+      <tr><td>Infrastructure</td><td>Partial artifact upload</td><td>Traces are dropped before upload</td></tr>
+      <tr><td>Config drift</td><td>Dependency drift</td><td>Older OpenTelemetry versions installed instead of the lockfile's</td></tr>
+      <tr><td>Config drift</td><td>Python version drift</td><td>Runner set up with a different Python</td></tr>
+      <tr><td>Config drift</td><td>Missing environment variable</td><td><code>POLICY_VERSION</code> unset, so the code falls back to a stale default prompt</td></tr>
+      <tr><td>Config drift</td><td>Wrong commit</td><td>An older commit of the agent code is checked out</td></tr>
+      <tr><td>Harness bug</td><td>Results merged twice</td><td>The collect step appends a run's items to itself</td></tr>
+      <tr><td>Harness bug</td><td>Runs mixed</td><td>The collect step merges two runs into one folder</td></tr>
+    </table></div>
+    <p class="caption">Table 3. Pipeline-level faults. These never appear in an agent trace; they test the run-level checks.</p>
+
+    <h3>5.6 Runs</h3>
+    <p>All paper runs execute in GitHub Actions on Python 3.11 with pinned dependencies, against the real Jev API. The baseline fingerprint comes from the first clean run there. A local stand-in for Jev is used only for the repo's tests. Each run is about 180 Jev calls.</p>
+    <div class="pending"><strong>Pending:</strong> number of clean runs, faulted runs per plan and seeds; dev/held-out split; dates; total spend.</div>
+
+    <h3>5.7 Metrics</h3>
+    <ul>
+      <li><strong>False regression rate (RQ1):</strong> share of faulted runs whose naive score falls outside the spread of clean runs; also false improvements.</li>
+      <li><strong>Attribution accuracy (RQ2):</strong> per failed item, the predicted cause against the injected one; precision and recall per cause.</li>
+      <li><strong>Gate trade-off (RQ3):</strong> invalid runs caught against clean runs rejected as the thresholds move.</li>
+      <li><strong>Score recovery (RQ4):</strong> the score on valid items of a faulted run minus the clean baseline score, with a bootstrap interval.</li>
+      <li><strong>Time to triage:</strong> how many items a person would read before finding the cause, with and without the attribution report.</li>
+    </ul>
+
+    <h2>6. Results</h2>
+    <h3>6.1 Clean runs</h3>
+    <div class="pending"><strong>Pending:</strong> clean-run score and its spread (the noise floor); judge agreement with the deterministic score; how many retries clean runs absorb.</div>
+    <h3>6.2 How often faults look like regressions (RQ1)</h3>
+    <div class="pending"><strong>Pending:</strong> Figure 2, naive score against gated verdict for every fault and dose; false regression and false improvement rates by cause.</div>
+    <h3>6.3 Attribution (RQ2)</h3>
+    <div class="pending"><strong>Pending:</strong> Figure 3, confusion matrix of predicted against injected cause; precision and recall per cause.</div>
+    <h3>6.4 The gate's threshold (RQ3)</h3>
+    <div class="pending"><strong>Pending:</strong> Figure 4, invalid runs caught against clean runs rejected; the frozen threshold on held-out runs.</div>
+    <h3>6.5 Score on valid items (RQ4)</h3>
+    <div class="pending"><strong>Pending:</strong> gap to the clean baseline by fault, with intervals.</div>
+    <h3>6.6 Wrong key, loud and silent</h3>
+    <div class="pending"><strong>Pending:</strong> naive score under each policy, missed evals listed, and whether real and simulated 401s leave the same trace.</div>
+    <h3>6.7 Pipeline faults</h3>
+    <div class="pending"><strong>Pending:</strong> verdict and reason for each pipeline fault.</div>
+    <h3>6.8 The control</h3>
+    <div class="pending"><strong>Pending:</strong> the declared change passes the gate and shows a real drop; the same change undeclared is marked invalid.</div>
+
+    <h2>7. A checklist</h2>
+    <p>The framework comes down to questions any team can ask of a run before reading its score, with or without this code:</p>
+    <ol>
+      <li>Did preflight pass: are dependencies reachable, does the judge parse a known answer, does the scorer pass known cases, do the fixtures match their checksums?</li>
+      <li>Does the run's fingerprint match the baseline's, and is every difference declared?</li>
+      <li>Did every planned item finish, exactly once, from this run?</li>
+      <li>Does every item have a successful model call and a successful judge call, or was something swallowed by a fallback?</li>
+      <li>Does the scorer's view of each item agree with what the trace shows the agent did?</li>
+      <li>What share of items failed for reasons other than the model, and is it under the threshold?</li>
+    </ol>
+
+    <h2>8. Limitations</h2>
+    <ul>
+      <li>Injected faults are cleaner than natural ones. One fault per run, at known doses, is easier to attribute than a real bad day where several things go wrong together. The incidents from paper 1 are the natural evidence; the injected faults are a controlled test.</li>
+      <li>One small eval family: two agents built for this study, both on Jev. The categories and checks are general; the thresholds are not.</li>
+      <li>I wrote both the faults and the attribution rules. Rules and thresholds are frozen on a development split before held-out runs are scored, but a reviewer with different faults in mind would find gaps.</li>
+      <li>Some checks rely on things this eval has and others may not: a deterministic scorer to compare the judge against, and a reference policy to check expected answers against their fixtures.</li>
+      <li>A shared rate limit across parallel CI jobs is not simulated, because each job runs its own fault service.</li>
+    </ul>
+
+    <h2>9. Reproducibility</h2>
+    <p>Everything is in <a href="https://github.com/bfalkowski/eval-run-validity">bfalkowski/eval-run-validity</a>: the agents, the dataset, faultd and the fault catalog, the validity code, the workflows, and every run with its traces and ground truth on the <code>data</code> branch.</p>
+<pre>python run.py --run-id clean-01
+python run.py --run-id wk-01 --fault-plan plans/wrong_key_first20.json --error-policy silent
+python -m validity.gate runs/wk-01 --baseline baselines/manifest.json</pre>
+    <div class="pending"><strong>Pending:</strong> the analysis script that produces every number and figure on this page, and the run dates.</div>
+    <p>Not affiliated with TypeSafe. No employer data or code is used.</p>
+
+    <h2>References</h2>
+    <ul>
+      <li>Luo, Hariri, Eloussi and Marinov. <a href="https://mir.cs.illinois.edu/lamyaa/publications/fse14.pdf">An Empirical Analysis of Flaky Tests</a>. FSE 2014.</li>
+      <li>Google Testing Blog. <a href="https://testing.googleblog.com/2016/05/flaky-tests-at-google-and-how-we.html">Flaky Tests at Google and How We Mitigate Them</a>. 2016.</li>
+      <li><a href="https://www.sciencedirect.com/science/article/pii/S0164121223002327">Test flakiness' causes, detection, impact and responses: A multivocal review</a>. Journal of Systems and Software, 2023.</li>
+      <li><a href="https://arxiv.org/abs/2504.16777">Systemic Flakiness: An Empirical Analysis of Co-Occurring Flaky Test Failures</a>. 2025.</li>
+      <li>Anthropic. <a href="https://www.anthropic.com/engineering/infrastructure-noise">Quantifying infrastructure noise in agentic coding evals</a>. 2026.</li>
+      <li>Biderman et al. <a href="https://arxiv.org/abs/2405.14782">Lessons from the Trenches on Reproducible Evaluation of Language Models</a>. 2024.</li>
+      <li>Tu et al. <a href="https://arxiv.org/abs/2604.24955">BenchGuard: Who Guards the Benchmarks? Automated Auditing of LLM Agent Benchmarks</a>. 2026.</li>
+      <li>Miller. <a href="https://arxiv.org/abs/2411.00640">Adding Error Bars to Evals: A Statistical Approach to Language Model Evaluations</a>. 2024.</li>
+      <li>OpenTelemetry. <a href="https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/">GenAI semantic conventions</a>.</li>
+      <li>Falkowski. <a href="cant-tell.html">Can a Browser Test Agent Tell When It Can't Tell?</a> 2026.</li>
+      <li>TypeSafe. <a href="https://typesafe.ai/blog/introducing-system-one-models-and-jev">Introducing System One models and Jev</a>.</li>
+    </ul>
+  </article>
+
+  <footer>&copy; 2026 Bryan Falkowski · <a href="../">Home</a></footer>
+</body>
+</html>
