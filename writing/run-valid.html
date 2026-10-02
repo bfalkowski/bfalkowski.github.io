@@ -325,6 +325,10 @@
       <tr><td>Wrong key for the first 20 tickets</td><td>57.5%</td><td>58.3%</td><td>invalid</td></tr>
     </table></div>
     <p class="caption">Table 9. Mean plain score per policy (four loud runs, two silent). Clean runs score 83%.</p>
+    <figure>
+      <img src="run-valid/fig-silent.png" alt="Dumbbell chart for five faults. For each, the plain score with loud error handling is lower than with silent handling: tool 500, 27 to 50 percent; Jev 401 from ticket 30, 40 to 62; wrong key on the last 20 tickets, 49 to 63; Jev down for tickets 20 to 39, 58 to 71; wrong key on the first 20 tickets, 58 to 58. All are well below the clean band at 83 percent.">
+      <figcaption>Figure 4. The same faults with loud and silent error handling. The silent fallback recovers up to 23 points of plain score without a single extra call succeeding. The gate marked every one of these runs invalid under both policies.</figcaption>
+    </figure>
     <p>Silent fallbacks make a broken run look less broken. The default action, reply only, happens to be right for many tickets, so the plain score recovers up to 23 points without a single extra call succeeding. A run that lost a third of its decisions reads as a 12 to 20 point drop instead of a 25 to 34 point one. Across the silent batch the median gap between the plain score and the clean mean was 8.8 points; on the items the gate kept it was 2.1.</p>
     <p><strong>Real and simulated failures.</strong> The wrong-key fault sends a real invalid key and gets a real 401 from TypeSafe; faultd's 401 is simulated. The two spans are identical in status, error type, HTTP status code, attempt count and events. The one difference is latency: about 150 ms for the real call and under 1 ms for the simulated one. Attribution does not use latency, so this does not change any result here, but it is a tell a reader could use, and a later version of faultd should add realistic delay.</p>
 
