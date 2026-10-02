@@ -59,13 +59,13 @@
   </div>
 
   <article class="container">
-    <div class="draft"><strong>Draft.</strong> Results for the development and held-out batches are in. The silent-fallback and pipeline-fault batches are running; their places are marked.</div>
+    <div class="draft"><strong>Draft.</strong> All batches are in except two collect-step faults, which are being re-run; their places are marked.</div>
 
     <h1>Is This Run Valid? Attributing Pipeline Failures Before Scoring LLM Evaluations</h1>
     <p class="byline">Bryan Falkowski · October 2026 · Code and data: <a href="https://github.com/bfalkowski/eval-run-validity">github.com/bfalkowski/eval-run-validity</a></p>
 
     <div class="abstract">
-      <p><strong>Abstract.</strong> An eval score only means something if the run that produced it worked. Most eval pipelines report a number either way, so a rate-limited API, a changed prompt, a stale fixture or a scorer bug shows up as a model regression and costs hours of triage. I propose checking whether a run is valid before scoring it. A run gets a fingerprint and preflight checks, every item is traced with OpenTelemetry, each failed item is assigned one of six causes using rules over its trace, and a gate marks the run valid, degraded or invalid. To test this I built a small support-agent eval on TypeSafe's Jev, a fault API that can break any part of it, and a GitHub Actions pipeline that can break itself. Across 164 runs with known injected faults on the real API, a plain score comparison would have reported a regression for 44% of them. The gate flagged all 114 runs that should have been flagged. Attribution named the right cause for every one of the 1,009 items a fault actually affected and wrongly excluded none of 8,411 unaffected items. On held-out runs scored with rules frozen in advance, the gate's verdict matched the answer key on 85 of 88 runs; the three misses came from a rounding bug, and after fixing it the gate matched on 88 of 88. Excluding the items the gate attributed to faults brought the score closer to the clean baseline (median gap 1.6 to 2.0 points, against 3.0 for the plain score). <span class="pending-inline">[Silent-fallback and pipeline-fault results pending.]</span></p>
+      <p><strong>Abstract.</strong> An eval score only means something if the run that produced it worked. Most eval pipelines report a number either way, so a rate-limited API, a changed prompt, a stale fixture or a scorer bug shows up as a model regression and costs hours of triage. I propose checking whether a run is valid before scoring it. A run gets a fingerprint and preflight checks, every item is traced with OpenTelemetry, each failed item is assigned one of six causes using rules over its trace, and a gate marks the run valid, degraded or invalid. To test this I built a small support-agent eval on TypeSafe's Jev, a fault API that can break any part of it, and a GitHub Actions pipeline that can break itself. Across 164 runs with known injected faults on the real API, a plain score comparison would have reported a regression for 44% of them. The gate flagged all 114 runs that should have been flagged. Attribution named the right cause for every one of the 1,009 items a fault actually affected and wrongly excluded none of 8,411 unaffected items. On held-out runs scored with rules frozen in advance, the gate's verdict matched the answer key on 85 of 88 runs; the three misses came from a rounding bug, and after fixing it the gate matched on 88 of 88. Excluding the items the gate attributed to faults brought the score closer to the clean baseline (median gap 1.6 to 2.0 points, against 3.0 for the plain score). When the agent silently swallowed failed calls, the plain score hid between 1 and 23 points of the damage, and the gate still flagged every run it should have from the traces. Every pipeline fault outside the run (killed runners, timeouts, lost traces, a missing environment variable, an old commit, dependency and Python drift) got the right verdict, including an old commit that scored higher than the real code. <span class="pending-inline">[Collect-step faults pending.]</span></p>
     </div>
 
     <h2>1. The problem</h2>
@@ -229,10 +229,11 @@
       <li><strong>Development batch:</strong> each of the 41 fault plans, plus a clean run and the declared control, twice (88 runs). I tuned against this batch only.</li>
       <li><strong>Freeze:</strong> attribution rules, gate thresholds and the ground-truth definitions were then frozen and tagged (<code>freeze-dev</code>).</li>
       <li><strong>Held-out batch:</strong> the same 44 plans, twice more, with different fault seeds, so faults land on different calls and items (88 runs).</li>
-      <li><strong>Silent-fallback and pipeline-fault batches:</strong> <span class="pending-inline">[pending]</span></li>
+      <li><strong>Silent-fallback batch:</strong> the 16 infrastructure, judge and wrong-key plans plus a clean run, with the silent error policy, twice (34 runs).</li>
+      <li><strong>Pipeline-fault batch:</strong> a clean eval under each of seven pipeline faults and under none, three times (24 runs). One dep_drift run was later changed in place by an early version of the collect step and is left out. <span class="pending-inline">[Collect-step faults pending.]</span></li>
     </ul>
     <p>Ground truth for each item is rebuilt from faultd's log alone. A Jev transport fault only counts when all three attempts of a call were hit; otherwise the retry absorbed it and the item was not affected. A scorer off-by-one only counts when the neighbouring expected answer differs, a missed state reset only when an earlier side effect carries over, and a stale fixture only when the changed order no longer fits the expected answer. A run's expected verdict uses the gate's own thresholds on the share of affected items, so the comparison asks whether the gate saw what really happened, not whether the thresholds are well chosen.</p>
-    <p>Total API spend so far is $0.79 for 180 runs (18.9 million input tokens). <span class="pending-inline">[final total pending]</span></p>
+    <p>Total API spend for every run in this paper, pilots included, was $1.03 for 235 runs (24.5 million input tokens).</p>
 
     <h3>5.7 Metrics</h3>
     <ul>
@@ -298,10 +299,35 @@
       <figcaption>Figure 3. Distance from the clean mean for runs with item-level faults, before and after excluding the items the gate attributed to faults. Black bars are medians; the shaded band is the clean runs ± 2 standard deviations. The runs still well below are ones where a third or more of the tickets were excluded, so the score is over a different, smaller subset: a wrong key on the last 20 tickets leaves the first 40, which happen to hold more of the hard cases. All of them were marked invalid, so no score was reported.</figcaption>
     </figure>
     <div class="pending"><strong>Pending:</strong> gap by fault and dose, with bootstrap intervals.</div>
-<h3>6.6 Wrong key, loud and silent</h3>
-    <div class="pending"><strong>Pending:</strong> naive score under each policy, missed evals listed, and whether real and simulated 401s leave the same trace.</div>
+<h3>6.6 Silent fallbacks and the wrong key</h3>
+    <p>With the silent error policy, a failed Jev call does not stop the item: the agent replies and takes no other action, and the judge votes "fail". In 34 silent runs the gate flagged all 30 that should have been flagged and none of the 4 that should not, with the exact verdict level matching on all 34. Attribution named the cause of all 381 affected items and wrongly excluded none of 1,659 unaffected ones. It can do this because the transport records the failed call in the trace even when the agent code swallows it, so a ticket with no successful decision call is a missed eval, not a wrong answer.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Fault</th><th>Plain score, loud</th><th>Plain score, silent</th><th>Gate, both policies</th></tr>
+      <tr><td>Jev returns 401 from ticket 30 on</td><td>40.0%</td><td>61.7%</td><td>invalid</td></tr>
+      <tr><td>Tool 500 on 25% of calls</td><td>26.7%</td><td>50.0%</td><td>invalid</td></tr>
+      <tr><td>Wrong key for the last 20 tickets</td><td>48.8%</td><td>63.3%</td><td>invalid</td></tr>
+      <tr><td>Jev down for tickets 20 to 39</td><td>57.9%</td><td>70.8%</td><td>invalid</td></tr>
+      <tr><td>Wrong key for the first 20 tickets</td><td>57.5%</td><td>58.3%</td><td>invalid</td></tr>
+    </table></div>
+    <p class="caption">Table 7. Mean plain score per policy (four loud runs, two silent). Clean runs score 83%.</p>
+    <p>Silent fallbacks make a broken run look less broken. The default action, reply only, happens to be right for many tickets, so the plain score recovers up to 23 points without a single extra call succeeding. A run that lost a third of its decisions reads as a 12 to 20 point drop instead of a 25 to 34 point one. Across the silent batch the median gap between the plain score and the clean mean was 8.8 points; on the items the gate kept it was 2.1.</p>
+    <p><strong>Real and simulated failures.</strong> The wrong-key fault sends a real invalid key and gets a real 401 from TypeSafe; faultd's 401 is simulated. The two spans are identical in status, error type, HTTP status code, attempt count and events. The one difference is latency: about 150 ms for the real call and under 1 ms for the simulated one. Attribution does not use latency, so this does not change any result here, but it is a tell a reader could use, and a later version of faultd should add realistic delay.</p>
+
     <h3>6.7 Pipeline faults</h3>
-    <div class="pending"><strong>Pending:</strong> verdict and reason for each pipeline fault.</div>
+    <div class="table-wrap"><table>
+      <tr><th>Pipeline fault</th><th>Plain score</th><th>Gate</th><th>Reason given</th></tr>
+      <tr><td>Runner killed mid-run</td><td>67 to 82%</td><td>invalid ×3</td><td>partial run: 11 to 13 of 60 items finished</td></tr>
+      <tr><td>Job timeout</td><td>70 to 80%</td><td>invalid ×3</td><td>partial run: 20 to 28 of 60 items finished</td></tr>
+      <tr><td>Traces lost in upload</td><td>78 to 85%</td><td>invalid ×3</td><td>no traces found</td></tr>
+      <tr><td>Missing environment variable</td><td>77 to 78%</td><td>invalid ×3</td><td>undeclared change in <code>policy_hash</code></td></tr>
+      <tr><td>Older commit of the agent code</td><td><strong>88 to 90%</strong></td><td>invalid ×3</td><td>undeclared change in <code>policy_hash</code>, <code>agent_code_hash</code></td></tr>
+      <tr><td>Dependencies resolved to older versions</td><td>82 to 85%</td><td>degraded ×2</td><td>environment differs in <code>packages</code></td></tr>
+      <tr><td>Different Python version</td><td>82 to 83%</td><td>degraded ×3</td><td>environment differs in <code>python_version</code></td></tr>
+    </table></div>
+    <p class="caption">Table 8. Pipeline faults on a clean eval. Clean runs score 83.0% (range 80.0 to 88.3%). Expected verdicts matched on all 20 runs.</p>
+    <p>None of these faults leaves a trace inside the agent, and several leave the plain score inside or near the clean range. Lost traces scored 78 to 85%, which looks like a normal run. Two are worth naming. A missing <code>POLICY_VERSION</code> made the code fall back to an older policy without the refund limit, and the run looked like an ordinary mediocre run. And checking out the previous commit of the agent code, which carries the older policy wording, produced a score above every clean run. A plain score comparison would have reported an improvement. Only the fingerprint shows that the code under test was not the code anyone meant to test.</p>
+    <div class="pending"><strong>Pending:</strong> collect-step faults (a run merged twice, two runs mixed into one folder).</div>
+
     <h3>6.8 The control</h3>
     <p>The control removes stock levels from Jev's context and declares the change in the manifest. Its four runs scored 78.3%, 78.3%, 78.3% and 76.7%, about five points below the clean mean, and the gate marked all four valid: a real, declared regression goes through. The same change made without declaring it was marked invalid in all four runs, as were all twelve undeclared config-drift runs.</p>
 
