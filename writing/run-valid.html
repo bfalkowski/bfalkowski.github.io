@@ -58,13 +58,13 @@
   </div>
 
   <article class="container">
-    <div class="draft"><strong>Draft.</strong> Design and method are written. Results are pending the runs in CI; every place a number is needed is marked.</div>
+    <div class="draft"><strong>Draft.</strong> Results for the development and held-out batches are in. The silent-fallback and pipeline-fault batches are running; their places are marked.</div>
 
     <h1>Is This Run Valid? Attributing Pipeline Failures Before Scoring LLM Evaluations</h1>
     <p class="byline">Bryan Falkowski · October 2026 · Code and data: <a href="https://github.com/bfalkowski/eval-run-validity">github.com/bfalkowski/eval-run-validity</a></p>
 
     <div class="abstract">
-      <p><strong>Abstract.</strong> An eval score only means something if the run that produced it worked. Most eval pipelines report a number either way, so a rate-limited API, a changed prompt, a stale fixture or a scorer bug shows up as a model regression and costs hours of triage. I propose checking whether a run is valid before scoring it. A run gets a fingerprint and preflight checks, every item is traced with OpenTelemetry, each failed item is assigned one of six causes using rules over its trace, and a gate marks the run valid, degraded or invalid. To test this I built a small support-agent eval on TypeSafe's Jev, a fault API that can break any part of it, and a GitHub Actions pipeline that can break itself. Across <span class="pending-inline">[N]</span> runs with known injected faults, a naive score reported a false regression in <span class="pending-inline">[X%]</span> of faulted runs. The gate caught <span class="pending-inline">[X%]</span> of invalid runs while rejecting <span class="pending-inline">[X%]</span> of clean ones, attribution named the right cause for <span class="pending-inline">[X%]</span> of failed items, and the score on valid items stayed within <span class="pending-inline">[X]</span> points of the clean baseline.</p>
+      <p><strong>Abstract.</strong> An eval score only means something if the run that produced it worked. Most eval pipelines report a number either way, so a rate-limited API, a changed prompt, a stale fixture or a scorer bug shows up as a model regression and costs hours of triage. I propose checking whether a run is valid before scoring it. A run gets a fingerprint and preflight checks, every item is traced with OpenTelemetry, each failed item is assigned one of six causes using rules over its trace, and a gate marks the run valid, degraded or invalid. To test this I built a small support-agent eval on TypeSafe's Jev, a fault API that can break any part of it, and a GitHub Actions pipeline that can break itself. Across 164 runs with known injected faults on the real API, a plain score comparison would have reported a regression for 44% of them. The gate flagged all 114 runs that should have been flagged. Attribution named the right cause for every one of the 1,009 items a fault actually affected and wrongly excluded none of 8,411 unaffected items. On held-out runs scored with rules frozen in advance, the gate's verdict matched the answer key on 85 of 88 runs; the three misses came from a rounding bug, and after fixing it the gate matched on 88 of 88. Excluding the items the gate attributed to faults brought the score closer to the clean baseline (median gap 1.6 to 2.0 points, against 3.0 for the plain score). <span class="pending-inline">[Silent-fallback and pipeline-fault results pending.]</span></p>
     </div>
 
     <h2>1. The problem</h2>
@@ -172,7 +172,19 @@
 
     <h2>5. Experimental setup</h2>
     <h3>5.1 The eval under test</h3>
-    <p>A support agent works 60 customer tickets against a local orders service. For each ticket it looks up the order and the stock, asks Jev which action a five-rule support policy calls for (refund, reship, escalate, or reply only), takes that action and replies. The policy has edge cases on purpose: refunds over $500 must be escalated, damage reported more than 30 days after delivery is escalated, and a lost order is reshipped only if the item is in stock. Expected actions are 20 reply, 18 refund, 12 escalate and 10 reship, generated from a reference policy function with a fixed seed.</p>
+    <p>A support agent works 60 customer tickets against a local orders service. For each ticket it looks up the order and the stock, asks Jev which action a five-rule support policy calls for (refund, reship, escalate, or reply only), takes that action and replies. The policy has edge cases on purpose: refunds over $500 must be escalated, damage reported more than 30 days after delivery is escalated, and a lost order is reshipped only if the item is in stock.</p>
+    <p>The first dataset was too easy. On 60 straightforward tickets Jev scored 60 of 60 on the real API. A perfect score leaves nothing for the gate to separate: no natural model failures, and no spread between clean runs. I wrote a second set of 60 tickets under the same policy, each hard in one deliberate way, and used it for every result below.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Kind of difficulty</th><th>Tickets</th><th>Example</th></tr>
+      <tr><td>Indirect wording or a distracting order number</td><td>18</td><td>"The box says webcam but inside is a ring light."</td></tr>
+      <tr><td>Customer asks for an action the policy does not give</td><td>13</td><td>A lost order, in stock, "just refund me": the policy says reship.</td></tr>
+      <tr><td>The $500 refund limit</td><td>10</td><td>Exactly $500 is refunded; an $899 lost order is reshipped, because the limit applies to refunds only.</td></tr>
+      <tr><td>Claim disagrees with the record</td><td>9</td><td>"Got it last week and it's broken" on an order delivered 45 days ago.</td></tr>
+      <tr><td>Dates exactly on a cutoff</td><td>6</td><td>Delivered exactly 30 days ago; shipped exactly 14 days ago.</td></tr>
+      <tr><td>Angry about an order that has not shipped</td><td>4</td><td>"Taking FOREVER, refund me now" on a Processing order.</td></tr>
+    </table></div>
+    <p class="caption">Table 1. Dataset v2. Expected actions are 17 refund, 17 reply, 13 escalate and 13 reship, generated by a reference policy function.</p>
+    <p>After the first clean run on this set, I read every miss. Two of the eight were arguable readings of the policy text rather than model errors ("within the last 30 days" at exactly 30 days, and whether the "never arrived" rule covers a customer asking where the order is). I tightened the wording of those two rules rather than the labels, and every result below uses the tightened policy.</p>
     <p>A deterministic scorer checks the service's side effects against the expected action. A judge asks Jev twice per ticket whether the resolution follows the policy, so the judge-failure category can be exercised and checked against the deterministic score. Jev answers through TypeSafe's typed <code>choice</code> and <code>noul</code> questions. Every decision in the system, the agent's and the judge's, is made by Jev. I chose one cheap model on purpose: the subject of this paper is the pipeline, not the model.</p>
     <p>Paper 1's harness was built to be stable, so faults could not be switched on cleanly there. This repo builds its own agents and routes every point of failure through one fault API.</p>
 
@@ -210,8 +222,16 @@
     <p class="caption">Table 3. Pipeline-level faults. These never appear in an agent trace; they test the run-level checks.</p>
 
     <h3>5.6 Runs</h3>
-    <p>All paper runs execute in GitHub Actions on Python 3.11 with pinned dependencies, against the real Jev API. The baseline fingerprint comes from the first clean run there. A local stand-in for Jev is used only for the repo's tests. Each run is about 180 Jev calls.</p>
-    <div class="pending"><strong>Pending:</strong> number of clean runs, faulted runs per plan and seeds; dev/held-out split; dates; total spend.</div>
+    <p>All paper runs execute in GitHub Actions on Python 3.11 with pinned dependencies, against the real Jev API, on October 2, 2026. Each run is about 180 Jev calls. The baseline fingerprint is a clean run on the final policy. A local stand-in for Jev is used only for the repo's tests.</p>
+    <ul>
+      <li><strong>Clean runs:</strong> 10 on the final baseline, which set the noise floor.</li>
+      <li><strong>Development batch:</strong> each of the 41 fault plans, plus a clean run and the declared control, twice (88 runs). I tuned against this batch only.</li>
+      <li><strong>Freeze:</strong> attribution rules, gate thresholds and the ground-truth definitions were then frozen and tagged (<code>freeze-dev</code>).</li>
+      <li><strong>Held-out batch:</strong> the same 44 plans, twice more, with different fault seeds, so faults land on different calls and items (88 runs).</li>
+      <li><strong>Silent-fallback and pipeline-fault batches:</strong> <span class="pending-inline">[pending]</span></li>
+    </ul>
+    <p>Ground truth for each item is rebuilt from faultd's log alone. A Jev transport fault only counts when all three attempts of a call were hit; otherwise the retry absorbed it and the item was not affected. A scorer off-by-one only counts when the neighbouring expected answer differs, a missed state reset only when an earlier side effect carries over, and a stale fixture only when the changed order no longer fits the expected answer. A run's expected verdict uses the gate's own thresholds on the share of affected items, so the comparison asks whether the gate saw what really happened, not whether the thresholds are well chosen.</p>
+    <p>Total API spend so far is $0.79 for 180 runs (18.9 million input tokens). <span class="pending-inline">[final total pending]</span></p>
 
     <h3>5.7 Metrics</h3>
     <ul>
@@ -224,21 +244,57 @@
 
     <h2>6. Results</h2>
     <h3>6.1 Clean runs</h3>
-    <div class="pending"><strong>Pending:</strong> clean-run score and its spread (the noise floor); judge agreement with the deterministic score; how many retries clean runs absorb.</div>
+    <p>Ten clean runs scored a mean of 83.0% (standard deviation 2.2 points, range 80.0% to 88.3%, or 48 to 53 tickets of 60). No clean run needed a single retry. Five tickets changed answer between clean runs: four sit near the 30-day cutoff and one is shipped exactly 14 days ago. Jev is not fully deterministic near a boundary, so a run-to-run swing of two or three tickets is normal, and a plain score comparison cannot see a fault that costs fewer.</p>
+    <p>The misses in the baseline run fall into three groups. Five are the customer's word winning over the record or the policy: reshipping an order the customer says is lost when tracking shows it shipped five days ago, or refunding a lost order the policy says to reship because the customer asked for money back. Four are orders delivered 31 to 35 days ago that Jev refunds instead of escalating. One is a $649 lost order, out of stock, that Jev refunds without applying the $500 limit.</p>
+    <p><strong>The judge.</strong> Over 600 items in clean runs, the judge's first vote disagreed with the deterministic score on 24.5% of items, but its two votes disagreed with each other on only 3.5%. Repeating a judge catches a flaky judge, not a confidently wrong one: roughly six in seven judge errors were consistent across both votes and invisible to the repeat check. Only a reference like the deterministic score exposes them.</p>
+    <p><strong>A natural config drift.</strong> Tightening the two policy rules is itself a test the gate was not built for. The first run after the change scored 50 of 60 against 52 before, a difference inside the noise floor. But eight tickets changed answer: three were fixed and five broke, mostly orders delivered 31 to 35 days ago that Jev now refunded instead of escalating. The gate marked the run invalid with "undeclared change from baseline in policy_hash" and attributed all ten failures to config drift. A plain score comparison would have called it noise.</p>
+
     <h3>6.2 How often faults look like regressions (RQ1)</h3>
-    <div class="pending"><strong>Pending:</strong> Figure 2, naive score against gated verdict for every fault and dose; false regression and false improvement rates by cause.</div>
+    <p>A faulted run counts as a false regression when its plain score falls more than two standard deviations below the clean mean, below 78.6%.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Injected cause</th><th>Runs per batch</th><th>False regressions, dev</th><th>False regressions, held-out</th><th>Flagged by the gate, dev / held-out</th></tr>
+      <tr><td>Infrastructure</td><td>46</td><td>21</td><td>20</td><td>32 / 24</td></tr>
+      <tr><td>Config drift</td><td>6</td><td>6</td><td>4</td><td>6 / 6</td></tr>
+      <tr><td>Task or dataset defect</td><td>12</td><td>4</td><td>5</td><td>10 / 11</td></tr>
+      <tr><td>Harness or scorer bug</td><td>10</td><td>5</td><td>7</td><td>8 / 9</td></tr>
+      <tr><td>Judge failure</td><td>8</td><td>0</td><td>0</td><td>5 / 4</td></tr>
+      <tr><th>All faulted runs</th><th>82</th><th>36 (44%)</th><th>36 (44%)</th><th>61 / 54</th></tr>
+    </table></div>
+    <p class="caption">Table 4. No faulted run produced a false improvement. Judge faults never move the agent's score, which is why they never look like regressions.</p>
+    <p>Not every faulted run should be flagged. At a 5% dose most Jev transport faults are absorbed by retries and the run is valid, which is why the gate flags only about half of the infrastructure runs. Of the 72 false regressions, the gate marked 71 degraded or invalid. The one it passed (a scorer off-by-one on held-out) had a single affected item, under the 2% threshold, and still scored 79.7% on its valid items: that run was mostly Jev having a low run.</p>
+
     <h3>6.3 Attribution (RQ2)</h3>
-    <div class="pending"><strong>Pending:</strong> Figure 3, confusion matrix of predicted against injected cause; precision and recall per cause.</div>
-    <h3>6.4 The gate's threshold (RQ3)</h3>
-    <div class="pending"><strong>Pending:</strong> Figure 4, invalid runs caught against clean runs rejected; the frozen threshold on held-out runs.</div>
+    <div class="table-wrap"><table>
+      <tr><th>Cause</th><th>Affected items, dev</th><th>Affected items, held-out</th><th>Recall</th><th>Precision</th></tr>
+      <tr><td>Infrastructure</td><td>392</td><td>372</td><td>100%</td><td>100%</td></tr>
+      <tr><td>Task or dataset defect</td><td>71</td><td>81</td><td>100%</td><td>100%</td></tr>
+      <tr><td>Harness or scorer bug</td><td>45</td><td>48</td><td>100%</td><td>100%</td></tr>
+    </table></div>
+    <p class="caption">Table 5. Agent score. Config drift is judged per run, not per item. Unaffected items wrongly excluded: 0 of 4,194 (dev) and 0 of 4,217 (held-out).</p>
+    <p>On held-out runs scored exactly as frozen, one unaffected item was excluded as a harness bug. On inspection the gate was right and my answer key was wrong: two missed state resets in a row carried a side effect from two tickets back, and the ground truth only looked one ticket back. I fixed the answer key, not the gate.</p>
+    <p>For the judge score, injected judge failures were attributed correctly in 101 of 108 cases (dev) and 123 of 134 (held-out). Every miss was an item where both judge votes were flipped the same way, so the repeats agreed. That is the same blind spot as in Section 6.1.</p>
+    <p>These numbers should be read with care. I wrote both the faults and the rules, each injected fault leaves a clean signal in the trace, and held-out runs vary where faults land, not what kind of fault they are. Perfect attribution here shows the rules are consistent with the taxonomy; it does not show they would catch a fault nobody thought of.</p>
+
+    <h3>6.4 The gate (RQ3)</h3>
+    <div class="table-wrap"><table>
+      <tr><th></th><th>Dev</th><th>Held-out, as frozen</th><th>Held-out, after fix</th></tr>
+      <tr><td>Runs that should be flagged that were flagged</td><td>60 / 60</td><td>54 / 54</td><td>54 / 54</td></tr>
+      <tr><td>Runs that should pass that were wrongly flagged</td><td>1 / 28</td><td>3 / 34</td><td>0 / 34</td></tr>
+      <tr><td>Verdict level matched exactly</td><td>87 / 88</td><td>85 / 88</td><td>88 / 88</td></tr>
+    </table></div>
+    <p class="caption">Table 6. Expected verdicts use the same 2% and 15% thresholds as the gate.</p>
+    <p>The held-out batch found a real bug. The judge exclusion rate was computed as one minus the share kept, so 9 of 60 came out as 0.15000000000000002 and tripped the "over 15%" rule. Three runs were marked degraded instead of valid. The fix computes the rate from counts. The single wrong flag in the dev batch is not a bug: a run with judge faults injected on 5% of calls also had the judge's natural self-disagreement, and together they crossed the threshold. The answer key counts only injected faults; the gate counts both, which is what it should do.</p>
+    <div class="pending"><strong>Pending:</strong> the threshold sweep (runs caught against clean runs rejected as the 2% and 15% thresholds move).</div>
+
     <h3>6.5 Score on valid items (RQ4)</h3>
-    <div class="pending"><strong>Pending:</strong> gap to the clean baseline by fault, with intervals.</div>
-    <h3>6.6 Wrong key, loud and silent</h3>
+    <p>Across runs with item-level faults, the median gap between a run's plain score and the clean mean was 3.0 points. After excluding the items the gate attributed to faults, the median gap was 2.0 points on dev and 1.6 on held-out. The remaining gap is mostly the clean noise floor itself (standard deviation 2.2 points).</p>
+    <div class="pending"><strong>Pending:</strong> gap by fault and dose, with bootstrap intervals.</div>
+<h3>6.6 Wrong key, loud and silent</h3>
     <div class="pending"><strong>Pending:</strong> naive score under each policy, missed evals listed, and whether real and simulated 401s leave the same trace.</div>
     <h3>6.7 Pipeline faults</h3>
     <div class="pending"><strong>Pending:</strong> verdict and reason for each pipeline fault.</div>
     <h3>6.8 The control</h3>
-    <div class="pending"><strong>Pending:</strong> the declared change passes the gate and shows a real drop; the same change undeclared is marked invalid.</div>
+    <p>The control removes stock levels from Jev's context and declares the change in the manifest. Its four runs scored 78.3%, 78.3%, 78.3% and 76.7%, about five points below the clean mean, and the gate marked all four valid: a real, declared regression goes through. The same change made without declaring it was marked invalid in all four runs, as were all twelve undeclared config-drift runs.</p>
 
     <h2>7. A checklist</h2>
     <p>The framework comes down to questions any team can ask of a run before reading its score, with or without this code:</p>
@@ -265,7 +321,7 @@
 <pre>python run.py --run-id clean-01
 python run.py --run-id wk-01 --fault-plan plans/wrong_key_first20.json --error-policy silent
 python -m validity.gate runs/wk-01 --baseline baselines/manifest.json</pre>
-    <div class="pending"><strong>Pending:</strong> the analysis script that produces every number and figure on this page, and the run dates.</div>
+    <p><code>analysis/analyze.py</code> is the only code that reads the ground truth, and it runs after the fact on the collected <code>data</code> branch. Result files for each batch, and a record of what was frozen and when (<code>analysis/FREEZE.md</code>), are in the repo.</p>
     <p>Not affiliated with TypeSafe. No employer data or code is used.</p>
 
     <h2>References</h2>
