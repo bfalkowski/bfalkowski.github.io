@@ -456,7 +456,8 @@ python run.py --run-id wk-01 --fault-plan plans/wrong_key_first20.json --error-p
 python -m validity.gate runs/wk-01 --baseline baselines/manifest.json</pre>
     <p><code>analysis/analyze.py</code> is the only code that reads the ground truth, and it runs after the fact on the collected <code>data</code> branch. Result files for each batch, and a record of what was frozen and when (<code>analysis/FREEZE.md</code>), are in the repo.</p>
     <p>Not affiliated with TypeSafe. No employer data or code is used.</p>
-    <p><strong>How this was made.</strong> I designed the study, chose the research questions, faults and claims, ran every batch in CI and reviewed the results. I worked with Claude Opus 5.5 (Anthropic) throughout: it wrote most of the code and drafts of the text with me, and ran the analysis scripts, which I checked against the raw runs. Two outside reviews by other models also shaped the final version.</p>
+    <p><strong>How this was made.</strong> I designed the study, chose the research questions, faults and claims, ran every batch in CI and reviewed the results. I worked with Claude throughout, in the Claude desktop app, on October 2, 2026: it wrote most of the code and drafts of the text with me, and ran the analysis scripts, which I checked against the raw runs. The session was configured for model ID <code>claude-opus-5-5</code> (Claude Opus 5.5). The service can route individual turns to a different model, so that is the configured model, not a guarantee for every turn. Two outside reviews by other AI models also shaped the final version.</p>
+    <p><strong>Model versions.</strong> Every Jev call, for the agent and the judge, used the model alias <code>jev-latest</code> on TypeSafe's System One API on October 2, 2026. An alias can later point to a different model, so a rerun may not reproduce these exact scores; the run manifests record the alias and the date of every run.</p>
 
     <h2>References</h2>
     <ul>
