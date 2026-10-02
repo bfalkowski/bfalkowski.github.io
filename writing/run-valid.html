@@ -456,7 +456,7 @@ python run.py --run-id wk-01 --fault-plan plans/wrong_key_first20.json --error-p
 python -m validity.gate runs/wk-01 --baseline baselines/manifest.json</pre>
     <p><code>analysis/analyze.py</code> is the only code that reads the ground truth, and it runs after the fact on the collected <code>data</code> branch. Result files for each batch, and a record of what was frozen and when (<code>analysis/FREEZE.md</code>), are in the repo.</p>
     <p>Not affiliated with TypeSafe. No employer data or code is used.</p>
-    <p><strong>How this was made.</strong> I designed the study, chose the research questions, faults and claims, ran every batch in CI and reviewed the results. I worked with Claude (Anthropic) throughout: it wrote most of the code and drafts of the text with me, and ran the analysis scripts, which I checked against the raw runs. Two outside reviews by other models also shaped the final version.</p>
+    <p><strong>How this was made.</strong> I designed the study, chose the research questions, faults and claims, ran every batch in CI and reviewed the results. I worked with Claude Opus 5.5 (Anthropic) throughout: it wrote most of the code and drafts of the text with me, and ran the analysis scripts, which I checked against the raw runs. Two outside reviews by other models also shaped the final version.</p>
 
     <h2>References</h2>
     <ul>
