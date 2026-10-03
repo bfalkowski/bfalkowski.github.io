@@ -4,291 +4,323 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="author" content="Bryan Falkowski">
-  <meta name="description" content="An investigation view over the 286 eval runs behind 'Is This Run Valid?': a queue of runs the validity gate flagged, why, which tickets were excluded, and the trace for each ticket.">
-  <title>Run Review | Bryan Falkowski</title>
+  <meta name="description" content="A release check for changes to an automated reviewer: can the measurement be trusted, and is the new version at least as good as the current one?">
+  <title>Release Check | Bryan Falkowski</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
   <style>
-    :root { --text: #2c2c2c; --muted: #666; --line: #e0e0e0; --alt-bg: #fafafa; --accent: #1d3f72;
+    :root { --text: #2c2c2c; --muted: #666; --line: #e0e0e0; --alt-bg: #fafafa; --accent: #1d3f72; --accent-bg: #eef3fb;
             --bad: #8f2f20; --bad-bg: #fbe9e6; --warn: #7a5300; --warn-bg: #fdf3dd; --good: #1f5e3a; --good-bg: #e7f4ec; }
     * { box-sizing: border-box; }
     body { margin: 0; background: #fff; color: var(--text); font: 15px/1.5 "Source Sans 3", "Source Sans Pro", sans-serif; }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
-    code, .mono { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 12.5px; }
-    .topbar { border-bottom: 1px solid var(--line); padding: 14px 24px; display: flex; justify-content: space-between; font-size: 15px; }
+    button { font: inherit; }
+    .mono { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 12.5px; }
+    .topbar { border-bottom: 1px solid var(--line); padding: 14px 24px; display: flex; justify-content: space-between; gap: 12px; font-size: 15px; flex-wrap: wrap; }
     .topbar a.home { color: var(--text); font-weight: 600; }
-    .wrap { max-width: 1280px; margin: 0 auto; padding: 24px; }
+    .wrap { max-width: 1240px; margin: 0 auto; padding: 24px; }
     h1 { font-size: 28px; margin: 0 0 6px; font-weight: 600; }
-    .intro { color: var(--muted); max-width: 820px; margin: 0 0 18px; }
-    .counts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-    .count { border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; background: #fff; cursor: pointer; font: inherit; }
-    .count b { font-size: 18px; margin-right: 6px; }
-    .count[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
-    .filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
-    .filters select, .filters input[type=search] { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
-    .filters input[type=search] { min-width: 220px; }
-    .filters label { color: var(--muted); display: flex; align-items: center; gap: 6px; }
-    .layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+    .intro { color: var(--muted); max-width: 900px; margin: 0 0 16px; }
+    .sub { color: var(--muted); font-size: 13px; }
+    h2.sec { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 8px; font-weight: 700; }
+
+    .baseline { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--alt-bg); margin-bottom: 16px; }
+    .baseline b { font-size: 18px; }
+    .summary { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+
+    .layout { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr); gap: 20px; align-items: start; }
     @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
-    .queue { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-    .queue-scroll { max-height: 78vh; overflow: auto; }
+    .cands { display: flex; flex-direction: column; gap: 8px; }
+    .cand { text-align: left; border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: 10px 12px; cursor: pointer; display: grid; grid-template-columns: 74px 1fr; gap: 4px 12px; align-items: start; }
+    .cand:hover { border-color: var(--accent); }
+    .cand[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
+    .cand .name { font-weight: 600; line-height: 1.3; }
+    .cand .meta { grid-column: 2; font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+    .fp { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 11.5px; background: #f2f2f2; border-radius: 4px; padding: 0 5px; color: var(--text); }
+    .chg { display: inline-block; border-radius: 10px; padding: 0 8px; font-size: 12px; font-weight: 600; }
+    .chg.none { background: #eef1f6; color: #33415c; font-weight: 500; }
+    .chg.decl { background: var(--accent-bg); color: var(--accent); }
+    .chg.und { background: var(--bad-bg); color: var(--bad); }
+    .chg.env { background: var(--warn-bg); color: var(--warn); }
+    .cand .why { grid-column: 2; font-size: 13px; color: var(--muted); line-height: 1.35; }
+    .dec { display: inline-flex; justify-content: center; align-items: center; gap: 5px; border-radius: 6px; padding: 3px 8px; font-size: 13px; font-weight: 700; }
+    .dec.ship { background: var(--good-bg); color: var(--good); }
+    .dec.hold { background: var(--warn-bg); color: var(--warn); }
+    .dec.block { background: var(--bad-bg); color: var(--bad); }
+    .count { border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; font-size: 14px; }
+    .count b { font-size: 17px; margin-right: 4px; }
+
+    .panel { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; position: sticky; top: 12px; max-height: 94vh; overflow-y: auto; }
+    .banner { padding: 14px 18px; border-bottom: 1px solid var(--line); }
+    .banner.ship { background: var(--good-bg); color: var(--good); }
+    .banner.hold { background: var(--warn-bg); color: var(--warn); }
+    .banner.block { background: var(--bad-bg); color: var(--bad); }
+    .banner .big { font-size: 22px; font-weight: 700; line-height: 1.2; }
+    .banner .what { color: var(--text); font-weight: 600; margin-top: 2px; }
+    .banner .why { color: var(--text); margin-top: 6px; }
+    .inner { padding: 14px 18px 20px; }
+    .inner h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 20px 0 8px; }
+    .checks { list-style: none; padding: 0; margin: 0; }
+    .checks li { display: grid; grid-template-columns: 22px 1fr; gap: 6px; padding: 7px 0; border-bottom: 1px solid #f0f0f0; }
+    .checks li:last-child { border-bottom: none; }
+    .ic { font-weight: 700; text-align: center; }
+    .ic.ok { color: var(--good); } .ic.no { color: var(--bad); } .ic.warn { color: var(--warn); } .ic.na { color: #aaa; }
+    .checks .d { font-size: 13.5px; color: var(--muted); }
+    .bar { position: relative; height: 40px; margin: 6px 0 0; }
+    .bar .track { position: absolute; left: 0; right: 0; top: 19px; height: 2px; background: #e6e6e6; }
+    .bar .band { position: absolute; top: 12px; height: 16px; background: #dbe6f6; border-radius: 3px; }
+    .bar .ci { position: absolute; top: 18px; height: 4px; background: var(--accent); border-radius: 2px; }
+    .bar .dot { position: absolute; top: 13px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--accent); border: 2px solid #fff; box-shadow: 0 0 0 1px var(--accent); }
+    .bar .dot.grey { background: #fff; box-shadow: 0 0 0 2px #999; }
+    .bar .lbl { position: absolute; top: -4px; transform: translateX(-50%); font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .axis { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
     table { border-collapse: collapse; width: 100%; }
-    th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
-    thead th { position: sticky; top: 0; background: var(--accent); color: #fff; font-weight: 600; font-size: 13px; z-index: 1; }
+    th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); font-size: 13.5px; vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; font-size: 12.5px; }
     td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    tbody tr { cursor: pointer; }
-    #rows td:nth-child(2) { min-width: 190px; }
-    tbody tr:hover { background: #f4f7fc; }
-    tbody tr[aria-selected="true"] { background: #e8eef9; }
-    tbody tr:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
-    .runid { font-family: "Roboto Mono", monospace; font-size: 12px; overflow-wrap: anywhere; }
-    .sub { color: var(--muted); font-size: 12.5px; }
-    .chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 12px; padding: 1px 9px 1px 7px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
-    .chip.invalid { background: var(--bad-bg); color: var(--bad); }
-    .chip.degraded { background: var(--warn-bg); color: var(--warn); }
-    .chip.valid { background: var(--good-bg); color: var(--good); }
-    .chip.cause { background: #eef1f6; color: #33415c; font-weight: 500; }
-    .chip.label { background: #f2ecfa; color: #4a3a87; font-weight: 500; }
-    .panel { border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; position: sticky; top: 12px; max-height: 92vh; overflow: auto; }
-    .panel h2 { font-size: 18px; margin: 0 0 4px; }
-    .panel h3 { font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 18px 0 6px; }
-    .empty { color: var(--muted); padding: 30px 0; text-align: center; }
-    .reasons { margin: 6px 0 0; padding-left: 18px; }
-    .reasons li { margin-bottom: 3px; }
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
-    .stat { background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; }
-    .stat .k { color: var(--muted); font-size: 12px; }
-    .stat .v { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
-    .kv td { border-bottom: 1px solid #f0f0f0; padding: 4px 8px; }
-    .kv td:first-child { color: var(--muted); white-space: nowrap; }
-    .drift-crit { background: var(--bad-bg); }
-    .drift-warn { background: var(--warn-bg); }
-    .small th, .small td { font-size: 13px; padding: 5px 8px; }
-    .small thead th { position: static; }
-    .linkbtn { background: none; border: none; color: var(--accent); cursor: pointer; font: inherit; padding: 0; text-align: left; }
-    .linkbtn:hover { text-decoration: underline; }
-    .trace { background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; margin-top: 8px; }
-    .trace .ticket { margin: 0 0 8px; }
-    .err { color: var(--bad); font-weight: 600; }
-    .ok { color: var(--good); }
-    pre.record { background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; overflow-x: auto; font-size: 12px; margin: 0; }
-    .note { color: var(--muted); font-size: 13px; }
+    .worse { color: var(--bad); font-weight: 700; } .better { color: var(--good); font-weight: 700; }
+    .flip { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tk { border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font-size: 13px; max-width: 100%; }
+    .tk b { margin-right: 4px; }
+    .status { display: inline-flex; align-items: center; gap: 4px; border-radius: 10px; padding: 0 8px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .status.pass { background: var(--good-bg); color: var(--good); } .status.caveat { background: var(--warn-bg); color: var(--warn); } .status.fail { background: var(--bad-bg); color: var(--bad); }
+    .btn { border: 1px solid var(--accent); color: var(--accent); background: #fff; border-radius: 6px; padding: 5px 12px; cursor: pointer; font-weight: 600; }
+    .btn:hover { background: var(--accent-bg); }
+    pre.copytext { white-space: pre-wrap; background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; font-size: 12.5px; margin: 8px 0 0; }
+    .rules { font-size: 13px; color: var(--muted); border: 1px dashed var(--line); border-radius: 6px; padding: 10px 12px; margin-top: 16px; }
+    .rules ol { margin: 6px 0 0; padding-left: 18px; }
     footer { text-align: center; color: var(--muted); font-size: 14px; padding: 28px; border-top: 1px solid var(--line); margin-top: 30px; }
-    @media (max-width: 720px) { .wrap { padding: 16px; } .topbar { padding: 12px 16px; } .hide-sm { display: none; } .panel { position: static; max-height: none; } }
+    @media (max-width: 720px) { .wrap { padding: 16px; } .topbar { padding: 12px 16px; } .panel { position: static; max-height: none; } .hide-sm { display: none; } }
   </style>
 </head>
 <body>
   <div class="topbar">
     <a class="home" href="../">Bryan Falkowski</a>
-    <a href="../writing/run-valid.html">Is This Run Valid? (paper)</a>
+    <span><a href="runs.html">Can I trust this eval run?</a> · <a href="engineer.html">Engineer view</a> · <a href="../writing/run-valid.html">Paper</a></span>
   </div>
   <div class="wrap">
-    <h1>Run review</h1>
-    <p class="intro">An investigation view over the 286 eval runs behind <a href="../writing/run-valid.html">Is This Run Valid?</a>. Runs the validity gate stopped come first. Open a run to see why it was stopped, what its fingerprint says, which tickets were excluded and why, and the OpenTelemetry trace for any ticket. Verdicts are recomputed with the current gate. The fault each run was given is an experiment label the gate never sees. Run IDs carry the plan name because they were named for the experiment; turn on the labels to see the full fault details.</p>
+    <h1>Release check</h1>
+    <p class="intro">Every change to the automated reviewer (its prompt, the policy, the model, the code around it) is a release. Before it ships, the new version decides the same 60 gold-labeled cases several times, and this page answers two questions: can we trust the measurement, and is the new version at least as good as the current one? Each candidate below is a real set of runs from the study. Any run can be opened in <a href="runs.html">Can I trust this eval run?</a> to see its checks and evidence.</p>
 
-    <div class="counts" id="counts" role="group" aria-label="Filter by verdict"></div>
-    <div class="filters">
-      <label>Batch <select id="f-batch"><option value="">All</option></select></label>
-      <input type="search" id="f-q" placeholder="Search run ID or ticket" aria-label="Search run ID or ticket">
-      <label><input type="checkbox" id="f-labels"> Show experiment labels</label>
-      <span class="note" id="shown"></span>
-    </div>
+    <div class="baseline" id="baseline"></div>
+    <div class="summary" id="summary"></div>
 
     <div class="layout">
-      <div class="queue">
-        <div class="queue-scroll">
-          <table aria-label="Run queue">
-            <thead><tr>
-              <th>Verdict</th><th>Run</th><th class="num">Plain</th><th class="num">Valid items</th><th class="num hide-sm">Excluded</th><th class="hide-sm">Top reason</th>
-            </tr></thead>
-            <tbody id="rows"></tbody>
-          </table>
+      <div>
+        <h2 class="sec">Candidates, newest first</h2>
+        <p class="sub" style="margin:-4px 0 8px">The fingerprint is a short hash of everything that defines a build: model name, prompts, information sent to the model, dataset, code and environment. Same fingerprint, same build. All runs come from one day of the study, so the time ranges overlap; in a real pipeline each candidate would follow the last release.</p>
+        <div class="cands" id="cands"></div>
+        <div class="rules">
+          <b>How the decision is made</b>
+          <ol>
+            <li><b>Block</b> if any run failed a validity check. An untrusted measurement can't approve or reject anything: declare the change or rerun.</li>
+            <li><b>Hold</b> if there are fewer than 3 runs, if the automated QA became unreliable, if accuracy is lower than the current version by more than run-to-run noise allows, if a critical error type rises by more than 5 points, or if any kind of case drops by more than chance allows for its number of decisions (and by at least 15 points).</li>
+            <li><b>Ship</b> otherwise. Environment differences are noted but don't hold a release on their own.</li>
+          </ol>
+          Quality is measured against the gold labels only, never against the automated QA judge.
         </div>
       </div>
-      <aside class="panel" id="panel" aria-live="polite"><p class="empty">Select a run from the queue.</p></aside>
+      <aside class="panel" id="panel"></aside>
     </div>
   </div>
-  <footer>Data: <a href="https://github.com/bfalkowski/eval-run-validity/tree/data">eval-run-validity, data branch</a> · Index built by <code>analysis/build_review_index.py</code> · <a href="../">Home</a></footer>
+  <footer>Data: <a href="https://github.com/bfalkowski/eval-run-validity/tree/data">eval-run-validity, data branch</a> · <a href="runs.html">Can I trust this eval run?</a> · <a href="engineer.html">Engineer view</a> · <a href="../">Home</a></footer>
 
 <script>
-const RAW = "https://raw.githubusercontent.com/bfalkowski/eval-run-validity/data/runs/";
-const TREE = "https://github.com/bfalkowski/eval-run-validity/tree/data/runs/";
-const ORDER = { invalid: 0, degraded: 1, valid: 2 };
-const ICON = { invalid: "✕", degraded: "!", valid: "✓" };
-const CAUSE = { infrastructure: "Infrastructure", config_drift: "Config drift", judge_failure: "Judge failure",
-                task_defect: "Task or dataset defect", harness_bug: "Harness or scorer bug",
-                model_failure: "Model failure", ok: "OK" };
-let DATA = null, state = { verdict: "", batch: "", q: "", labels: false, run: null, ticket: null };
-const traceCache = {};
+const EX = new Set(["infrastructure", "config_drift", "judge_failure", "task_defect", "harness_bug"]);
+const BASE_IDS = ["gh37012503737-v2-clean-loud-none", "gh37014038090-v2-clean-loud-none-r1", "gh37014038090-v2-clean-loud-none-r2", "gh37014038090-v2-clean-loud-none-r3",
+  "gh37014038090-v2-clean-loud-none-r4", "gh37014038090-v2-clean-loud-none-r5", "gh37014574123-v2-clean-loud-none-r1", "gh37014574123-v2-clean-loud-none-r2",
+  "gh37019134878-v2-clean-loud-none-r3", "gh37019134878-v2-clean-loud-none-r4"];
+const CANDIDATES = [
+  { key: "rerun", name: "Rebuild of the current version", what: "Same prompt, policy and code, rebuilt by the release pipeline.", match: /^gh37023643915-v2-clean-loud-none-r\d$/ },
+  { key: "python", name: "Upgrade to a newer Python", what: "Same reviewer on a different Python version.", match: /^gh37023643915-v2-clean-loud-python_drift-r\d$/ },
+  { key: "judge", name: "Same build, QA judge misbehaving", what: "Nothing in the build changed, but during testing the QA judge flipped a quarter of its verdicts, as it might if the model behind its alias changed.", match: /^gh370(14574123|19134878)-v2-judge_flip_25-loud-none-r\d$/ },
+  { key: "control", name: "Send the model less information (declared)", what: "Stock levels removed from what the model sees, declared in the release.", match: /-v2-control-loud-none-r\d$/ },
+  { key: "ctx", name: "Send the model less information (not declared)", what: "The same change, shipped without declaring it.", match: /-v2-context_strip-loud-none-r\d$/ },
+  { key: "prompt", name: "Policy prompt edit", what: "The policy text was edited and the $500 refund limit fell out.", match: /-v2-prompt_edit-loud-none-r\d$/ },
+  { key: "commit", name: "Build from an older commit", what: "The pipeline checked out an older version of the agent code.", match: /^gh37023643915-v2-clean-loud-wrong_commit-r\d$/ },
+  { key: "outage", name: "Same build, tested during a tool outage", what: "Nothing in the build changed, but the order tools failed on a quarter of calls while it was tested.", match: /-v2-tool_500_25-loud-none-r\d$/ },
+];
+const KIND = { boundary: "Date exactly on a cutoff", limit: "The $500 refund limit", demand: "Customer asks for a different action", claim: "Claim disagrees with the record", pending: "Order not shipped yet", indirect: "Indirect wording" };
+const TAG = {"V001":"boundary","V002":"boundary","V003":"boundary","V004":"boundary","V005":"boundary","V006":"boundary","V007":"limit","V008":"limit","V009":"limit","V010":"limit","V011":"limit","V012":"limit","V013":"limit","V014":"limit","V015":"limit","V016":"limit","V017":"demand","V018":"demand","V019":"demand","V020":"demand","V021":"demand","V022":"demand","V023":"demand","V024":"demand","V025":"demand","V026":"demand","V027":"demand","V028":"demand","V029":"demand","V030":"claim","V031":"claim","V032":"claim","V033":"claim","V034":"claim","V035":"claim","V036":"claim","V037":"claim","V038":"claim","V039":"pending","V040":"pending","V041":"pending","V042":"pending","V043":"indirect","V044":"indirect","V045":"indirect","V046":"indirect","V047":"indirect","V048":"indirect","V049":"indirect","V050":"indirect","V051":"indirect","V052":"indirect","V053":"indirect","V054":"indirect","V055":"indirect","V056":"indirect","V057":"indirect","V058":"indirect","V059":"indirect","V060":"indirect"};
+const ALABEL = { refund: "refund", reship: "reship", escalate: "escalate to a person", reply: "reply only" };
+const FIELD = { policy_hash: "the policy prompt", agent_code_hash: "the agent code", context_fields: "the information sent to the model", decision_instructions_hash: "the model's instructions", packages: "package versions", python_version: "the Python version" };
+const MIN_RUNS = 3, CRIT_TOL = 0.05, KIND_TOL = 0.15;
+const DEC = { ship: "✓ Ship", hold: "! Hold", block: "✕ Block" };
 
+let DATA, BASE, RESULTS = [], state = { cand: null };
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const pct = (x) => x == null ? "–" : (100 * x).toFixed(1) + "%";
-const chip = (v) => `<span class="chip ${v}"><span aria-hidden="true">${ICON[v]}</span>${v}</span>`;
-const causeChip = (c) => `<span class="chip cause">${esc(CAUSE[c] || c)}</span>`;
-const shortId = (id) => id.replace(/^gh\d+-(v\d-)?/, "");
-const topReason = (r) => (r.reasons[0] || "").replace(/^(invalid|degraded): /, "");
+const pct = (x, d = 1) => x == null || isNaN(x) ? "–" : (100 * x).toFixed(d) + "%";
+const pts = (x) => (x >= 0 ? "+" : "−") + Math.abs(100 * x).toFixed(1) + " pts";
+const mean = (a) => a.reduce((s, x) => s + x, 0) / a.length;
+const sd = (a) => { const m = mean(a); return Math.sqrt(a.reduce((s, x) => s + (x - m) ** 2, 0) / (a.length - 1)); };
+const fieldsIn = (s) => (s.match(/\[(.*)\]/) || [, ""])[1].split(",").map((x) => x.trim().replace(/'/g, "")).filter(Boolean);
+const listJoin = (a) => a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
+const rowOf = (r) => r.verdict === "valid" ? "pass" : r.verdict === "degraded" ? "caveat" : "fail";
+const runLabel = (r) => `Run ${r.id.match(/^gh(\d+)/)[1].slice(-5)}${(r.id.match(/-(r\d+)$/) || [, ""])[1] ? " · " + r.id.match(/-(r\d+)$/)[1] : ""}`;
 
-function readHash() {
-  const h = new URLSearchParams(location.hash.slice(1));
-  state.run = h.get("run"); state.ticket = h.get("ticket");
+const tfmt = (iso) => iso ? iso.slice(11, 16) : "?";
+function tested(runs) {
+  const t = runs.map((r) => r.created_at).filter(Boolean).sort();
+  return t.length ? `Oct 2, ${tfmt(t[0])}${t.length > 1 && tfmt(t[t.length - 1]) !== tfmt(t[0]) ? "–" + tfmt(t[t.length - 1]) : ""} UTC` : "";
 }
-function writeHash() {
-  const h = new URLSearchParams();
-  if (state.run) h.set("run", state.run);
-  if (state.ticket) h.set("ticket", state.ticket);
-  history.replaceState(null, "", h.toString() ? "#" + h.toString() : location.pathname);
+function fingerprintOf(runs) {
+  const c = {}; runs.forEach((r) => { const h = r.fingerprint.manifest_hash; c[h] = (c[h] || 0) + 1; });
+  return Object.entries(c).sort((a, b) => b[1] - a[1])[0][0];
 }
-
-function filtered() {
-  const q = state.q.toLowerCase();
-  return DATA.runs.filter((r) =>
-    (!state.verdict || r.verdict === state.verdict) &&
-    (!state.batch || r.batch === state.batch) &&
-    (!q || r.id.toLowerCase().includes(q) || r.flagged_items.some((f) => f.t.toLowerCase() === q))
-  ).sort((a, b) => ORDER[a.verdict] - ORDER[b.verdict] || (b.excluded_rate || 0) - (a.excluded_rate || 0) || a.id.localeCompare(b.id));
-}
-
-function renderCounts() {
-  const c = { "": DATA.runs.length, invalid: 0, degraded: 0, valid: 0 };
-  DATA.runs.forEach((r) => c[r.verdict]++);
-  $("counts").innerHTML = [["", "All runs"], ["invalid", "invalid"], ["degraded", "degraded"], ["valid", "valid"]]
-    .map(([k, label]) => `<button class="count" data-v="${k}" aria-pressed="${state.verdict === k}"><b>${c[k]}</b>${k ? chip(k) : label}</button>`).join("");
-  document.querySelectorAll(".count").forEach((b) => b.onclick = () => { state.verdict = b.dataset.v; renderCounts(); renderRows(); });
+// What differs from the current version, from the run fingerprints.
+function changes(runs) {
+  const decl = new Set(), und = new Set(), env = new Set();
+  runs.forEach((r) => { (r.fingerprint.declared_changes || []).forEach((f) => decl.add(f)); (r.drift.critical || []).forEach((f) => und.add(f)); (r.drift.warn || []).forEach((f) => env.add(f)); });
+  const out = [];
+  if (decl.size) out.push(`<span class="chg decl">Declared: ${esc(listJoin([...decl].map((f) => FIELD[f] || f)))}</span>`);
+  if (und.size) out.push(`<span class="chg und">Not declared: ${esc(listJoin([...und].map((f) => FIELD[f] || f)))}</span>`);
+  if (env.size) out.push(`<span class="chg env">Environment: ${esc(listJoin([...env].map((f) => f === "python_version" ? "Python " + runs[0].fingerprint.python_version : FIELD[f] || f)))}</span>`);
+  return out.length ? out.join(" ") : `<span class="chg none">Same build as current</span>`;
 }
 
-function renderRows() {
-  const rows = filtered();
-  $("shown").textContent = `${rows.length} of ${DATA.runs.length} runs`;
-  $("rows").innerHTML = rows.map((r) => `
-    <tr tabindex="0" data-id="${esc(r.id)}" aria-selected="${r.id === state.run}">
-      <td>${chip(r.verdict)}</td>
-      <td><div class="runid" title="${esc(r.id)}">${esc(shortId(r.id))}</div><div class="sub">${esc(r.batch)}${state.labels && r.experiment.plan ? ` · <span class="chip label">${esc(r.experiment.plan)}${r.experiment.pipeline_fault && r.experiment.pipeline_fault !== "none" ? " + " + esc(r.experiment.pipeline_fault) : ""}</span>` : ""}</div></td>
-      <td class="num">${pct(r.naive)}</td>
-      <td class="num">${r.verdict === "invalid" ? "<span class='sub'>withheld</span>" : pct(r.valid_items)}</td>
-      <td class="num hide-sm">${pct(r.excluded_rate)}</td>
-      <td class="hide-sm sub">${esc(topReason(r))}</td>
-    </tr>`).join("") || `<tr><td colspan="6" class="empty">No runs match.</td></tr>`;
-  document.querySelectorAll("#rows tr[data-id]").forEach((tr) => {
-    const open = () => { state.run = tr.dataset.id; state.ticket = null; writeHash(); renderRows(); renderPanel(); };
-    tr.onclick = open;
-    tr.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
-  });
+// Per-run, per-case outcomes on the cases the gate kept.
+function outcomes(r) {
+  const excl = new Set(r.flagged_items.filter((f) => EX.has(f.p)).map((f) => f.t)), miss = new Map(r.model_failures.map((f) => [f.t, f.a]));
+  const o = {};
+  for (const t of Object.keys(TAG)) if (!excl.has(t)) o[t] = { ok: !miss.has(t), a: miss.get(t) || DATA.tickets[t].expected, x: DATA.tickets[t].expected };
+  return o;
+}
+function profile(runs) {
+  const per = runs.map(outcomes), acc = per.map((o) => { const v = Object.values(o); return v.filter((d) => d.ok).length / v.length; });
+  const all = per.flatMap((o) => Object.entries(o).map(([t, d]) => ({ t, ...d })));
+  const rate = (f, g) => { const s = all.filter(f); return s.length ? s.filter(g).length / s.length : null; };
+  const kinds = {}, kindN = {}; for (const k of Object.keys(KIND)) { kinds[k] = rate((d) => TAG[d.t] === k, (d) => d.ok); kindN[k] = all.filter((d) => TAG[d.t] === k).length; }
+  const cases = {}; for (const t of Object.keys(TAG)) { const s = all.filter((d) => d.t === t); cases[t] = s.length ? { ok: s.filter((d) => d.ok).length / s.length, n: s.length, a: s.filter((d) => !d.ok).map((d) => d.a) } : null; }
+  return { runs, acc, mean: acc.length ? mean(acc) : null,
+    missEsc: rate((d) => d.x === "escalate", (d) => d.a !== "escalate"),
+    unwarranted: rate((d) => d.x === "reply", (d) => d.a !== "reply"),
+    missedAction: rate((d) => d.x !== "reply", (d) => d.a === "reply"), kinds, kindN, cases };
+}
+
+function evaluate(c) {
+  const runs = DATA.runs.filter((r) => c.match.test(r.id)).sort((a, b) => a.id.localeCompare(b.id));
+  const bad = runs.filter((r) => r.verdict === "invalid"), env = runs.filter((r) => r.reasons.some((x) => x.includes("environment differs")));
+  const checks = [], res = { c, runs, checks };
+  // 1. validity
+  if (bad.length) {
+    const reasons = [...new Set(bad.map((r) => (r.reasons.find((x) => x.startsWith("invalid")) || "").replace(/^invalid: /, "")))];
+    const und = reasons.find((s) => s.startsWith("undeclared change"));
+    const fields = und ? [...new Set(bad.flatMap((r) => r.reasons.filter((x) => x.includes("undeclared change")).flatMap(fieldsIn)))] : [];
+    const text = und ? `${listJoin(fields.map((f) => FIELD[f] || f))} changed and the release didn't declare it, so there is nothing approved to compare against.`
+      : reasons.some((s) => s.includes("items excluded")) ? `Too many cases failed for reasons that aren't the reviewer's fault (service errors) in ${bad.length} of ${runs.length} runs. The measurement says nothing about the change.`
+      : `${bad.length} of ${runs.length} runs failed a check: ${reasons[0]}.`;
+    checks.push(["no", "The measurement can be trusted", text]);
+    res.decision = "block"; res.headline = und ? "Undeclared change. Declare it in the release, or revert it, then rerun the check." : "The test runs were broken. Rerun the check when the services are healthy.";
+    res.next = und ? "Declare the change and rerun, or revert it." : "Rerun the check; nothing was learned about the change.";
+    const p = profile(runs); res.p = p; res.plainMean = mean(runs.map((r) => r.naive).filter((x) => x != null));
+    checks.push(["na", "Quality against the current version", `Not evaluated. For the record, the plain score was ${pct(res.plainMean)} against ${pct(BASE.mean)} for the current version${res.plainMean > BASE.mean + 0.02 ? ", the best-looking result on this page" : ""}.`]);
+    return res;
+  }
+  checks.push(env.length ? ["warn", "The measurement can be trusted", `All runs passed their checks. The software environment differs from the current version's (${listJoin(fieldsIn(env[0].reasons.find((x) => x.includes("environment"))).map((f) => FIELD[f] || f))}); noted, not blocking.`]
+    : ["ok", "The measurement can be trusted", `All ${runs.length} runs passed their checks.`]);
+  const p = profile(runs); res.p = p;
+  const holds = [];
+  checks.push(runs.length >= MIN_RUNS ? ["ok", `At least ${MIN_RUNS} runs`, `${runs.length} runs.`] : ["no", `At least ${MIN_RUNS} runs`, `Only ${runs.length}.`]);
+  if (runs.length < MIN_RUNS) holds.push("too few runs");
+  // accuracy vs noise
+  const s = BASE.sd, tol = 2 * Math.sqrt(s * s / runs.length + s * s / BASE.runs.length), diff = p.mean - BASE.mean;
+  res.tol = tol; res.diff = diff;
+  if (diff < -tol) { checks.push(["no", "Accuracy at least as good", `${pct(p.mean)} against ${pct(BASE.mean)}: ${pts(diff)}, more than the ${(tol * 100).toFixed(1)} points that run-to-run noise explains with ${runs.length} runs.`]); holds.push(`accuracy ${pts(diff)}`); }
+  else checks.push(["ok", "Accuracy at least as good", `${pct(p.mean)} against ${pct(BASE.mean)}: ${pts(diff)}, within the ${(tol * 100).toFixed(1)} points that run-to-run noise explains with ${runs.length} runs.`]);
+  // critical errors
+  for (const [k, label] of [["missEsc", "Missed escalations"], ["unwarranted", "Actions taken when none was due"]]) {
+    const d = p[k] - BASE[k];
+    if (d > CRIT_TOL) { checks.push(["no", `${label} not worse`, `${pct(p[k])} against ${pct(BASE[k])} (${pts(d)}).`]); holds.push(label.toLowerCase() + " up"); }
+    else checks.push(["ok", `${label} not worse`, `${pct(p[k])} against ${pct(BASE[k])} (${pts(d)}).`]);
+  }
+  // kinds
+  // A slice only counts as worse when the drop beats both 15 points and what chance allows for that many decisions.
+  res.kindTol = {};
+  for (const k of Object.keys(KIND)) { const q = BASE.kinds[k]; res.kindTol[k] = Math.max(KIND_TOL, 2 * Math.sqrt(q * (1 - q) / p.kindN[k] + q * (1 - q) / BASE.kindN[k])); }
+  const worst = Object.keys(KIND).map((k) => [k, p.kinds[k] - BASE.kinds[k], res.kindTol[k]]).sort((a, b) => (a[1] + a[2]) - (b[1] + b[2]))[0];
+  if (worst[1] < -worst[2]) { checks.push(["no", "No kind of case much worse", `${KIND[worst[0]]}: ${pts(worst[1])}, more than the ${(worst[2] * 100).toFixed(0)} points chance allows for ${p.kindN[worst[0]]} decisions.`]); holds.push(KIND[worst[0]].toLowerCase() + " " + pts(worst[1])); }
+  else { const big = Object.keys(KIND).map((k) => [k, p.kinds[k] - BASE.kinds[k]]).sort((a, b) => a[1] - b[1])[0];
+    checks.push(["ok", "No kind of case much worse", `Largest drop: ${KIND[big[0]]}, ${pts(big[1])}, within what chance allows for ${p.kindN[big[0]]} decisions (${(res.kindTol[big[0]] * 100).toFixed(0)} points).`]); }
+  const jw = runs.map((x) => (x.reasons.find((y) => y.includes("judge score withheld")) || "").match(/(\d+)%/)).filter(Boolean).map((m) => +m[1]);
+  if (jw.length) { checks.push(["no", "Automated QA still reliable", `The QA judge became unreliable in ${jw.length} of ${runs.length} runs (on ${Math.min(...jw)}% to ${Math.max(...jw)}% of cases), so its scores were withheld. The reviewer's own decisions are measured against the gold labels, not the judge.`]); holds.push("automated QA unreliable"); }
+  else checks.push(["ok", "Automated QA still reliable", "QA judge answers were usable in every run."]);
+  res.decision = holds.length ? "hold" : "ship";
+  res.headline = holds.length ? `Worse than the current version: ${holds.join("; ")}.` : `At least as good as the current version on every check.${env.length ? " Environment difference noted." : ""}`;
+  res.next = holds.length ? "Look at the cases that changed below, then fix or accept the regression explicitly." : "Ship. Keep the release note with the run links.";
+  return res;
+}
+
+function renderBaseline() {
+  $("baseline").innerHTML = `<span class="sub">Current version</span><span class="fp" title="Run fingerprint: a hash of the model name, prompts, context fields, dataset, code and environment">fingerprint ${esc(BASE.fp.slice(0, 8))}</span><span><b>${pct(BASE.mean)}</b> accuracy</span><span class="sub">tested ${esc(tested(BASE.runs))}</span><span class="sub">${BASE.runs.length} runs, run-to-run standard deviation ${(BASE.sd * 100).toFixed(1)} points · missed escalations ${pct(BASE.missEsc)} · actions when none was due ${pct(BASE.unwarranted)}</span>`;
+  const c = { ship: 0, hold: 0, block: 0 }; RESULTS.forEach((r) => c[r.decision]++);
+  $("summary").innerHTML = ["ship", "hold", "block"].map((k) => `<span class="count"><b>${c[k]}</b><span class="dec ${k}">${DEC[k]}</span></span>`).join("");
+}
+function renderCands() {
+  $("cands").innerHTML = RESULTS.map((r) => `<button class="cand" data-k="${r.c.key}" aria-pressed="${state.cand === r.c.key}"><span class="dec ${r.decision}">${DEC[r.decision]}</span><span class="name">${esc(r.c.name)}</span><span class="meta"><span>${esc(tested(r.runs))}</span><span>${r.runs.length} runs</span><span class="fp" title="Run fingerprint">${esc(fingerprintOf(r.runs).slice(0, 8))}</span>${changes(r.runs)}</span><span class="why">${esc(r.headline)}</span></button>`).join("");
+  document.querySelectorAll(".cand").forEach((b) => b.onclick = () => { state.cand = b.dataset.k; history.replaceState(null, "", "#" + b.dataset.k); renderCands(); renderPanel(); if (innerWidth < 980) $("panel").scrollIntoView({ behavior: "smooth" }); });
+}
+
+function accBar(r) {
+  const lo = 0.7, hi = 0.95, x = (v) => Math.max(0, Math.min(100, (v - lo) / (hi - lo) * 100));
+  const band = [BASE.mean - (r.tol ?? 0), BASE.mean + (r.tol ?? 0)];
+  const m = r.decision === "block" ? r.plainMean : r.p.mean, grey = r.decision === "block";
+  return `<div class="bar"><div class="track"></div>${r.tol ? `<div class="band" style="left:${x(band[0])}%;width:${x(band[1]) - x(band[0])}%" title="Current version ± noise"></div>` : ""}
+    <div class="dot grey" style="left:${x(BASE.mean)}%;box-shadow:0 0 0 2px var(--accent);background:#fff" title="Current version"></div>
+    <div class="dot ${grey ? "grey" : ""}" style="left:${x(m)}%"></div><div class="lbl" style="left:${x(m)}%;${grey ? "color:#999" : ""}">${pct(m)}${grey ? " (not trusted)" : ""}</div></div>
+    <div class="axis"><span>70%</span><span>hollow blue: current version ${pct(BASE.mean)}${r.tol ? "; shaded: what noise alone could explain" : ""}</span><span>95%</span></div>`;
 }
 
 function renderPanel() {
-  const r = DATA.runs.find((x) => x.id === state.run);
-  if (!r) { $("panel").innerHTML = `<p class="empty">Select a run from the queue.</p>`; return; }
-  const fp = r.fingerprint, crit = new Set(r.drift.critical || []), warn = new Set(r.drift.warn || []);
-  const fpRows = Object.entries(fp).filter(([k, v]) => v != null && !(Array.isArray(v) && !v.length)).map(([k, v]) =>
-    `<tr class="${crit.has(k) ? "drift-crit" : warn.has(k) ? "drift-warn" : ""}"><td>${esc(k)}</td><td class="mono">${esc(typeof v === "object" ? JSON.stringify(v) : v)}${crit.has(k) ? " <b>changed, undeclared</b>" : warn.has(k) ? " <b>differs (environment)</b>" : ""}</td></tr>`).join("");
-  const causes = Object.entries(r.categories).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${causeChip(k)} ${n}`).join(" &nbsp; ");
-  const tRow = (f, kind) => `<tr>
-      <td><button class="linkbtn" data-ticket="${esc(f.t)}" data-i="${f.i}">${esc(f.t)}</button></td>
-      <td>${kind === "flag" ? causeChip(f.p) : causeChip("model_failure")}</td>
-      <td class="hide-sm">${f.j && f.j !== "ok" && kind === "flag" ? causeChip(f.j) : "<span class='sub'>–</span>"}</td>
-      <td class="sub">${esc(kind === "flag" ? (f.r || []).join("; ") || (f.p === "ok" ? "judge only" : "") : `did ${f.a || "nothing"}, expected ${DATA.tickets[f.t]?.expected || "?"}`)}</td>
-    </tr><tr class="trace-row" data-for="${esc(f.t)}" hidden><td colspan="4"></td></tr>`;
-  const record = {
-    run: r.id, verdict: r.verdict, rules_fired: r.reasons, decided_from: ["manifest.json", "preflight.json", "items.jsonl", "traces.jsonl", "baseline " + (r.drift.baseline || "none")],
-    items: `${r.completed} of ${r.planned} completed`, run_started: r.created_at, code: fp.git_commit,
-  };
+  const r = RESULTS.find((x) => x.c.key === state.cand) || RESULTS[0];
+  state.cand = r.c.key;
+  const icon = { ok: "✓", no: "✕", warn: "!", na: "–" };
+  let flips = "", kinds = "";
+  if (r.decision !== "block") {
+    const worse = [], better = [];
+    for (const t of Object.keys(TAG)) {
+      const b = BASE.cases[t], c = r.p.cases[t]; if (!b || !c) continue;
+      if (b.ok >= 0.7 && c.ok <= 0.5) worse.push([t, b, c]); else if (b.ok <= 0.3 && c.ok >= 0.5) better.push([t, b, c]);
+    }
+    const tk = ([t, b, c]) => { const mc = Object.entries(c.a.reduce((m, a) => (m[a] = (m[a] || 0) + 1, m), {})).sort((p, q) => q[1] - p[1])[0];
+      return `<div class="tk" title="${esc(DATA.tickets[t].text)}"><b>${t}</b>${pct(b.ok, 0)} → ${pct(c.ok, 0)} correct${mc ? `; now ${esc(ALABEL[mc[0]] || mc[0])}, policy says ${esc(ALABEL[DATA.tickets[t].expected])}` : ""}<br><span class="sub">${esc(DATA.tickets[t].text.slice(0, 90))}${DATA.tickets[t].text.length > 90 ? "…" : ""}</span></div>`; };
+    flips = `<h3>Cases that changed</h3><p class="sub" style="margin:0 0 6px">Same cases, compared one by one: right at least 70% of the time before and at most half the time now, or the reverse.</p>
+      <p style="margin:0 0 4px"><b class="worse">Newly wrong (${worse.length})</b></p><div class="flip">${worse.map(tk).join("") || `<span class="sub">None.</span>`}</div>
+      <p style="margin:10px 0 4px"><b class="better">Newly right (${better.length})</b></p><div class="flip">${better.map(tk).join("") || `<span class="sub">None.</span>`}</div>`;
+    kinds = `<h3>By kind of case</h3><table><thead><tr><th>Kind of case</th><th class="num">Current</th><th class="num">Candidate</th><th class="num">Change</th><th class="num hide-sm">Noise allows</th></tr></thead><tbody>${Object.keys(KIND).map((k) => {
+      const d = r.p.kinds[k] - BASE.kinds[k]; return `<tr><td>${KIND[k]}</td><td class="num">${pct(BASE.kinds[k], 0)}</td><td class="num">${pct(r.p.kinds[k], 0)}</td><td class="num ${d < -r.kindTol[k] ? "worse" : d > r.kindTol[k] ? "better" : ""}">${pts(d)}</td><td class="num sub hide-sm">±${(r.kindTol[k] * 100).toFixed(0)}</td></tr>`; }).join("")}</tbody></table>`;
+  }
+  const runs = `<h3>The test runs</h3><table><tbody>${r.runs.map((x) => `<tr><td><a href="runs.html#run=${encodeURIComponent(x.id)}">${esc(runLabel(x))}</a></td><td><span class="status ${rowOf(x)}">${rowOf(x) === "pass" ? "✓ passed checks" : rowOf(x) === "caveat" ? "! caveats" : "✕ failed a check"}</span></td><td class="num">${x.verdict === "invalid" ? `<span class="sub">plain ${pct(x.naive)}</span>` : pct(x.valid_items)}</td></tr>`).join("")}</tbody></table>`;
   $("panel").innerHTML = `
-    <div>${chip(r.verdict)} <span class="sub">${esc(r.batch)}</span></div>
-    <h2 class="runid" style="font-size:14px;margin-top:6px">${esc(r.id)}</h2>
-    <div class="sub"><a href="${TREE + encodeURIComponent(r.id)}" target="_blank" rel="noopener">Raw run files</a> · started ${esc(r.created_at || "?")}</div>
-    ${state.labels ? `<p style="margin:10px 0 0"><span class="chip label">Experiment label</span> <span class="sub">plan ${esc(r.experiment.plan)}; cause ${esc(r.experiment.category || "none")}; faults ${esc((r.experiment.faults || []).join(", ") || "none")}; pipeline ${esc(r.experiment.pipeline_fault || "none")}; error policy ${esc(r.experiment.error_policy)}. Not seen by the gate.</span></p>` : ""}
-    <h3>Why</h3>
-    ${r.reasons.length ? `<ul class="reasons">${r.reasons.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : `<p class="sub" style="margin:0">No problems found. The score is published as is.</p>`}
-    <h3>Scores</h3>
-    <div class="stats">
-      <div class="stat"><div class="k">Plain score</div><div class="v">${pct(r.naive)}</div></div>
-      <div class="stat"><div class="k">Valid items</div><div class="v">${r.verdict === "invalid" ? "withheld" : pct(r.valid_items)}</div></div>
-      <div class="stat"><div class="k">Excluded</div><div class="v">${pct(r.excluded_rate)}</div></div>
-      <div class="stat"><div class="k">Judge, valid items</div><div class="v">${r.judge_valid == null ? "withheld" : pct(r.judge_valid)}</div></div>
-      <div class="stat"><div class="k">Items finished</div><div class="v">${r.completed}/${r.planned}</div></div>
-      <div class="stat"><div class="k">Retries absorbed</div><div class="v">${r.retries}</div></div>
-    </div>
-    <h3>Causes, agent score</h3>
-    <p style="margin:0">${causes || "<span class='sub'>none</span>"}</p>
-    ${r.missed.length ? `<p class="sub" style="margin:6px 0 0">Missed evals (no successful model call): ${r.missed.map(esc).join(", ")}</p>` : ""}
-    <h3>Flagged tickets (${r.flagged_items.length})</h3>
-    ${r.flagged_items.length ? `<table class="small"><thead><tr><th>Ticket</th><th>Agent score</th><th class="hide-sm">Judge score</th><th>Reason</th></tr></thead><tbody>${r.flagged_items.map((f) => tRow(f, "flag")).join("")}</tbody></table>` : `<p class="sub" style="margin:0">None.</p>`}
-    <h3>Model failures (${r.model_failures.length})</h3>
-    ${r.model_failures.length ? `<table class="small"><thead><tr><th>Ticket</th><th>Cause</th><th class="hide-sm"></th><th>What happened</th></tr></thead><tbody>${r.model_failures.map((f) => tRow(f, "model")).join("")}</tbody></table>` : `<p class="sub" style="margin:0">None.</p>`}
-    <h3>Fingerprint</h3>
-    <p class="sub" style="margin:0 0 6px">Compared with baseline <span class="mono">${esc(r.drift.baseline || "none")}</span>. Red: critical field changed without being declared. Amber: environment differs.</p>
-    <table class="kv small"><tbody>${fpRows}</tbody></table>
-    <h3>Decision record</h3>
-    <pre class="record">${esc(JSON.stringify(record, null, 2))}</pre>`;
-  document.querySelectorAll("#panel button[data-ticket]").forEach((b) => b.onclick = () => openTrace(r, b.dataset.ticket, +b.dataset.i));
-  if (state.ticket) {
-    const b = document.querySelector(`#panel button[data-ticket="${CSS.escape(state.ticket)}"]`);
-    if (b) openTrace(r, state.ticket, +b.dataset.i, true);
-  }
-}
-
-async function loadTraces(r) {
-  if (traceCache[r.id]) return traceCache[r.id];
-  const res = await fetch(RAW + encodeURIComponent(r.id) + "/traces.jsonl");
-  if (!res.ok) throw new Error("HTTP " + res.status);
-  const spans = (await res.text()).split("\n").filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
-  return (traceCache[r.id] = spans);
-}
-
-async function openTrace(r, ticket, idx, keepScroll) {
-  state.ticket = ticket; writeHash();
-  document.querySelectorAll("#panel .trace-row").forEach((tr) => { tr.hidden = true; });
-  const row = document.querySelector(`#panel .trace-row[data-for="${CSS.escape(ticket)}"]`);
-  if (!row) return;
-  row.hidden = false;
-  const cell = row.firstElementChild, t = DATA.tickets[ticket] || {};
-  const head = `<p class="ticket"><b>${esc(ticket)}</b> · order ${esc(t.order)} · expected <b>${esc(t.expected)}</b><br>“${esc(t.text)}”</p>`;
-  if (!r.has_traces) { cell.innerHTML = `<div class="trace">${head}<p class="err">This run has no traces (they were lost before upload).</p></div>`; return; }
-  cell.innerHTML = `<div class="trace">${head}<p class="sub">Loading trace…</p></div>`;
-  try {
-    const spans = (await loadTraces(r)).filter((s) => s.attributes["eval.item_index"] === idx && s.name !== "eval.item")
-      .sort((a, b) => a.start - b.start);
-    const t0 = spans.length ? spans[0].start : 0;
-    const line = (s) => {
-      const a = s.attributes, err = s.status === "ERROR";
-      const what = s.name === "jev.call" ? `Jev ${a["gen_ai.operation.name"]} (${a["eval.role"]})` : s.name.replace("tool.", "tool ");
-      const detail = [a["http.response.status_code"] && "HTTP " + a["http.response.status_code"], a["jev.attempts"] > 1 && a["jev.attempts"] + " attempts",
-        a["tool.arg.order_id"] && "order " + a["tool.arg.order_id"], a["tool.arg.sku"] && a["tool.arg.sku"], a["jev.parse_ok"] === false && "unparseable answer"].filter(Boolean).join(", ");
-      return `<tr><td class="num mono">+${((s.start - t0) / 1e6).toFixed(0)} ms</td><td>${esc(what)}</td>
-        <td>${err ? `<span class="err">✕ ${esc(a["error.type"] || "error")}</span>` : `<span class="ok">✓</span>`}</td><td class="sub">${esc(detail)}</td>
-        <td class="num mono">${((s.end - s.start) / 1e6).toFixed(0)} ms</td></tr>`;
-    };
-    cell.innerHTML = `<div class="trace">${head}
-      <table class="small"><thead><tr><th class="num">At</th><th>Span</th><th>Status</th><th>Detail</th><th class="num">Took</th></tr></thead>
-      <tbody>${spans.map(line).join("") || `<tr><td colspan="5" class="sub">No spans for this ticket.</td></tr>`}</tbody></table>
-      <p class="sub" style="margin:6px 0 0"><a href="${RAW + encodeURIComponent(r.id)}/traces.jsonl" target="_blank" rel="noopener">Raw traces for this run</a></p></div>`;
-    if (!keepScroll) row.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  } catch (e) {
-    cell.innerHTML = `<div class="trace">${head}<p class="err">Could not load the trace (${esc(e.message)}).</p></div>`;
-  }
+    <div class="banner ${r.decision}"><div class="big">${DEC[r.decision]}</div><div class="what">${esc(r.c.name)}</div><div class="sub" style="color:var(--text)">${esc(r.c.what)}</div><div class="sub" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center">Tested ${esc(tested(r.runs))} · ${r.runs.length} runs · <span class="fp">fingerprint ${esc(fingerprintOf(r.runs).slice(0, 8))}</span> vs current <span class="fp">${esc(BASE.fp.slice(0, 8))}</span> ${changes(r.runs)}</div><div class="why">${esc(r.headline)}</div></div>
+    <div class="inner">
+      <h3 style="margin-top:2px">Release checklist</h3>
+      <ul class="checks">${r.checks.map(([s, t, d]) => `<li><span class="ic ${s}">${icon[s]}</span><span><b>${esc(t)}</b><br><span class="d">${esc(d)}</span></span></li>`).join("")}</ul>
+      <h3>Accuracy</h3>${accBar(r)}
+      ${flips}${kinds}${runs}
+      <div style="margin-top:14px"><button class="btn" id="copy">Copy release note</button><span class="sub" id="copied" style="margin-left:8px"></span></div>
+    </div>`;
+  $("copy").onclick = async () => {
+    const t = [`Release check: ${r.c.name}`, `Decision: ${DEC[r.decision].slice(2)}`, `Why: ${r.headline}`,
+      r.decision === "block" ? `Accuracy: not evaluated (runs failed validity checks)` : `Accuracy: ${pct(r.p.mean)} vs ${pct(BASE.mean)} current (${pts(r.diff)}; noise allows ${(r.tol * 100).toFixed(1)} pts)`,
+      `Next: ${r.next}`, `Runs: ${r.runs.map(runLabel).join(", ")}`, `Link: ${location.href.split("#")[0]}#${r.c.key}`].join("\n");
+    try { await navigator.clipboard.writeText(t); $("copied").textContent = "Copied."; } catch { $("copied").innerHTML = `<pre class="copytext">${esc(t)}</pre>`; }
+  };
 }
 
 async function init() {
-  readHash();
-  try {
-    DATA = await (await fetch("index.json")).json();
-  } catch (e) {
-    $("rows").innerHTML = `<tr><td colspan="6" class="err">Could not load index.json.</td></tr>`;
-    return;
+  for (const src of ["index.json", "https://bfalkowski.github.io/review/index.json", "https://raw.githubusercontent.com/bfalkowski/bfalkowski.github.io/main/review/index.json"]) {
+    try { const res = await fetch(src); if (res.ok) { DATA = await res.json(); break; } } catch (e) { /* next */ }
   }
-  const batches = [...new Set(DATA.runs.map((r) => r.batch))].sort();
-  $("f-batch").innerHTML += batches.map((b) => `<option>${esc(b)}</option>`).join("");
-  $("f-batch").onchange = (e) => { state.batch = e.target.value; renderRows(); };
-  $("f-q").oninput = (e) => { state.q = e.target.value.trim(); renderRows(); };
-  $("f-labels").onchange = (e) => { state.labels = e.target.checked; renderRows(); renderPanel(); };
-  renderCounts(); renderRows(); renderPanel();
-  const sel = document.querySelector(`#rows tr[aria-selected="true"]`);
-  if (sel) sel.scrollIntoView({ block: "center" });
+  if (!DATA) { $("baseline").innerHTML = `<span style="color:var(--bad)">Could not load the run index. Open this page from the site, or serve the folder with a local web server.</span>`; return; }
+  const base = DATA.runs.filter((r) => BASE_IDS.includes(r.id));
+  BASE = profile(base); BASE.sd = sd(BASE.acc); BASE.fp = fingerprintOf(base);
+  RESULTS = CANDIDATES.map(evaluate).sort((a, b) => (b.runs[0]?.created_at || "").localeCompare(a.runs[0]?.created_at || ""));
+  state.cand = location.hash.slice(1) || "control";
+  renderBaseline(); renderCands(); renderPanel();
 }
-window.addEventListener("hashchange", () => { readHash(); renderRows(); renderPanel(); });
 init();
 </script>
 </body>

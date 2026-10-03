@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Bryan Falkowski">
+  <meta name="description" content="A run dashboard for the eval behind 'Is This Run Valid?': for each run, did it pass the validity checks, and did its score move outside the normal range?">
+  <title>Can I Trust This Run? | Bryan Falkowski</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root { --text: #2c2c2c; --muted: #666; --line: #e0e0e0; --alt-bg: #fafafa; --accent: #1d3f72; --accent-bg: #eef3fb;
+            --bad: #8f2f20; --bad-bg: #fbe9e6; --warn: #7a5300; --warn-bg: #fdf3dd; --good: #1f5e3a; --good-bg: #e7f4ec; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #fff; color: var(--text); font: 15px/1.5 "Source Sans 3", "Source Sans Pro", sans-serif; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code, .mono { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 12.5px; }
+    button { font: inherit; }
+    .topbar { border-bottom: 1px solid var(--line); padding: 14px 24px; display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
+    .topbar a.home { color: var(--text); font-weight: 600; }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 28px; margin: 0 0 6px; font-weight: 600; }
+    h2.sec { font-size: 15px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 26px 0 10px; font-weight: 700; }
+    .intro { color: var(--muted); max-width: 860px; margin: 0 0 8px; }
+    .muted { color: var(--muted); }
+    .sub { color: var(--muted); font-size: 13px; }
+
+    /* Start here */
+    .scenarios { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+    .scn { text-align: left; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; }
+    .scn:hover { border-color: var(--accent); }
+    .scn[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+    .scn .q { font-weight: 600; line-height: 1.3; }
+    .scn .s { font-size: 13px; color: var(--muted); }
+
+    /* Grid */
+    .grid-wrap { overflow-x: auto; }
+    .grid { display: grid; grid-template-columns: 150px repeat(4, minmax(150px, 1fr)); gap: 6px; min-width: 780px; }
+    .gh { font-size: 13px; color: var(--muted); font-weight: 600; padding: 4px 6px; align-self: end; }
+    .gh small { display: block; font-weight: 400; }
+    .rowh { display: flex; flex-direction: column; justify-content: center; padding: 8px 10px; border-radius: 8px; font-weight: 700; font-size: 14px; }
+    .rowh small { font-weight: 400; font-size: 12.5px; }
+    .rowh.pass { background: var(--good-bg); color: var(--good); }
+    .rowh.caveat { background: var(--warn-bg); color: var(--warn); }
+    .rowh.fail { background: var(--bad-bg); color: var(--bad); }
+    .cell { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; text-align: left; background: #fff; cursor: pointer; min-height: 74px; display: flex; flex-direction: column; gap: 2px; }
+    .cell:hover:not([disabled]) { border-color: var(--accent); }
+    .cell[disabled] { cursor: default; background: var(--alt-bg); color: #aaa; }
+    .cell[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
+    .cell .n { font-size: 22px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .cell .act { font-size: 12.5px; color: var(--muted); line-height: 1.3; }
+    .cell.hot { background: var(--accent-bg); }
+    .grid-note { font-size: 13px; color: var(--muted); margin: 8px 0 0; max-width: 900px; }
+
+    /* Filters, list, detail */
+    .filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin: 22px 0 10px; }
+    .filters select, .filters input[type=search] { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+    .filters label { color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .pill { display: inline-flex; gap: 6px; align-items: center; background: var(--accent-bg); color: var(--accent); border-radius: 14px; padding: 2px 6px 2px 12px; font-size: 13px; font-weight: 600; }
+    .pill button { border: none; background: none; color: var(--accent); cursor: pointer; font-size: 15px; line-height: 1; padding: 0 4px; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 20px; align-items: start; }
+    @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } }
+    .list { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    .list-scroll { max-height: 80vh; overflow: auto; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    thead th { position: sticky; top: 0; background: var(--accent); color: #fff; font-weight: 600; font-size: 13px; z-index: 1; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    #rows tr { cursor: pointer; }
+    #rows tr:hover { background: #f4f7fc; }
+    #rows tr[aria-selected="true"] { background: #e8eef9; }
+    #rows tr:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .status { display: inline-flex; align-items: center; gap: 5px; border-radius: 12px; padding: 1px 9px 1px 7px; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+    .status.pass { background: var(--good-bg); color: var(--good); }
+    .status.caveat { background: var(--warn-bg); color: var(--warn); }
+    .status.fail { background: var(--bad-bg); color: var(--bad); }
+    .move { font-size: 12.5px; white-space: nowrap; }
+    .runname { font-weight: 600; }
+    .chip { display: inline-block; border-radius: 10px; padding: 0 8px; font-size: 12px; font-weight: 600; }
+    .chip.new { background: var(--bad-bg); color: var(--bad); }
+    .chip.fixed { background: var(--good-bg); color: var(--good); }
+    .chip.same { background: #eef1f6; color: #33415c; font-weight: 500; }
+    .chip.label { background: #f2ecfa; color: #4a3a87; font-weight: 500; }
+
+    .panel { border: 1px solid var(--line); border-radius: 8px; padding: 0; position: sticky; top: 12px; max-height: 94vh; overflow: auto; }
+    .panel .inner { padding: 16px 18px 20px; }
+    .empty { color: var(--muted); padding: 40px 18px; text-align: center; }
+    .banner { padding: 14px 18px; border-bottom: 1px solid var(--line); }
+    .banner.pass { background: var(--good-bg); color: var(--good); }
+    .banner.caveat { background: var(--warn-bg); color: var(--warn); }
+    .banner.fail { background: var(--bad-bg); color: var(--bad); }
+    .banner .big { font-size: 21px; font-weight: 700; line-height: 1.2; }
+    .banner .why { color: var(--text); margin-top: 4px; }
+    .banner .meta { font-size: 13px; color: var(--muted); margin-top: 6px; }
+    .panel h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 20px 0 8px; }
+    .next { border-left: 3px solid var(--accent); background: var(--accent-bg); padding: 10px 12px; border-radius: 0 6px 6px 0; }
+    .next ul { margin: 0; padding-left: 18px; }
+    .next li { margin-bottom: 4px; }
+    .next .owner { color: var(--muted); font-size: 13px; }
+    .bar { position: relative; height: 34px; margin: 18px 0 4px; }
+    .bar .track { position: absolute; left: 0; right: 0; top: 15px; height: 4px; background: #e6e6e6; border-radius: 2px; }
+    .bar .band { position: absolute; top: 9px; height: 16px; background: #dbe6f6; border-radius: 3px; }
+    .bar .dot { position: absolute; top: 9px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--accent); background: var(--accent); }
+    .bar .dot.hollow { background: #fff; box-shadow: 0 0 0 2px #999; }
+    .bar .lbl { position: absolute; top: -14px; font-size: 12px; transform: translateX(-50%); white-space: nowrap; font-weight: 600; }
+    .axis { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+    .scoreline { margin: 6px 0 0; }
+    .checks { list-style: none; padding: 0; margin: 0; }
+    .checks li { display: grid; grid-template-columns: 22px 1fr; gap: 6px; padding: 5px 0; border-bottom: 1px solid #f0f0f0; }
+    .checks li:last-child { border-bottom: none; }
+    .ic { font-weight: 700; text-align: center; }
+    .ic.ok { color: var(--good); } .ic.no { color: var(--bad); } .ic.warn { color: var(--warn); } .ic.na { color: #aaa; }
+    .checks .d { font-size: 13px; color: var(--muted); }
+    .notcovered { font-size: 13px; color: var(--muted); background: var(--alt-bg); border: 1px dashed var(--line); border-radius: 6px; padding: 8px 10px; margin-top: 10px; }
+    .tk th, .tk td { font-size: 13.5px; padding: 6px 8px; }
+    .tk thead th { position: static; background: var(--alt-bg); color: var(--text); }
+    .tk tbody tr.trow { cursor: pointer; }
+    .tk tbody tr.trow:hover { background: #f4f7fc; }
+    .tk .txt { color: var(--muted); font-size: 13px; }
+    .detail-row td { background: var(--alt-bg); }
+    .kv { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; font-size: 13.5px; margin: 4px 0 8px; }
+    .kv dt { color: var(--muted); } .kv dd { margin: 0; }
+    details.tech { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 10px; }
+    details.tech summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+    details summary.small { font-size: 13px; color: var(--accent); cursor: pointer; }
+    .spans th, .spans td { font-size: 12.5px; padding: 4px 6px; }
+    .spans thead th { position: static; background: #fff; color: var(--muted); }
+    .err { color: var(--bad); font-weight: 600; }
+    .ok { color: var(--good); }
+    .btn { border: 1px solid var(--accent); color: var(--accent); background: #fff; border-radius: 6px; padding: 5px 12px; cursor: pointer; font-weight: 600; }
+    .btn:hover { background: var(--accent-bg); }
+    .actions { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+    pre.copytext { white-space: pre-wrap; background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; font-size: 12.5px; margin: 8px 0 0; }
+    .chart-wrap { position: relative; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px 6px; }
+    #chart svg { display: block; width: 100%; min-width: 760px; height: auto; }
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin: 0 0 4px; }
+    .legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .tip { position: absolute; pointer-events: none; background: #fff; border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,.12); padding: 7px 10px; font-size: 13px; line-height: 1.4; max-width: 280px; z-index: 5; }
+    .pt { cursor: pointer; }
+    footer { text-align: center; color: var(--muted); font-size: 14px; padding: 28px; border-top: 1px solid var(--line); margin-top: 30px; }
+    @media (max-width: 720px) { .wrap { padding: 16px; } .topbar { padding: 12px 16px; } .hide-sm { display: none; } .panel { position: static; max-height: none; } }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <a class="home" href="../">Bryan Falkowski</a>
+    <span><a href="./">Release check</a> · <a href="engineer.html">Engineer view</a> · <a href="../writing/run-valid.html">Paper</a></span>
+  </div>
+  <div class="wrap">
+    <h1>Can I trust this eval run?</h1>
+    <p class="intro">A dashboard over the <span id="n-runs">285</span> runs of the support-agent eval in <a href="../writing/run-valid.html">Is This Run Valid?</a>. Every run gets two answers: did it pass the validity checks, and did its score move outside the normal range? A failed check comes with evidence. A passed check means no known problem was found, not that the run is proven good.</p>
+
+    <h2 class="sec">Start here</h2>
+    <div class="scenarios" id="scenarios"></div>
+
+    <h2 class="sec">All runs at a glance</h2>
+    <div class="grid-wrap"><div class="grid" id="grid" role="group" aria-label="Runs by check result and score movement"></div></div>
+    <p class="grid-note">Normal range: 78.6% to 87.4%, the mean of ten clean runs plus or minus two standard deviations. One ticket is 1.67 points, so a swing of two or three tickets between clean runs is normal. For runs that passed or passed with caveats, the score is the one that would be published (excluded tickets left out). For failed runs, it is the plain score a dashboard without checks would have shown.</p>
+
+    <h2 class="sec">Over time</h2>
+    <div class="chart-wrap" id="chartwrap">
+      <div class="legend" aria-hidden="true">
+        <span><svg width="12" height="12"><circle cx="6" cy="6" r="4.5" fill="#1f5e3a"/></svg>Passed</span>
+        <span><svg width="12" height="12"><rect x="2" y="2" width="8" height="8" transform="rotate(45 6 6)" fill="#c08a00"/></svg>Passed with caveats</span>
+        <span><svg width="12" height="12"><path d="M2,2L10,10M10,2L2,10" stroke="#b5452f" stroke-width="2.2"/></svg>Failed a check</span>
+        <span><svg width="12" height="12"><circle cx="6" cy="6" r="4.5" fill="#1d3f72"/></svg>Published score</span>
+        <span><svg width="22" height="12"><rect x="0" y="2" width="22" height="8" fill="#dbe6f6"/></svg>Normal range</span>
+      </div>
+      <div id="chart"></div>
+      <div class="tip" id="tip" hidden></div>
+    </div>
+    <p class="grid-note">Runs in the order they started, all on October 2, 2026, between 13:15 and 15:02 UTC. Many ran in parallel, so the axis is run order, not clock time. Faults were grouped by batch for the study, so this is a replay of the experiment, not a product's history. Hover a point for details; click it to open the run.</p>
+
+    <div class="filters">
+      <span id="cellpill"></span>
+      <label>Batch <select id="f-batch"><option value="">All</option></select></label>
+      <input type="search" id="f-q" placeholder="Find a run or ticket" aria-label="Find a run or ticket">
+      <label>Sort <select id="f-sort"><option value="urgent">Most urgent first</option><option value="new">Newest first</option><option value="old">Oldest first</option></select></label>
+      <label><input type="checkbox" id="f-labels"> Show what was injected</label>
+      <span class="sub" id="shown"></span>
+    </div>
+
+    <div class="layout">
+      <div class="list">
+        <div class="list-scroll">
+          <table aria-label="Runs">
+            <thead><tr><th>Can I use it?</th><th>Run</th><th class="num">Score</th><th class="hide-sm">vs normal</th><th class="hide-sm">Main issue</th><th class="hide-sm">Started</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </div>
+      <aside class="panel" id="panel" aria-live="polite"><p class="empty">Pick a scenario above, a cell in the grid, or a run in the list.</p></aside>
+    </div>
+  </div>
+  <footer>Data: <a href="https://github.com/bfalkowski/eval-run-validity/tree/data">eval-run-validity, data branch</a> · One run on the first, easier dataset is left out · <a href="./">Release check</a> · <a href="engineer.html">Engineer view</a> · <a href="../">Home</a></footer>
+
+<script>
+const RAW = "https://raw.githubusercontent.com/bfalkowski/eval-run-validity/data/runs/";
+const TREE = "https://github.com/bfalkowski/eval-run-validity/tree/data/runs/";
+const LO = 0.786, HI = 0.874, MEAN = 0.83, BASELINE = "gh37012503737-v2-clean-loud-none";
+
+const ROWS = [
+  { k: "pass", v: "valid", label: "Passed all checks", sub: "Score can be used" },
+  { k: "caveat", v: "degraded", label: "Passed with caveats", sub: "Score usable, read the notes" },
+  { k: "fail", v: "invalid", label: "Failed a check", sub: "Don't read the score" },
+];
+const COLS = [
+  { k: "none", label: "No score", sub: "stopped before scoring" },
+  { k: "below", label: "Below normal", sub: "under 78.6%" },
+  { k: "inside", label: "Normal range", sub: "78.6% to 87.4%" },
+  { k: "above", label: "Above normal", sub: "over 87.4%" },
+];
+const ACTION = {
+  "pass:inside": "No change. Nothing to do.",
+  "pass:below": "Real drop. Review the model's misses.",
+  "pass:above": "Possible gain. Confirm on a rerun.",
+  "caveat:inside": "Probably no change. Check what was left out.",
+  "caveat:below": "Possible drop. Confirm on a rerun.",
+  "caveat:above": "Possible gain. Confirm on a rerun.",
+  "fail:none": "Stopped at setup. Fix and rerun.",
+  "fail:below": "Looks like a drop, but can't be trusted. Fix and rerun.",
+  "fail:inside": "Looks normal, but can't be trusted. Fix and rerun.",
+  "fail:above": "Looks like a gain, but can't be trusted. Fix and rerun.",
+};
+const STATUS = { pass: "Use this score", caveat: "Use with caveats", fail: "Don't use this score" };
+const ICON = { pass: "✓", caveat: "!", fail: "✕" };
+
+const CAUSE = {
+  infrastructure: { name: "Service errors", plain: "the AI model or a tool failed to respond", next: "Rerun. If it happens again, check the model provider's status and the tool service.", owner: "Platform or on-call" },
+  config_drift: { name: "Undeclared change", plain: "settings changed since the baseline", next: "Ask who changed it. If the change was intended, declare it and set a new baseline; if not, revert and rerun.", owner: "Eval author" },
+  judge_failure: { name: "Judge problems", plain: "the judge gave unusable or inconsistent answers", next: "Use the agent's score. Don't rely on the judge score for this run.", owner: "Eval engineer" },
+  task_defect: { name: "Bad test data", plain: "a ticket or its order record is wrong", next: "Fix the ticket or its order record in the dataset, then rerun.", owner: "Dataset owner" },
+  harness_bug: { name: "Scoring bug", plain: "the scoring code judged the ticket wrongly", next: "Fix the scoring code, then rerun.", owner: "Eval engineer" },
+  model_failure: { name: "Model miss", plain: "the model chose the wrong action" },
+};
+const FIELD = { policy_hash: "the policy prompt", agent_code_hash: "the agent code", context_fields: "the information sent to the model",
+  decision_instructions_hash: "the model's instructions", judge_instructions_hash: "the judge's instructions", dataset_hash: "the test tickets",
+  scorer_code_hash: "the scoring code", model: "the model", packages: "package versions", python_version: "the Python version", lockfile_hash: "the dependency lockfile" };
+
+const SCENARIOS = [
+  { id: "gh37014038090-v2-clean-loud-none-r1", q: "A normal run", s: "What a run with nothing wrong looks like." },
+  { id: "gh37023643915-v2-clean-loud-wrong_commit-r1", q: "The score went up 7 points. Ship it?", s: "Higher than any clean run." },
+  { id: "gh37022301998-v2-tool_500_05-silent-none-r2", q: "The score looks normal. Anything wrong?", s: "80%, right in the normal range." },
+  { id: "gh37014574123-v2-tool_500_25-loud-none-r1", q: "The score fell 45 points. Did the model break?", s: "A drop that would page someone." },
+  { id: "gh37014574123-v2-control-loud-none-r1", q: "The score dropped 5 points after a change", s: "A change someone made on purpose." },
+  { id: "gh37014574123-v2-judge_flip_25-loud-none-r1", q: "The judge score is missing", s: "But the agent score looks fine." },
+];
+
+let DATA = null, RUNS = [], BASEMISS = new Set();
+let state = { cell: "", batch: "", q: "", labels: false, sort: "urgent", run: null, ticket: null };
+const byStart = (a, b) => (a.created_at || "").localeCompare(b.created_at || "") || a.id.localeCompare(b.id);
+const hhmm = (r) => (r.created_at || "").slice(11, 19);
+const traceCache = {};
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const pct = (x) => x == null ? "–" : (100 * x).toFixed(1) + "%";
+const rowOf = (r) => r.verdict === "valid" ? "pass" : r.verdict === "degraded" ? "caveat" : "fail";
+const shownScore = (r) => r.verdict === "invalid" ? r.naive : r.valid_items;
+function colOf(r) { const s = shownScore(r); return s == null ? "none" : s < LO ? "below" : s > HI ? "above" : "inside"; }
+function runName(r) {
+  const m = r.id.match(/^gh(\d+)-.*?(?:-(r\d+))?(-cf-[a-z_]+)?$/);
+  const rep = (r.id.match(/-(r\d+)(?:-cf-|$)/) || [])[1];
+  return `Run ${m ? m[1].slice(-5) : r.id}${rep ? " · " + rep : ""}${r.id.includes("-cf-") ? " · re-collected" : ""}`;
+}
+const statusChip = (k) => `<span class="status ${k}"><span aria-hidden="true">${ICON[k]}</span>${STATUS[k]}</span>`;
+function moveText(r) {
+  const s = shownScore(r); if (s == null) return `<span class="sub">no score</span>`;
+  const d = (s - MEAN) * 100, c = colOf(r);
+  const arrow = c === "below" ? "▼" : c === "above" ? "▲" : "●";
+  return `<span class="move" style="color:${c === "inside" ? "var(--muted)" : rowOf(r) === "fail" ? "#999" : "var(--text)"}">${arrow} ${d >= 0 ? "+" : ""}${d.toFixed(1)} pts</span>`;
+}
+const fieldsIn = (s) => (s.match(/\[(.*)\]/) || [, ""])[1].split(",").map((x) => x.trim().replace(/'/g, "")).filter(Boolean);
+const listJoin = (a) => a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
+
+// One plain sentence per gate reason.
+function plainReason(x, r) {
+  const s = x.replace(/^(invalid|degraded): /, "");
+  let m;
+  if (s.startsWith("preflight failed: jev_canary")) return "The setup check could not reach the AI model, so the run stopped before scoring anything.";
+  if (s.startsWith("preflight failed: scorer_canary")) return "The setup check found the scoring code getting known answers wrong, so the run stopped before scoring anything.";
+  if (s.startsWith("preflight failed")) return "A setup check failed, so the run stopped before scoring anything.";
+  if (s.startsWith("undeclared change")) return `Since the baseline, ${listJoin(fieldsIn(s).map((f) => FIELD[f] || f))} changed, and nobody declared the change.`;
+  if (s.startsWith("environment differs")) return `The software environment differs from the baseline (${listJoin(fieldsIn(s).map((f) => FIELD[f] || f))}). The run is usable, but environment changes can move scores.`;
+  if (s.startsWith("dataset differs")) return "The test tickets are not the same as the baseline's: at least one ticket is duplicated.";
+  if (s.startsWith("the same item appears more than once")) return "Results were collected wrong: some tickets are counted more than once.";
+  if (s.startsWith("results from another run")) return "Results were collected wrong: tickets from another run are mixed in.";
+  if ((m = s.match(/partial run: (\d+) of (\d+)/))) return `The run stopped early. Only ${m[1]} of ${m[2]} tickets finished.`;
+  if (s.startsWith("no traces")) return "The run's records of what happened were lost, so nothing in it can be checked.";
+  if ((m = s.match(/(\d+) of (\d+) items excluded \((\d+)%\)/))) {
+    const cs = Object.entries(r.categories).filter(([k]) => k !== "model_failure" && k !== "ok").sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} ${CAUSE[k] ? CAUSE[k].name.toLowerCase() : k}`);
+    return `${m[1]} of ${m[2]} tickets (${m[3]}%) failed for reasons that are not the model's fault${cs.length ? " (" + listJoin(cs) + ")" : ""}${x.startsWith("invalid") ? ". That is too many to publish a score." : ", so they are left out of the score."}`;
+  }
+  if ((m = s.match(/judge score withheld: (\d+)%/))) return `The judge was unreliable on ${m[1]}% of tickets, so the judge score is withheld. The agent's score does not depend on the judge.`;
+  return s;
+}
+
+function headline(r) {
+  if (r.verdict === "valid") {
+    const decl = (r.fingerprint.declared_changes || []).map((f) => FIELD[f] || f);
+    const d = decl.length ? ` The run includes a declared change to ${listJoin(decl)}.` : "";
+    return "No problem found in the run." + d + (colOf(r) === "below" ? " The drop is real." : colOf(r) === "above" ? " The gain may be chance: one clean run in ten lands here." : "");
+  }
+  const main = r.reasons.find((x) => x.startsWith("invalid")) || r.reasons[0];
+  return plainReason(main, r);
+}
+function mainIssue(r) {
+  if (!r.reasons.length) return r.fingerprint.declared_changes?.length ? "Declared change: " + r.fingerprint.declared_changes.map((f) => FIELD[f] || f).join(", ") : "None";
+  const s = (r.reasons.find((x) => x.startsWith("invalid")) || r.reasons[0]).replace(/^(invalid|degraded): /, "");
+  if (s.startsWith("preflight failed")) return "Setup check failed";
+  if (s.startsWith("undeclared change")) return "Undeclared change: " + fieldsIn(s).map((f) => FIELD[f] || f).join(", ");
+  if (s.startsWith("environment differs")) return "Environment differs";
+  if (s.startsWith("dataset differs")) return "Test tickets changed";
+  if (s.startsWith("the same item") || s.startsWith("results from another")) return "Results collected wrong";
+  if (s.startsWith("partial run")) return "Run stopped early";
+  if (s.startsWith("no traces")) return "Run records lost";
+  if (s.includes("items excluded")) {
+    const top = Object.entries(r.categories).filter(([k]) => k !== "model_failure" && k !== "ok").sort((a, b) => b[1] - a[1])[0];
+    return (s.match(/\d+ of \d+/) || [""])[0] + " tickets left out" + (top ? ": " + CAUSE[top[0]].name.toLowerCase() : "");
+  }
+  if (s.startsWith("judge score withheld")) return "Judge unreliable";
+  return s;
+}
+
+// What to do next, by what went wrong.
+function nextSteps(r) {
+  const steps = [], seen = new Set();
+  const add = (text, owner) => { if (!seen.has(text)) { seen.add(text); steps.push({ text, owner }); } };
+  const reasons = r.reasons.map((x) => x.replace(/^(invalid|degraded): /, ""));
+  for (const s of reasons) {
+    if (s.startsWith("preflight failed: jev_canary")) add("Wait for the AI model to be reachable again, then rerun. Nothing was spent on this run.", "Platform or on-call");
+    else if (s.startsWith("preflight failed")) add("Fix the scoring code so it passes its known-answer cases, then rerun.", "Eval engineer");
+    else if (s.startsWith("undeclared change")) add(CAUSE.config_drift.next, CAUSE.config_drift.owner);
+    else if (s.startsWith("environment differs")) add("Pin the environment to the lockfile, or declare the change. Rerun before comparing small differences.", "CI owner");
+    else if (s.startsWith("dataset differs")) add(CAUSE.task_defect.next, CAUSE.task_defect.owner);
+    else if (s.startsWith("the same item") || s.startsWith("results from another")) add("Re-collect the results from the original run. The run itself may be fine.", "CI owner");
+    else if (s.startsWith("partial run")) add("Rerun the job. Check why it stopped: a killed runner or a timeout.", "CI owner");
+    else if (s.startsWith("no traces")) add("Rerun the job and check the artifact upload step.", "CI owner");
+    else if (s.startsWith("judge score withheld") && r.verdict !== "invalid") add(CAUSE.judge_failure.next, CAUSE.judge_failure.owner);
+  }
+  Object.entries(r.categories).filter(([k]) => CAUSE[k]?.next && !(k === "judge_failure" && r.verdict === "invalid") && !(k === "config_drift" && seen.has(CAUSE.config_drift.next))).sort((a, b) => b[1] - a[1]).forEach(([k]) => add(CAUSE[k].next, CAUSE[k].owner));
+  if (!steps.length) {
+    const c = colOf(r);
+    if (c === "below") add("The run is clean and the score is below normal. Review the model's misses below; this is a real change in behavior.", "Product owner");
+    else if (c === "above") add("Clean runs occasionally land here by chance. Confirm with a rerun before announcing a gain.", "Product owner");
+    else add("Nothing. The score can be compared with other runs that passed.", "");
+  }
+  return steps;
+}
+
+function checklist(r) {
+  const R = r.reasons.map((x) => x.replace(/^(invalid|degraded): /, "")), has = (p) => R.find((s) => s.startsWith(p));
+  const stopped = !!has("preflight failed");
+  const out = [];
+  out.push(stopped ? ["no", "Setup checks passed", plainReason(has("preflight failed"), r)] : ["ok", "Setup checks passed", "The model, judge and scorer answered known questions correctly; the data files match."]);
+  if (stopped) { out.push(["na", "Everything else", "Not checked: the run stopped at setup."]); return out; }
+  const und = has("undeclared change") || has("dataset differs"), env = has("environment differs");
+  const decl = r.fingerprint.declared_changes || [];
+  out.push(und ? ["no", "Same settings as the baseline", plainReason(und, r)] : env ? ["warn", "Same settings as the baseline", plainReason(env, r)]
+    : ["ok", "Same settings as the baseline", decl.length ? `Declared change: ${listJoin(decl.map((f) => FIELD[f] || f))}. A declared change is allowed; the score reflects it.` : "Prompt, code, data and model name match the baseline."]);
+  const integ = has("partial run") || has("the same item") || has("results from another") || has("no traces");
+  out.push(integ ? ["no", "Every ticket finished, once, from this run", plainReason(integ, r)] : ["ok", "Every ticket finished, once, from this run", `${r.completed} of ${r.planned} tickets.`]);
+  if (!r.has_traces) out.push(["na", "Every ticket got an answer from the model", "Can't be checked without the run's records."]);
+  else out.push(r.missed.length ? ["no", "Every ticket got an answer from the model", `${r.missed.length} tickets never got a successful answer from the model. Their results are the agent's fallback, not the model's decision.`] : ["ok", "Every ticket got an answer from the model", "Every ticket has a successful model call."]);
+  const jw = has("judge score withheld");
+  out.push(jw ? ["warn", "The judge worked", plainReason(jw, r)] : ["ok", "The judge worked", "Judge answers were usable on enough tickets to report a judge score."]);
+  const ex = r.excluded_rate || 0, n = Math.round(ex * (r.completed || 60));
+  if (und) { out.push(["na", "Few tickets left out", "Not meaningful here: with an undeclared change, every miss is blamed on the change, not the model."]); return out; }
+  out.push([ex > 0.15 ? "no" : ex > 0.02 ? "warn" : "ok", "Few tickets left out", `${n} of ${r.completed} tickets left out (${(ex * 100).toFixed(0)}%). Up to 2% is fine; over 15% means no score.`]);
+  return out;
+}
+
+function renderScenarios() {
+  $("scenarios").innerHTML = SCENARIOS.filter((s) => RUNS.find((r) => r.id === s.id)).map((s) => {
+    const r = RUNS.find((x) => x.id === s.id);
+    return `<button class="scn" data-id="${esc(s.id)}" aria-pressed="${state.run === s.id}"><span class="q">${esc(s.q)}</span><span class="s">${esc(s.s)}</span><span>${statusChip(rowOf(r))}</span></button>`;
+  }).join("");
+  document.querySelectorAll(".scn").forEach((b) => b.onclick = () => openRun(b.dataset.id, true));
+}
+
+function renderGrid() {
+  const count = {};
+  RUNS.forEach((r) => { const k = rowOf(r) + ":" + colOf(r); count[k] = (count[k] || 0) + 1; });
+  let h = `<div></div>` + COLS.map((c) => `<div class="gh">${c.label}<small>${c.sub}</small></div>`).join("");
+  for (const row of ROWS) {
+    h += `<div class="rowh ${row.k}"><span>${ICON[row.k]} ${row.label}</span><small>${row.sub}</small></div>`;
+    for (const col of COLS) {
+      const key = row.k + ":" + col.k, n = count[key] || 0, act = ACTION[key];
+      h += n || act ? `<button class="cell${row.k === "pass" && col.k === "below" ? " hot" : ""}" data-cell="${key}" aria-pressed="${state.cell === key}" ${n ? "" : "disabled"}><span class="n">${n}</span><span class="act">${n ? esc(act || "") : "No runs"}</span></button>`
+        : `<div class="cell" aria-hidden="true" style="visibility:hidden"></div>`;
+    }
+  }
+  $("grid").innerHTML = h;
+  document.querySelectorAll(".cell[data-cell]").forEach((b) => b.onclick = () => { state.cell = state.cell === b.dataset.cell ? "" : b.dataset.cell; renderGrid(); renderRows(); });
+}
+
+function renderChart() {
+  const runs = [...RUNS].sort(byStart), N = runs.length;
+  const W = 1200, L = 44, Rr = 10, PH = 170, GAP = 50, T = 50;
+  const xs = (i) => L + (i + 0.5) * (W - L - Rr) / N;
+  const panels = [{ y0: T, title: "What a plain dashboard would show: every run's score" },
+                  { y0: T + PH + GAP, title: "What the checks let through: published scores only" }];
+  const ys = (p, v) => p.y0 + PH - v * PH;
+  const H = T + 2 * PH + GAP + 22;
+  let g = "";
+  // batch separators and labels
+  let prev = null, starts = [];
+  runs.forEach((r, i) => { const b = r.batch === "collect fault" ? "pipeline" : r.batch.startsWith("baseline") ? "baseline" : r.batch; if (b !== prev) { starts.push([i, b]); prev = b; } });
+  starts.forEach(([i, b], k) => {
+    const x = L + i * (W - L - Rr) / N, nx = k + 1 < starts.length ? L + starts[k + 1][0] * (W - L - Rr) / N : W - Rr;
+    if (i) g += `<line x1="${x}" x2="${x}" y1="${T - 24}" y2="${H - 18}" stroke="#d8d8d8" stroke-dasharray="3 3"/>`;
+    if (nx - x > 40) g += `<text x="${(x + nx) / 2}" y="${T - 10}" text-anchor="middle" font-size="12" fill="#666">${esc(b)}</text>`;
+  });
+  for (const p of panels) {
+    g += `<text x="${L}" y="${p.y0 - (p === panels[0] ? -12 : 10)}" font-size="14" font-weight="600" fill="#2c2c2c">${p === panels[0] ? "" : esc(p.title)}</text>`;
+    g += `<rect x="${L}" y="${ys(p, HI)}" width="${W - L - Rr}" height="${ys(p, LO) - ys(p, HI)}" fill="#dbe6f6"/>`;
+    for (const v of [0, 0.25, 0.5, 0.75, 1]) {
+      g += `<line x1="${L}" x2="${W - Rr}" y1="${ys(p, v)}" y2="${ys(p, v)}" stroke="${v ? "#eeeeee" : "#cfcfcf"}"/>`;
+      g += `<text x="${L - 6}" y="${ys(p, v) + 4}" text-anchor="end" font-size="11" fill="#888">${v * 100}%</text>`;
+    }
+  }
+  // panel 1 title sits above the batch labels row
+  g = `<text x="${L}" y="14" font-size="14" font-weight="600" fill="#2c2c2c">${esc(panels[0].title)}</text>` + g;
+  const COL = { pass: "#1f5e3a", caveat: "#c08a00", fail: "#b5452f" };
+  const mark = (k, x, y, sel) => {
+    const ring = sel ? `<circle cx="${x}" cy="${y}" r="8" fill="none" stroke="#1d3f72" stroke-width="2"/>` : "";
+    if (k === "pass") return ring + `<circle cx="${x}" cy="${y}" r="3.6" fill="${COL.pass}" stroke="#fff" stroke-width="1"/>`;
+    if (k === "caveat") return ring + `<rect x="${x - 3.4}" y="${y - 3.4}" width="6.8" height="6.8" transform="rotate(45 ${x} ${y})" fill="${COL.caveat}" stroke="#fff" stroke-width="1"/>`;
+    return ring + `<path d="M${x - 3.4},${y - 3.4}L${x + 3.4},${y + 3.4}M${x + 3.4},${y - 3.4}L${x - 3.4},${y + 3.4}" stroke="${COL.fail}" stroke-width="2"/>`;
+  };
+  let hits = "";
+  runs.forEach((r, i) => {
+    const x = xs(i), k = rowOf(r), sel = r.id === state.run;
+    const p1 = panels[0], p2 = panels[1];
+    if (r.naive != null) g += mark(k, x, ys(p1, r.naive), sel);
+    else g += `<text x="${x}" y="${ys(p1, 0) - 4}" text-anchor="middle" font-size="9" fill="${COL.fail}">✕</text>`;
+    if (k !== "fail" && r.valid_items != null) {
+      g += (sel ? `<circle cx="${x}" cy="${ys(p2, r.valid_items)}" r="8" fill="none" stroke="#1d3f72" stroke-width="2"/>` : "") +
+           `<circle cx="${x}" cy="${ys(p2, r.valid_items)}" r="3.6" fill="#1d3f72" stroke="#fff" stroke-width="1"/>`;
+    } else {
+      g += `<line x1="${x}" x2="${x}" y1="${ys(p2, 0)}" y2="${ys(p2, 0) + 5}" stroke="#c9c9c9" stroke-width="1.5"/>`;
+    }
+    hits += `<rect class="pt" data-id="${esc(r.id)}" x="${x - (W - L - Rr) / N / 2}" y="${T - 4}" width="${(W - L - Rr) / N}" height="${2 * PH + GAP + 8}" fill="transparent"/>`;
+  });
+  const p2 = panels[1];
+  g += `<text x="${W - Rr}" y="${ys(p2, 0) + 18}" text-anchor="end" font-size="11" fill="#888">grey ticks on the baseline: failed runs, no score published</text>`;
+  const failed = runs.filter((r) => rowOf(r) === "fail").length;
+  $("chart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Two strips over ${N} runs in start order. Top: every run's plain score, which swings from 20% to 90%. Bottom: only the ${N - failed} published scores, which stay near the normal range; ${failed} failed runs publish nothing.">${g}<g id="hover"></g>${hits}</svg>`;
+  const tip = $("tip"), wrap = $("chartwrap"), hover = $("chart").querySelector("#hover");
+  $("chart").querySelectorAll(".pt").forEach((el) => {
+    el.addEventListener("mouseenter", (e) => {
+      const r = RUNS.find((x) => x.id === el.dataset.id), k = rowOf(r);
+      const x = +el.getAttribute("x") + +el.getAttribute("width") / 2;
+      hover.innerHTML = `<line x1="${x}" x2="${x}" y1="${T - 4}" y2="${ys(p2, 0)}" stroke="#1d3f72" stroke-width="1" opacity=".5"/>`;
+      tip.innerHTML = `<b>${esc(runName(r))}</b> <span class="sub">${esc(r.batch)}, ${esc(hhmm(r))} UTC</span><br>${statusChip(k)}<br>Plain score ${pct(r.naive)} · Published ${k === "fail" ? "none" : pct(r.valid_items)}<br><span class="sub">${esc(mainIssue(r))}</span>`;
+      tip.hidden = false;
+    });
+    el.addEventListener("mousemove", (e) => {
+      const b = wrap.getBoundingClientRect(), tx = e.clientX - b.left + wrap.scrollLeft;
+      tip.style.left = Math.min(tx + 14, wrap.scrollWidth - 290) + "px"; tip.style.top = (e.clientY - b.top + 14) + "px";
+    });
+    el.addEventListener("mouseleave", () => { tip.hidden = true; hover.innerHTML = ""; });
+    el.addEventListener("click", () => openRun(el.dataset.id, true));
+  });
+}
+
+function filtered() {
+  const q = state.q.toLowerCase();
+  const sev = { fail: 0, caveat: 1, pass: 2 };
+  return RUNS.filter((r) => (!state.cell || rowOf(r) + ":" + colOf(r) === state.cell) && (!state.batch || r.batch === state.batch) &&
+    (!q || r.id.toLowerCase().includes(q) || runName(r).toLowerCase().includes(q) || r.flagged_items.some((f) => f.t.toLowerCase() === q) || r.model_failures.some((f) => f.t.toLowerCase() === q)))
+    .sort(state.sort === "new" ? (a, b) => byStart(b, a) : state.sort === "old" ? byStart
+      : (a, b) => sev[rowOf(a)] - sev[rowOf(b)] || (shownScore(a) ?? -1) - (shownScore(b) ?? -1) || a.id.localeCompare(b.id));
+}
+
+function renderRows() {
+  const rows = filtered();
+  const cell = state.cell.split(":");
+  $("cellpill").innerHTML = state.cell ? `<span class="pill">${ROWS.find((x) => x.k === cell[0]).label} · ${COLS.find((x) => x.k === cell[1]).label}<button aria-label="Clear" id="clearcell">×</button></span>` : "";
+  if (state.cell) $("clearcell").onclick = () => { state.cell = ""; renderGrid(); renderRows(); };
+  $("shown").textContent = `${rows.length} of ${RUNS.length} runs`;
+  $("rows").innerHTML = rows.map((r) => `
+    <tr tabindex="0" data-id="${esc(r.id)}" aria-selected="${r.id === state.run}">
+      <td>${statusChip(rowOf(r))}</td>
+      <td><div class="runname">${esc(runName(r))}</div><div class="sub">${esc(r.batch)}${state.labels && r.experiment.plan ? ` · <span class="chip label">${esc(r.experiment.plan)}${r.experiment.pipeline_fault && r.experiment.pipeline_fault !== "none" ? " + " + esc(r.experiment.pipeline_fault) : ""}</span>` : ""}</div></td>
+      <td class="num" style="${rowOf(r) === "fail" ? "color:#999;text-decoration:line-through" : ""}">${pct(shownScore(r))}</td>
+      <td class="hide-sm">${moveText(r)}</td>
+      <td class="hide-sm sub">${esc(mainIssue(r))}</td>
+      <td class="hide-sm sub mono" style="white-space:nowrap">${esc(hhmm(r))}</td>
+    </tr>`).join("") || `<tr><td colspan="6" class="empty">No runs match.</td></tr>`;
+  document.querySelectorAll("#rows tr[data-id]").forEach((tr) => {
+    tr.onclick = () => openRun(tr.dataset.id);
+    tr.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openRun(tr.dataset.id); } };
+  });
+}
+
+function openRun(id, scroll) {
+  state.run = id; state.ticket = null; writeHash(); renderScenarios(); renderRows(); renderPanel(); renderChart();
+  if (scroll) $("panel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function scoreBar(r) {
+  const lo = 0.5, hi = 1.0, x = (v) => Math.max(0, Math.min(100, (v - lo) / (hi - lo) * 100));
+  const pub = shownScore(r), fail = rowOf(r) === "fail";
+  const dots = [];
+  if (!fail && pub != null) dots.push(`<div class="dot" style="left:${x(pub)}%" title="Published score ${pct(pub)}"></div><div class="lbl" style="left:${x(pub)}%">${pct(pub)}</div>`);
+  if (r.naive != null && (fail || Math.abs(r.naive - pub) > 0.0005)) dots.push(`<div class="dot hollow" style="left:${x(r.naive)}%" title="Plain score ${pct(r.naive)}"></div>${fail ? `<div class="lbl" style="left:${x(r.naive)}%;color:#999">${pct(r.naive)}${r.naive < lo ? " (off scale)" : ""}</div>` : ""}`);
+  const line = fail
+    ? (r.naive == null ? "No score: the run stopped before scoring." : `The hollow dot is the plain score a dashboard without checks would show. It is not published, because the run failed a check.`)
+    : (Math.abs((r.naive ?? pub) - pub) > 0.0005 ? `Published score ${pct(pub)} on ${Math.round((1 - r.excluded_rate) * r.completed)} tickets, with the excluded tickets left out. The hollow dot is the plain score over all ${r.completed}, ${pct(r.naive)}.` : `Published score ${pct(pub)} on all ${r.completed} tickets.`);
+  return `<div class="bar"><div class="track"></div><div class="band" style="left:${x(LO)}%;width:${x(HI) - x(LO)}%"></div>${dots.join("")}</div>
+    <div class="axis"><span>50%</span><span style="color:var(--accent)">normal range 78.6 to 87.4%</span><span>100%</span></div>
+    <p class="scoreline sub">${line}</p>`;
+}
+
+function ticketRows(r) {
+  const T = DATA.tickets, base = BASEMISS;
+  const misses = r.model_failures.map((f) => ({ ...f, kind: "miss" }));
+  const excl = r.flagged_items.filter((f) => f.p !== "ok" && f.p !== "model_failure").map((f) => ({ ...f, kind: "excl" }));
+  const judge = r.flagged_items.filter((f) => f.p === "ok").map((f) => ({ ...f, kind: "judge" }));
+  const fixed = r.verdict === "invalid" || r.id === BASELINE ? [] : [...base].filter((t) => !misses.some((m) => m.t === t) && !excl.some((e) => e.t === t));
+  const row = (f, tag) => {
+    const t = T[f.t] || {};
+    return `<tr class="trow" data-t="${esc(f.t)}" data-i="${f.i}" tabindex="0"><td><b>${esc(f.t)}</b> ${tag}</td><td class="txt">${esc((t.text || "").slice(0, 90))}${(t.text || "").length > 90 ? "…" : ""}</td>
+      <td class="sub hide-sm">${f.kind === "excl" ? esc(CAUSE[f.p]?.name || f.p) : f.kind === "judge" ? "judge answers disagree" : `did <b>${esc(f.a || "nothing")}</b>, expected <b>${esc(f.x || t.expected)}</b>`}</td></tr>
+      <tr class="detail-row" data-for="${esc(f.t)}" hidden><td colspan="3"></td></tr>`;
+  };
+  const isNew = (t) => r.id !== BASELINE && !base.has(t);
+  let h = "";
+  h += `<h3>The model's misses (${misses.length})</h3>`;
+  if (r.verdict === "invalid") h += `<p class="sub" style="margin:0 0 6px">Shown for investigation only. The run failed a check, so these can't be trusted as the model's performance.</p>`;
+  else h += `<p class="sub" style="margin:0 0 6px">These count against the model. Compared with the baseline run: <span class="chip new">new</span> missed here but not in the baseline, <span class="chip same">also in baseline</span> missed in both. A swing of two or three tickets is normal.</p>`;
+  h += misses.length ? `<table class="tk"><thead><tr><th>Ticket</th><th>Customer wrote</th><th class="hide-sm">What happened</th></tr></thead><tbody>${misses.map((f) => row(f, r.verdict === "invalid" ? "" : isNew(f.t) ? `<span class="chip new">new</span>` : `<span class="chip same">also in baseline</span>`)).join("")}</tbody></table>` : `<p class="sub" style="margin:0">None.</p>`;
+  if (fixed.length) h += `<p class="sub" style="margin:8px 0 0"><span class="chip fixed">now correct</span> missed in the baseline, correct here: ${fixed.map(esc).join(", ")}</p>`;
+  h += `<h3>Left out of the score (${excl.length})</h3>`;
+  h += excl.length ? `<p class="sub" style="margin:0 0 6px">These failed for reasons that are not the model's fault, so they don't count for or against it.</p><table class="tk"><thead><tr><th>Ticket</th><th>Customer wrote</th><th class="hide-sm">Why left out</th></tr></thead><tbody>${excl.map((f) => row(f, "")).join("")}</tbody></table>` : `<p class="sub" style="margin:0">None.</p>`;
+  if (judge.length) h += `<details style="margin-top:10px"><summary class="small">Tickets where only the judge was unreliable (${judge.length})</summary><table class="tk" style="margin-top:6px"><tbody>${judge.map((f) => row(f, "")).join("")}</tbody></table></details>`;
+  return h;
+}
+
+function copyText(r) {
+  const k = rowOf(r), steps = nextSteps(r);
+  return [`${runName(r)} (${r.id})`, `Status: ${STATUS[k]}`, `Why: ${headline(r)}`,
+    `Score: ${r.verdict === "invalid" ? "not published (plain score " + pct(r.naive) + ")" : pct(shownScore(r))}; normal range 78.6% to 87.4%`,
+    `Next: ${steps.map((s) => s.text + (s.owner ? " (" + s.owner + ")" : "")).join(" ")}`,
+    `Link: ${location.href.split("#")[0]}#run=${encodeURIComponent(r.id)}`].join("\n");
+}
+
+function renderPanel() {
+  const r = RUNS.find((x) => x.id === state.run);
+  if (!r) { $("panel").innerHTML = `<p class="empty">Pick a scenario above, a cell in the grid, or a run in the list.</p>`; return; }
+  const k = rowOf(r), main = r.reasons.find((y) => y.startsWith("invalid")) || r.reasons[0];
+  const drift = r.reasons.some((x) => x.includes("undeclared change") || x.includes("dataset differs"));
+  const others = r.reasons.filter((x) => x !== main && x.startsWith(r.verdict) && !(drift && x.includes("items excluded")));
+  const COLNOTE = { above: "The score is above normal, but it can't be credited to the model.", inside: "The score looks normal, but it can't be trusted.", below: "The score is below normal, but the drop can't be blamed on the model." };
+  const colnote = k === "fail" && COLNOTE[colOf(r)] ? " " + COLNOTE[colOf(r)] : "";
+  const hidden = r.flagged_items.filter((f) => r.missed.includes(f.t) && !f.err).length;
+  const silentnote = hidden && r.has_traces ? ` ${hidden} of these never got a successful answer from the model, yet the run recorded no error for them: the agent's code covered the failure with a fallback action, which looks like an ordinary answer in the plain score.` : "";
+  const icon = { ok: "✓", no: "✕", warn: "!", na: "–" };
+  const fp = r.fingerprint, crit = new Set(r.drift.critical || []), warn = new Set(r.drift.warn || []);
+  $("panel").innerHTML = `
+    <div class="banner ${k}">
+      <div class="big">${ICON[k]} ${STATUS[k]}</div>
+      <div class="why">${esc(headline(r))}${others.length && k !== "pass" ? " " + others.map((x) => esc(plainReason(x, r))).join(" ") : ""}${esc(silentnote)}<b>${esc(colnote)}</b></div>
+      <div class="meta">${esc(runName(r))} · ${esc(r.batch)} · ${esc((r.created_at || "").slice(0, 16).replace("T", " "))} UTC</div>
+    </div>
+    <div class="inner">
+      ${state.labels ? `<p class="sub" style="margin:0 0 8px"><span class="chip label">Injected</span> ${esc(r.experiment.plan || "nothing")}${r.experiment.pipeline_fault && r.experiment.pipeline_fault !== "none" ? " + " + esc(r.experiment.pipeline_fault) : ""}, error policy ${esc(r.experiment.error_policy)}. The checks never see this.</p>` : ""}
+      <h3 style="margin-top:4px">What to do next</h3>
+      <div class="next"><ul>${nextSteps(r).map((s) => `<li>${esc(s.text)}${s.owner ? ` <span class="owner">Owner: ${esc(s.owner)}</span>` : ""}</li>`).join("")}</ul></div>
+      <div class="actions"><button class="btn" id="copybtn">Copy status</button><span class="sub" id="copied"></span></div>
+      <h3>Score</h3>
+      ${scoreBar(r)}
+      <h3>The checks</h3>
+      <ul class="checks">${checklist(r).map(([s, t, d]) => `<li><span class="ic ${s}" aria-label="${s}">${icon[s]}</span><span><b>${esc(t)}</b><br><span class="d">${esc(d)}</span></span></li>`).join("")}</ul>
+      ${k === "pass" ? `<div class="notcovered"><b>What passing doesn't prove.</b> The checks can't see a different model behind the same model name, a scoring mistake outside its known cases, a wrong expected answer that still fits its record, a judge that is wrong the same way every time, or a single affected ticket (under the 2% threshold).</div>` : ""}
+      ${ticketRows(r)}
+      <details class="tech"><summary>Technical details</summary>
+        <h3>Gate output</h3>
+        ${r.reasons.length ? `<ul style="margin:0;padding-left:18px">${r.reasons.map((x) => `<li class="mono">${esc(x)}</li>`).join("")}</ul>` : `<p class="sub">No rules fired.</p>`}
+        <h3>Run settings snapshot (fingerprint)</h3>
+        <p class="sub" style="margin:0 0 6px">Compared with baseline <span class="mono">${esc(r.drift.baseline || "none")}</span>.</p>
+        <dl class="kv">${Object.entries(fp).filter(([, v]) => v != null && !(Array.isArray(v) && !v.length)).map(([f, v]) => `<dt>${esc(f)}</dt><dd class="mono" style="${crit.has(f) ? "background:var(--bad-bg)" : warn.has(f) ? "background:var(--warn-bg)" : ""}">${esc(typeof v === "object" ? JSON.stringify(v) : v)}${crit.has(f) ? " <b>changed, undeclared</b>" : warn.has(f) ? " <b>differs</b>" : ""}</dd>`).join("")}</dl>
+        <p class="sub"><a href="${TREE + encodeURIComponent(r.id)}" target="_blank" rel="noopener">Raw run files</a> · <a href="engineer.html#run=${encodeURIComponent(r.id)}">Open in engineer view</a></p>
+      </details>
+    </div>`;
+  $("copybtn").onclick = async () => {
+    const t = copyText(r);
+    try { await navigator.clipboard.writeText(t); $("copied").textContent = "Copied."; }
+    catch { $("copied").innerHTML = `<pre class="copytext">${esc(t)}</pre>`; }
+  };
+  document.querySelectorAll("#panel tr.trow").forEach((tr) => {
+    const open = () => toggleTicket(r, tr.dataset.t, +tr.dataset.i);
+    tr.onclick = open; tr.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
+  });
+  if (state.ticket) { const tr = document.querySelector(`#panel tr.trow[data-t="${CSS.escape(state.ticket)}"]`); if (tr) toggleTicket(r, state.ticket, +tr.dataset.i, true); }
+}
+
+function toggleTicket(r, t, idx, force) {
+  const row = document.querySelector(`#panel tr.detail-row[data-for="${CSS.escape(t)}"]`);
+  if (!row) return;
+  if (!row.hidden && !force) { row.hidden = true; state.ticket = null; writeHash(); return; }
+  document.querySelectorAll("#panel tr.detail-row").forEach((x) => x.hidden = true);
+  row.hidden = false; state.ticket = t; writeHash();
+  const f = [...r.model_failures, ...r.flagged_items].find((x) => x.t === t) || {}, tk = DATA.tickets[t] || {};
+  const votes = (f.v || []).map((v) => v ? "pass" : "fail").join(" / ") || "–";
+  const why = f.p && f.p !== "ok" && f.p !== "model_failure" ? `${CAUSE[f.p]?.name || f.p}: ${CAUSE[f.p]?.plain || ""}${(f.r || []).length ? " (" + f.r.join("; ") + ")" : ""}` : f.p === "ok" ? "Only the judge was unreliable on this ticket; it still counts in the agent's score." : "Counted against the model.";
+  row.firstElementChild.innerHTML = `
+    <p style="margin:2px 0 8px">“${esc(tk.text)}”</p>
+    <dl class="kv"><dt>Policy says</dt><dd><b>${esc(f.x || tk.expected)}</b></dd><dt>Agent did</dt><dd><b>${esc(f.a || "nothing")}</b>${f.err ? ` <span class="err">(${esc(f.err)})</span>` : ""}</dd>
+      <dt>Judge said</dt><dd>${esc(votes)}</dd><dt>Why it's here</dt><dd>${esc(why)}</dd></dl>
+    <details class="trace-d"><summary class="small">Technical details: what happened, call by call</summary><div class="spanbox sub">Loading…</div></details>`;
+  row.querySelector("details").addEventListener("toggle", (e) => { if (e.target.open) loadSpans(r, idx, row.querySelector(".spanbox")); }, { once: true });
+}
+
+async function loadSpans(r, idx, box) {
+  if (!r.has_traces) { box.innerHTML = `<span class="err">This run's records were lost before upload.</span>`; return; }
+  try {
+    if (!traceCache[r.id]) {
+      const res = await fetch(RAW + encodeURIComponent(r.id) + "/traces.jsonl");
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      traceCache[r.id] = (await res.text()).split("\n").filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+    }
+    const spans = traceCache[r.id].filter((s) => s.attributes["eval.item_index"] === idx && s.name !== "eval.item").sort((a, b) => a.start - b.start);
+    const t0 = spans.length ? spans[0].start : 0;
+    box.innerHTML = `<table class="spans"><thead><tr><th class="num">At</th><th>Step</th><th>Result</th><th>Detail</th></tr></thead><tbody>${spans.map((s) => {
+      const a = s.attributes, err = s.status === "ERROR";
+      const what = s.name === "jev.call" ? (a["eval.role"] === "judge" ? "Judge asked" : "Model asked for an action") : s.name.replace("tool.", "Tool: ");
+      const d = [a["http.response.status_code"] && "HTTP " + a["http.response.status_code"], a["jev.attempts"] > 1 && a["jev.attempts"] + " attempts", a["jev.parse_ok"] === false && "unreadable answer"].filter(Boolean).join(", ");
+      return `<tr><td class="num mono">+${((s.start - t0) / 1e6).toFixed(0)} ms</td><td>${esc(what)}</td><td>${err ? `<span class="err">✕ ${esc(a["error.type"] || "failed")}</span>` : `<span class="ok">✓</span>`}</td><td>${esc(d)}</td></tr>`;
+    }).join("") || `<tr><td colspan="4">No records for this ticket.</td></tr>`}</tbody></table>`;
+  } catch (e) { box.innerHTML = `<span class="err">Could not load the records (${esc(e.message)}).</span>`; }
+}
+
+function readHash() { const h = new URLSearchParams(location.hash.slice(1)); state.run = h.get("run"); state.ticket = h.get("ticket"); }
+function writeHash() {
+  const h = new URLSearchParams(); if (state.run) h.set("run", state.run); if (state.ticket) h.set("ticket", state.ticket);
+  history.replaceState(null, "", h.toString() ? "#" + h.toString() : location.pathname);
+}
+
+async function init() {
+  readHash();
+  // Same folder first; when the page is opened as a file or a preview, fall back to the published copy.
+  for (const src of ["index.json", "https://bfalkowski.github.io/review/index.json",
+                     "https://raw.githubusercontent.com/bfalkowski/bfalkowski.github.io/main/review/index.json"]) {
+    try { const res = await fetch(src); if (res.ok) { DATA = await res.json(); break; } } catch (e) { /* try the next source */ }
+  }
+  if (!DATA) { $("rows").innerHTML = `<tr><td colspan="5" class="err">Could not load the run index. Open this page from the site, or serve the folder with a local web server.</td></tr>`; return; }
+  RUNS = DATA.runs.filter((r) => r.dataset === "v2");
+  const b = RUNS.find((r) => r.id === BASELINE); BASEMISS = new Set((b?.model_failures || []).map((f) => f.t));
+  $("n-runs").textContent = RUNS.length;
+  [...new Set(RUNS.map((r) => r.batch))].sort().forEach((x) => $("f-batch").insertAdjacentHTML("beforeend", `<option>${esc(x)}</option>`));
+  $("f-batch").onchange = (e) => { state.batch = e.target.value; renderRows(); };
+  $("f-q").oninput = (e) => { state.q = e.target.value.trim(); renderRows(); };
+  $("f-sort").onchange = (e) => { state.sort = e.target.value; renderRows(); };
+  $("f-labels").onchange = (e) => { state.labels = e.target.checked; renderRows(); renderPanel(); };
+  renderScenarios(); renderGrid(); renderChart(); renderRows(); renderPanel();
+}
+window.addEventListener("hashchange", () => { readHash(); renderScenarios(); renderRows(); renderPanel(); });
+init();
+</script>
+</body>
+</html>
