@@ -40,6 +40,9 @@
     pre { background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; overflow-x: auto; font-size: 13px; }
     .abstract { background: var(--alt-bg); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 6px 6px 0; margin-bottom: 8px; }
     .abstract p:last-child { margin-bottom: 0; }
+    .box { border: 1px solid var(--accent); border-radius: 6px; padding: 12px 16px; margin: 4px 0 18px; }
+    .box p:last-child { margin-bottom: 0; }
+    .box .box-title { font-weight: 700; color: var(--accent); margin-bottom: 6px; }
     .diagram-fig { margin: 12px 0 24px; }
     .diagram-fig svg { width: 100%; height: auto; display: block; }
     footer { text-align: center; color: var(--muted); font-size: 14px; padding: 32px; border-top: 1px solid var(--line); }
@@ -60,9 +63,9 @@
     <p class="byline">Bryan Falkowski · October 2026 · Code and data: <a href="https://github.com/bfalkowski/eval-run-validity">github.com/bfalkowski/eval-run-validity</a></p>
 
     <div class="abstract">
-      <p><strong>Abstract.</strong> An eval score only means something if the run that produced it worked. Most eval pipelines report a number either way, so a rate-limited API, a changed prompt or a scorer bug shows up as a model regression. I propose checking whether a run is valid before scoring it: fingerprint the run, run preflight canaries, trace every item with OpenTelemetry, assign each failed item a cause, and gate the run as valid, degraded or invalid. I tested this on a small support-agent eval built on Jev, a small decision model from TypeSafe, with a fault service (faultd) that can break any part of the eval and a GitHub Actions pipeline that can break itself: 238 runs on the real API, for about $1.05.</p>
-      <p>Three results stand out. An older commit of the agent code scored at or above the best clean run, and only the fingerprint showed that the wrong code had been tested. When the agent silently swallowed failed calls, the plain score hid up to 23 points of damage, and the gate still caught every case from the traces. And repeating the LLM judge missed most of its mistakes: it was wrong on a quarter of items but disagreed with itself on only 3.5% of them.</p>
-      <p>Overall, 44% of faulted runs would have read as regressions to a plain score comparison, and the gate flagged every run whose faults crossed its thresholds. Attribution named the right cause for every affected item, but I wrote both the faults and the rules, so this shows the rules match the taxonomy, not that they would catch faults nobody planned for. The paper ends with the gate as a working CI pipeline.</p>
+      <p><strong>Abstract.</strong> An eval score only means something if the run that produced it worked. Most eval pipelines report a number either way, so a rate-limited API, a changed prompt or a scorer bug shows up as a model regression. I propose checking whether a run is valid before scoring it: fingerprint the run, run preflight canaries, trace every item with OpenTelemetry, assign each failed item a cause, and gate the run as valid (publish the score), degraded (publish the score on the remaining items and list what was excluded) or invalid (publish no score). I tested this on a small support-agent eval built on Jev, a small decision model from TypeSafe, with a fault service (faultd) that can break any part of the eval and a GitHub Actions pipeline that can break itself: 238 runs on the real API, for about $1.05.</p>
+      <p>Three results stand out. An older commit of the agent code scored at or above the best clean run, and only the fingerprint showed that the wrong code had been tested. When the agent silently swallowed failed calls, the plain score hid up to 23 points of damage, and the gate still caught every case from the traces. And asking the same LLM judge twice missed most of its mistakes: in this eval the judge was wrong on a quarter of items, but its two calls disagreed on only 3.5% of them.</p>
+      <p>Of 164 faulted runs, 72 (44%) scored low enough that a plain score comparison would have reported a model regression. Another 84 scored inside the clean range, and 36 of those had damaged items that only the gate found. The gate flagged every run whose faults crossed its thresholds. Attribution named the right cause for every affected item, but I wrote both the faults and the rules, so this shows the rules match the taxonomy, not that they would catch faults nobody planned for. The paper ends with the gate as a working CI pipeline.</p>
     </div>
     <p class="caption" style="margin-top:10px"><strong>In practice:</strong> add a validity gate between running an eval and publishing its score. Check a fingerprint of the run against the baseline, check that every item has a successful model and judge call, and check that results were collected once, from one run. Section 7 gives the stages.</p>
 
@@ -83,7 +86,8 @@
     <p><strong>Reproducible evaluation.</strong> <a href="https://arxiv.org/abs/2405.14782">Biderman et al. (2024)</a>, from the lm-evaluation-harness team, catalog how small setup details change results and argue for sharing exact configurations. The run fingerprint here makes that comparison automatic and per run.</p>
     <p><strong>Benchmark auditing.</strong> <a href="https://arxiv.org/abs/2604.24955">BenchGuard (Tu et al., 2026)</a> uses LLMs to audit agent benchmarks for defects in instructions, ground truth and evaluation scripts, and found 12 confirmed defects in ScienceAgentBench. Audits like this check a benchmark once, before use. This paper checks each run as it happens, and covers infrastructure and judge faults as well as dataset defects.</p>
     <p><strong>Statistics of eval scores.</strong> <a href="https://arxiv.org/abs/2411.00640">Miller (2024)</a> sets out how to put error bars on eval scores and compare models properly. That work assumes the run is valid; this paper checks that first.</p>
-    <p><strong>Tooling.</strong> The <a href="https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/">OpenTelemetry GenAI semantic conventions</a> give standard attributes for model calls, which this paper uses and extends. Eval harnesses record logs and configurations but, as far as I found, do not issue a validity verdict on a run.</p>
+    <p><strong>Tooling.</strong> The <a href="https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/">OpenTelemetry GenAI semantic conventions</a> give standard attributes for model calls, which this paper uses and extends. The eval harnesses I looked at record logs and configurations. I did not find one that issues an explicit validity verdict per run, but I did not survey them systematically.</p>
+    <p><strong>Consistency of LLM judges.</strong> <a href="https://aclanthology.org/2025.findings-emnlp.1361/">Haldar and Hockenmaier (2025)</a> show that LLM judges often give different scores to the same input across runs, which makes a single judge score unreliable. Section 6.9 looks at the reverse case: a judge that gives the same answer twice and is wrong both times. <a href="https://arxiv.org/abs/2607.08065">Ding (2026)</a> finds that agreement among a model's samples correlates only weakly with correctness, and that the most self-consistent model in that study was among the worst calibrated. <a href="https://arxiv.org/abs/2404.18796">Verga et al. (2024)</a> replace one large judge with a panel of smaller models from different families. A panel of different models is one way to get a check that does not come only from the judge; this paper does not test it.</p>
 
     <h2>3. A taxonomy of failures</h2>
     <p>Six causes. Only the last should count against the model. The right-hand column is what actually happened in my previous paper.</p>
@@ -155,6 +159,19 @@
       <li><strong>Attribution.</strong> Rules over each item's spans, its record and the run's fingerprint assign one cause. Items with any cause other than model failure are excluded from the score and listed.</li>
       <li><strong>Gate.</strong> The run is invalid if preflight failed, a critical field drifted, results from another run are mixed in, fewer than 90% of items finished, or more than 15% of items were excluded. It is degraded for more than 2% excluded, a partial run above 90%, a warning-level drift, or a withheld judge score. Otherwise it is valid. These thresholds are starting values, frozen on a development split before the held-out runs are scored.</li>
     </ol>
+    <p>The three verdicts decide what gets published. A <strong>valid</strong> run publishes its score. A <strong>degraded</strong> run publishes the score on the items that were not excluded, with the excluded items and their causes listed beside it. An <strong>invalid</strong> run publishes no score. In the results, a run is <strong>flagged</strong> when it is degraded or invalid.</p>
+    <p>Each check answers a narrow question. Passing all of them does not make a run correct; it removes the failure causes the checks were built for.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Check</th><th>What it detects</th><th>What it does not establish</th></tr>
+      <tr><td>Preflight</td><td>A dependency that is down, a scorer that fails known-answer cases, data files that changed</td><td>That the model and judge will keep working for the whole run, or that the scorer is right outside its twelve known cases</td></tr>
+      <tr><td>Fingerprint</td><td>An undeclared change to the model name, prompts, context fields, dataset, code or environment</td><td>That the model behind a name is unchanged: an alias such as <code>jev-latest</code> can point to a new model with the same name</td></tr>
+      <tr><td>Integrity</td><td>Partial runs, items counted twice, results from another run or configuration</td><td>That the items that did finish were handled correctly</td></tr>
+      <tr><td>Coverage</td><td>Items with no successful model call or judge call, including failures the agent code swallowed</td><td>That a successful call returned a sensible answer</td></tr>
+      <tr><td>Attribution</td><td>A cause for each failed item, from its spans, its record and the fingerprint</td><td>That an item left as a model failure really is the model's fault; a fault that leaves no signal in the trace is counted against the model</td></tr>
+      <tr><td>Judge repeat</td><td>Judge answers that change between two calls</td><td>That the judge is right (Section 6.9)</td></tr>
+      <tr><td>Score on valid items</td><td>The score with the excluded items removed</td><td>That the remaining tickets are as hard as the full set; excluded tickets may not be a random sample (Section 6.5)</td></tr>
+    </table></div>
+    <p class="caption">Table 1. What each check detects and what it leaves open.</p>
     <h3>Span attributes</h3>
     <div class="table-wrap"><table>
       <tr><th>Attribute</th><th>On</th><th>Used for</th></tr>
@@ -181,9 +198,55 @@
       <tr><td>Dates exactly on a cutoff</td><td>6</td><td>Delivered exactly 30 days ago; shipped exactly 14 days ago.</td></tr>
       <tr><td>Angry about an order that has not shipped</td><td>4</td><td>"Taking FOREVER, refund me now" on a Processing order.</td></tr>
     </table></div>
-    <p class="caption">Table 1. Dataset v2. Expected actions are 17 refund, 17 reply, 13 escalate and 13 reship, generated by a reference policy function.</p>
+    <p class="caption">Table 2. Dataset v2. Expected actions are 17 refund, 17 reply, 13 escalate and 13 reship, generated by a reference policy function.</p>
     <p>After the first clean run on this set, I read every miss. Two of the eight were arguable readings of the policy text rather than model errors ("within the last 30 days" at exactly 30 days, and whether the "never arrived" rule covers a customer asking where the order is). I tightened the wording of those two rules rather than the labels, and every result below uses the tightened policy.</p>
-    <p>A deterministic scorer checks the service's side effects against the expected action. A judge asks Jev twice per ticket whether the resolution follows the policy, so the judge-failure category can be exercised and checked against the deterministic score. Jev answers through TypeSafe's typed <code>choice</code> and <code>noul</code> questions. Every decision in the system, the agent's and the judge's, is made by Jev. I chose one cheap model on purpose: the subject of this paper is the pipeline, not the model.</p>
+    <div class="box">
+      <p class="box-title">The score used throughout this paper</p>
+      <p>A ticket is <strong>correct</strong> when the side effects the agent caused in the orders service (refund, reship, escalate) are exactly those of the expected action. A reply-only ticket is correct when there are no side effects. Correctness is decided by a deterministic scorer; the judge has no part in it.</p>
+      <p>The <strong>plain score</strong> is the share of all 60 tickets that are correct. The <strong>score on valid items</strong> is the same share over the tickets left after the gate excludes items attributed to a cause other than the model. Every score, regression and band in this paper is one of these two, unless it is labeled as the judge score.</p>
+    </div>
+    <p>A judge asks Jev twice per ticket whether the resolution follows the policy. Its votes form a separate <strong>judge score</strong>, which is a diagnostic: it lets the judge-failure category be exercised, and it can be checked against the deterministic score. Jev answers through TypeSafe's typed <code>choice</code> and <code>noul</code> questions. Every decision in the system, the agent's and the judge's, is made by Jev. I chose one cheap model on purpose: the subject of this paper is the pipeline, not the model.</p>
+    <figure class="diagram-fig">
+      <svg viewBox="0 0 745 200" role="img" aria-label="How one ticket is scored. The agent asks Jev for an action and takes it in the orders service. A deterministic scorer compares the side effects with the expected action and produces the primary score. Separately, a judge asks Jev twice whether the resolution follows the policy and produces the judge score, a diagnostic.">
+        <defs>
+          <marker id="arr4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1d3f72"/></marker>
+          <marker id="arr5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#999"/></marker>
+        </defs>
+        <g font-family="Source Sans 3, sans-serif" font-size="14" fill="#2c2c2c">
+          <rect x="10" y="72" width="100" height="56" rx="6" fill="#fafafa" stroke="#1d3f72"/>
+          <text x="60" y="96" text-anchor="middle" font-weight="600">Ticket</text>
+          <text x="60" y="114" text-anchor="middle" font-size="12" fill="#666">+ order, stock</text>
+          <rect x="140" y="72" width="130" height="56" rx="6" fill="#fafafa" stroke="#1d3f72"/>
+          <text x="205" y="96" text-anchor="middle" font-weight="600">Agent</text>
+          <text x="205" y="114" text-anchor="middle" font-size="12" fill="#666">Jev picks the action</text>
+          <rect x="300" y="72" width="130" height="56" rx="6" fill="#fafafa" stroke="#1d3f72"/>
+          <text x="365" y="96" text-anchor="middle" font-weight="600">Orders service</text>
+          <text x="365" y="114" text-anchor="middle" font-size="12" fill="#666">side effects + reply</text>
+          <line x1="110" y1="100" x2="138" y2="100" stroke="#1d3f72" stroke-width="1.5" marker-end="url(#arr4)"/>
+          <line x1="270" y1="100" x2="298" y2="100" stroke="#1d3f72" stroke-width="1.5" marker-end="url(#arr4)"/>
+          <rect x="465" y="18" width="135" height="56" rx="6" fill="#fafafa" stroke="#1d3f72"/>
+          <text x="532" y="42" text-anchor="middle" font-weight="600">Scorer</text>
+          <text x="532" y="60" text-anchor="middle" font-size="12" fill="#666">deterministic</text>
+          <rect x="625" y="18" width="110" height="56" rx="6" fill="#1d3f72"/>
+          <text x="680" y="42" text-anchor="middle" font-weight="600" fill="#fff">Score</text>
+          <text x="680" y="60" text-anchor="middle" font-size="12" fill="#dfe7f5">primary result</text>
+          <rect x="465" y="126" width="135" height="56" rx="6" fill="#fff" stroke="#999" stroke-dasharray="5 4"/>
+          <text x="532" y="150" text-anchor="middle" font-weight="600">Judge</text>
+          <text x="532" y="168" text-anchor="middle" font-size="12" fill="#666">Jev, asked twice</text>
+          <rect x="625" y="126" width="110" height="56" rx="6" fill="#fff" stroke="#999" stroke-dasharray="5 4"/>
+          <text x="680" y="150" text-anchor="middle" font-weight="600">Judge score</text>
+          <text x="680" y="168" text-anchor="middle" font-size="12" fill="#666">diagnostic only</text>
+          <line x1="430" y1="92" x2="463" y2="52" stroke="#1d3f72" stroke-width="1.5" marker-end="url(#arr4)"/>
+          <line x1="430" y1="108" x2="463" y2="148" stroke="#999" stroke-width="1.5" marker-end="url(#arr5)"/>
+          <line x1="600" y1="46" x2="623" y2="46" stroke="#1d3f72" stroke-width="1.5" marker-end="url(#arr4)"/>
+          <line x1="600" y1="154" x2="623" y2="154" stroke="#999" stroke-width="1.5" marker-end="url(#arr5)"/>
+          <line x1="680" y1="76" x2="680" y2="124" stroke="#999" stroke-width="1.2" stroke-dasharray="3 3"/>
+          <text x="686" y="104" font-size="11.5" fill="#666">compared</text>
+          <text x="686" y="118" font-size="11.5" fill="#666">(6.9)</text>
+        </g>
+      </svg>
+      <figcaption>Figure 2. How one ticket is scored. The deterministic scorer produces every score in the results. The judge runs alongside it and is used only as a diagnostic.</figcaption>
+    </figure>
     <p>Paper 1's harness was built to be stable, so faults could not be switched on cleanly there. This repo builds its own agents and routes every point of failure through one fault API.</p>
 
     <h3>5.2 The fault API</h3>
@@ -199,7 +262,7 @@
       <tr><td>Harness or scorer bug</td><td>Scorer compares against the next ticket's expected answer; service state not reset between tickets; an always-on scorer bug</td></tr>
       <tr><td>Control</td><td>Stock removed from the context, declared in the manifest. A real regression that the gate should let through.</td></tr>
     </table></div>
-    <p class="caption">Table 2. Item-level faults. Per-call faults run at two doses, 5% and 25% of calls.</p>
+    <p class="caption">Table 3. Item-level faults. Per-call faults run at two doses, 5% and 25% of calls.</p>
 
     <h3>5.4 Wrong key and silent fallbacks</h3>
     <p>One fault is real rather than simulated. For part of a run the agent sends an invalid key, and TypeSafe returns a real 401; then it switches to the correct key. This is run under two error policies. With a <strong>loud</strong> policy, the failed call raises and the item is marked errored. With a <strong>silent</strong> policy, the agent falls back to replying only and the judge votes "fail". Silent fallbacks are the realistic bug: the items look like ordinary wrong answers. The check that catches both is coverage. Every ticket must have a successful decision span and successful judge spans; a ticket without them is a missed eval, not a wrong answer. Comparing the traces of a real 401 with a faultd 401 also tests whether the simulated faults look like real ones.</p>
@@ -217,12 +280,12 @@
       <tr><td>Harness bug</td><td>Results merged twice</td><td>The collect step appends a run's items to itself</td></tr>
       <tr><td>Harness bug</td><td>Runs mixed</td><td>The collect step merges two runs into one folder</td></tr>
     </table></div>
-    <p class="caption">Table 3. Pipeline-level faults. These never appear in an agent trace; they test the run-level checks.</p>
+    <p class="caption">Table 4. Pipeline-level faults. These never appear in an agent trace; they test the run-level checks.</p>
 
     <h3>5.6 Runs</h3>
     <p>All paper runs execute in GitHub Actions on Python 3.11 with pinned dependencies, against the real Jev API, on October 2, 2026. Each run is about 180 Jev calls. The baseline fingerprint is a clean run on the final policy. A local stand-in for Jev is used only for the repo's tests.</p>
     <ul>
-      <li><strong>Clean runs:</strong> 10 on the final policy set the noise floor: the baseline run, the 5 noise-floor runs, and the clean run in each repeat of the development and held-out batches (2 + 2). They score a mean of 83.0% with a standard deviation of 2.2 points; observed range 80.0% to 88.3%, and mean ± 2 standard deviations 78.6% to 87.4%. The three clean runs in the pipeline batch came later; the pipeline's report stage uses all 13, which gives a band of 79.2% to 86.8%.</li>
+      <li><strong>Clean runs:</strong> 10 on the final policy set the noise floor: the baseline run, the 5 noise-floor runs, and the clean run in each repeat of the development and held-out batches (2 + 2). They score a mean of 83.0% with a standard deviation of 2.2 points; observed range 80.0% to 88.3%, and mean ± 2 standard deviations 78.6% to 87.4%. All analysis in Section 6 uses these 10.<sup><a href="#note-13">1</a></sup></li>
       <li><strong>Development batch:</strong> each of the 41 fault plans, plus a clean run and the declared control, twice (86 runs). The development split also includes two of the noise-floor clean runs, so it has 88 runs, 82 of them faulted. I tuned against this batch only.</li>
       <li><strong>Freeze:</strong> attribution rules, gate thresholds and the ground-truth definitions were then frozen and tagged (<code>freeze-dev</code>).</li>
       <li><strong>Held-out batch:</strong> the same 43 plans, twice more, with different fault seeds, so faults land on different calls and items (86 runs, plus two noise-floor clean runs: 88).</li>
@@ -231,6 +294,18 @@
     </ul>
     <p>Ground truth for each item is rebuilt from faultd's log alone. A Jev transport fault only counts when all three attempts of a call were hit; otherwise the retry absorbed it and the item was not affected. A scorer off-by-one only counts when the neighbouring expected answer differs, a missed state reset only when an earlier side effect carries over, and a stale fixture only when the changed order no longer fits the expected answer. A run's expected verdict uses the gate's own thresholds on the share of affected items, so the comparison asks whether the gate saw what really happened, not whether the thresholds are well chosen.</p>
     <p>In total 238 runs called the real API: 3 baseline runs while the dataset and policy settled, 5 noise-floor runs, 86 development, 86 held-out, 34 silent and 24 pipeline. The 48 collect-step copies made no API calls. Spend was $1.03 for the 235 runs whose traces were kept (24.5 million input tokens), plus about $0.02 for the three runs whose traces were dropped on purpose by the lost-upload fault. There were no separate pilots on the real API; plumbing was tested against a local stand-in.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Batch</th><th>Runs</th><th>What was injected</th><th>Used in RQ1 to RQ3</th><th>Used in RQ4</th><th>Plain score exists</th></tr>
+      <tr><td>Baseline</td><td>3</td><td>Nothing</td><td>The last one is a clean reference</td><td>No</td><td>Yes</td></tr>
+      <tr><td>Noise floor</td><td>5</td><td>Nothing</td><td>Clean reference</td><td>No</td><td>Yes</td></tr>
+      <tr><td>Development</td><td>86</td><td>41 fault plans, a clean run and the control, twice</td><td>82 faulted runs, plus 2 clean, 2 control and 2 noise-floor clean</td><td>68 runs with item-level faults</td><td>Yes, except 4 stopped at preflight</td></tr>
+      <tr><td>Held-out</td><td>86</td><td>The same plans with new seeds, twice</td><td>Same as development</td><td>68 runs with item-level faults</td><td>Yes, except 4 stopped at preflight</td></tr>
+      <tr><td>Silent fallback</td><td>34</td><td>16 infrastructure, judge and wrong-key plans and a clean run, silent policy, twice</td><td>Section 6.6 only</td><td>32 runs, in Table 10 only</td><td>Yes</td></tr>
+      <tr><td>Pipeline</td><td>24</td><td>7 pipeline faults and none, three times</td><td>Section 6.7 only</td><td>No</td><td>Yes; killed and timed-out runs score only the items that finished</td></tr>
+      <tr><td>Collect copies</td><td>48</td><td>Each pipeline run merged twice, and mixed with another run</td><td>Section 6.7 only</td><td>No</td><td>Yes, over the merged records; no API calls</td></tr>
+      <tr><td>Reference pipeline</td><td>4</td><td>One fault per run</td><td>Section 7.1 only</td><td>No</td><td>Not counted in the 238</td></tr>
+    </table></div>
+    <p class="caption">Table 5. Where every run is used. RQ1 to RQ3 use the 82 faulted development runs and the 82 faulted held-out runs (164). RQ4 uses the runs whose faults act on items (infrastructure, judge, task and harness) and that produced a score on an unchanged dataset; Table 10 gives the exact counts.</p>
 
     <h3>5.7 Metrics</h3>
     <ul>
@@ -241,14 +316,16 @@
     </ul>
 
     <h2>6. Results</h2>
+    <p>The results draw on two kinds of evidence, and they support different claims. <strong>Injected faults</strong> come from faultd and the pipeline workflow, and each has an answer key; they test whether the checks catch the causes they were built for (Sections 6.2 to 6.7). <strong>Natural incidents</strong> happened without injection: Jev's run-to-run variation (6.1), a change in policy wording the gate was not built for (6.1), a rounding bug in the gate and a bug in my answer key found on held-out runs (6.3, 6.4), and the judge's own errors (6.9). The wrong-key 401 sits between the two: a real failure from TypeSafe's API, triggered on purpose.</p>
     <h3>6.1 Clean runs</h3>
     <p>Ten clean runs scored a mean of 83.0% (standard deviation 2.2 points, range 80.0% to 88.3%, or 48 to 53 tickets of 60). No clean run needed a single retry. Five tickets changed answer between clean runs: four sit near the 30-day cutoff and one is shipped exactly 14 days ago. Jev is not fully deterministic near a boundary, so a run-to-run swing of two or three tickets is normal, and a plain score comparison cannot see a fault that costs fewer.</p>
     <p>The misses in the baseline run fall into three groups. Five are the customer's word winning over the record or the policy: reshipping an order the customer says is lost when tracking shows it shipped five days ago, or refunding a lost order the policy says to reship because the customer asked for money back. Four are orders delivered 31 to 35 days ago that Jev refunds instead of escalating. One is a $649 lost order, out of stock, that Jev refunds without applying the $500 limit.</p>
-    <p><strong>The judge.</strong> Across the 600 items in the ten clean runs, the judge's first vote disagreed with the deterministic score on 24.5% of items, but its two votes disagreed with each other on only 3.5%. Section 6.9 looks at what that means for checking a judge.</p>
+    <p><strong>The judge.</strong> Across the 600 items in the ten clean runs, the judge's first call disagreed with the deterministic score on 24.5% of items, but its two calls disagreed with each other on only 3.5%. Section 6.9 looks at what that means for checking a judge.</p>
     <p><strong>A natural config drift.</strong> Tightening the two policy rules is itself a test the gate was not built for. The first run after the change scored 50 of 60 against 52 before, a difference inside the noise floor. But eight tickets changed answer: three were fixed and five broke, mostly orders delivered 31 to 35 days ago that Jev now refunded instead of escalating. The gate marked the run invalid with "undeclared change from baseline in policy_hash". This is a run-level verdict. With an undeclared change the gate does not try to say which failures the change caused, and it labeled all ten failures as config drift, although comparing with the previous run only five were new. A plain score comparison would have called it noise.</p>
 
     <h3>6.2 How often faults look like regressions (RQ1)</h3>
-    <p>A faulted run counts as a false regression when its plain score falls more than two standard deviations below the clean mean, below 78.6%.</p>
+    <p>A faulted run counts as a false regression when its plain score falls more than two standard deviations below the clean mean, below 78.6%. This cutoff is an operational choice for this study, not a significance test. The ten clean runs scored a mean of 83.0% with a sample standard deviation of 2.19 points, and one ticket is worth 1.67 points, so 83.0 − 2 × 2.19 = 78.6% means a run has to lose about three tickets more than an average clean run before it reads as a regression. The cutoff depends on this eval and these ten runs; with another eval or more clean runs it would move. Appendix A lists the clean scores.</p>
+    <p>A faulted run is not automatically a bad run. A Jev error that a retry absorbs leaves no affected item, and a fault that lands on one ticket of 60 stays under the gate's 2% threshold. Runs like these should pass, and the answer key (Section 5.6) says so. That is why the last column of Table 6 is below the number of faulted runs.</p>
     <div class="table-wrap"><table>
       <tr><th>Injected cause</th><th>Runs per batch</th><th>False regressions, dev</th><th>False regressions, held-out</th><th>Flagged by the gate, dev / held-out</th></tr>
       <tr><td>Infrastructure</td><td>46</td><td>21</td><td>20</td><td>32 / 24</td></tr>
@@ -258,14 +335,16 @@
       <tr><td>Judge failure</td><td>8</td><td>0</td><td>0</td><td>5 / 4</td></tr>
       <tr><th>All faulted runs</th><th>82</th><th>36 (44%)</th><th>36 (44%)</th><th>61 / 54</th></tr>
     </table></div>
-    <p class="caption">Table 4. No faulted run produced a false improvement. Judge faults never move the agent's score, which is why they never look like regressions.</p>
+    <p class="caption">Table 6. No faulted run produced a false improvement. Judge faults never move the agent's score, which is why they never look like regressions.</p>
     <figure>
       <img src="run-valid/fig-scores-by-verdict.png" alt="Dot plot of every development and held-out run: plain score on the horizontal axis, injected cause on the vertical axis, each dot marked valid, degraded or invalid by the gate. Clean and control runs are all valid. Runs far below the clean band are all invalid. Runs inside the band are a mix, depending on whether the fault actually affected items.">
-      <figcaption>Figure 2. Every development and held-out run (168 plotted; 8 more stopped at preflight and have no score). Shaded: the clean mean ± 2 standard deviations. Many faulted runs sit inside the clean band, where a plain score comparison sees nothing; the gate still marks most of them degraded. The control sits just below the band and passes, as a declared change should.</figcaption>
+      <figcaption>Figure 3. Every development and held-out run (168 plotted; 8 more stopped at preflight and have no score). Shaded: the clean mean ± 2 standard deviations. Many faulted runs sit inside the clean band, where a plain score comparison sees nothing; the gate still marks most of them degraded. The control sits just below the band and passes, as a declared change should.</figcaption>
     </figure>
-    <p>Not every faulted run should be flagged. At a 5% dose most Jev transport faults are absorbed by retries and the run is valid, which is why the gate flags 32 of 46 infrastructure runs on dev and 24 of 46 on held-out. Of the 72 false regressions, the gate marked 71 degraded or invalid. The two counts are consistent: a run should be flagged only when its faults affected more than 2% of items or changed the run itself, and the one false regression the gate passed was not in that group. That run (a scorer off-by-one on held-out) had a single affected item, under the 2% threshold, and still scored 79.7% on its valid items: that run was mostly Jev having a low run.</p>
+    <p>Across both batches, 72 of the 164 faulted runs (44%) scored below 78.6%. A team comparing plain scores would have read each of them as the model getting worse. Of the other 92, eight were stopped at preflight and never produced a score, and 84 scored inside the clean band, where a plain comparison reports nothing. That is not the same as being fine: the gate flagged 36 of those 84 because their faults had damaged items, and passed 48 where retries absorbed the faults or too few items were touched to cross the 2% threshold. So without a gate, 44% of faulted runs would have been given the wrong explanation, and another 22% (36 of 164) carried damage that no plain comparison could see.</p>
+    <p>At a 5% dose most Jev transport faults are absorbed by retries and the run is valid, which is why the gate flags 32 of 46 infrastructure runs on dev and 24 of 46 on held-out. Of the 72 false regressions, the gate marked 71 degraded or invalid. The two counts are consistent: a run should be flagged only when its faults affected more than 2% of items or changed the run itself, and the one false regression the gate passed was not in that group. That run (a scorer off-by-one on held-out) had a single affected item, under the 2% threshold, and still scored 79.7% on its valid items: that run was mostly Jev having a low run.</p>
 
     <h3>6.3 Attribution (RQ2)</h3>
+    <p>Every cause in this table is an injected fault whose trace signal I designed. The 100% figures show that the rules are consistent with the taxonomy. They do not measure accuracy on faults nobody planned for.</p>
     <div class="table-wrap"><table>
       <tr><th>Cause</th><th>Affected items, dev</th><th>Affected items, held-out</th><th>Recall</th><th>Precision</th></tr>
       <tr><td>Infrastructure</td><td>392</td><td>372</td><td>100%</td><td>100%</td></tr>
@@ -273,10 +352,10 @@
       <tr><td>Harness or scorer bug</td><td>45</td><td>48</td><td>100%</td><td>100%</td></tr>
       <tr><td>Judge failure (judge score)</td><td>108</td><td>134</td><td>94% / 92%</td><td>not computed</td></tr>
     </table></div>
-    <p class="caption">Table 5. The first three rows are attribution for the agent's score; config drift is judged per run, not per item. Unaffected items wrongly excluded from the agent's score: 0 of 4,194 (dev) and 0 of 4,217 (held-out, after the answer-key fix below). The judge row is attribution for the judge's score, recall on dev / held-out; precision is not computed because the gate also flags the judge's natural self-disagreement, which the answer key does not count as a fault.</p>
+    <p class="caption">Table 7. The first three rows are attribution for the agent's score; config drift is judged per run, not per item. Unaffected items wrongly excluded from the agent's score: 0 of 4,194 (dev) and 0 of 4,217 (held-out, after the answer-key fix below). The judge row is attribution for the judge's score, recall on dev / held-out; precision is not computed because the gate also flags the judge's natural self-disagreement, which the answer key does not count as a fault.</p>
     <p>On held-out runs scored exactly as frozen, one unaffected item was excluded as a harness bug. On inspection the gate was right and my answer key was wrong: two missed state resets in a row carried a side effect from two tickets back, and the ground truth only looked one ticket back. I fixed the answer key, not the gate.</p>
     <p>For the judge score, injected judge failures were attributed correctly in 101 of 108 cases (dev) and 123 of 134 (held-out). Every miss was an item where both judge votes were flipped the same way, so the repeats agreed. That is the same blind spot as in Section 6.1.</p>
-    <p>These numbers should be read with care. I wrote both the faults and the rules, each injected fault leaves a clean signal in the trace, and held-out runs vary where faults land, not what kind of fault they are. Perfect attribution here shows the rules are consistent with the taxonomy; it does not show they would catch a fault nobody thought of.</p>
+    <p>The held-out batch does not change this. Its runs vary where faults land, not what kind of fault they are, and I wrote both the faults and the rules. Real incidents are messier: several causes at once, and signals that are weaker than the ones faultd leaves.</p>
 
     <h3>6.4 The gate (RQ3)</h3>
     <div class="table-wrap"><table>
@@ -285,7 +364,7 @@
       <tr><td>Runs that should pass that were wrongly flagged</td><td>1 / 28</td><td>3 / 34</td><td>0 / 34</td></tr>
       <tr><td>Verdict level matched exactly</td><td>87 / 88</td><td>85 / 88</td><td>88 / 88</td></tr>
     </table></div>
-    <p class="caption">Table 6. Expected verdicts use the same 2% and 15% thresholds as the gate.</p>
+    <p class="caption">Table 8. Expected verdicts use the same 2% and 15% thresholds as the gate.</p>
     <p>The held-out batch found a real bug. The judge exclusion rate was computed as one minus the share kept, so 9 of 60 came out as 0.15000000000000002 and tripped the "over 15%" rule. Three runs were marked degraded instead of valid. The fix computes the rate from counts. The single wrong flag in the dev batch is not a bug: a run with judge faults injected on 5% of calls also had the judge's natural self-disagreement, and together they crossed the threshold. The answer key counts only injected faults; the gate counts both, which is what it should do.</p>
     <p><strong>The thresholds.</strong> I expected the thresholds to trade bad runs caught against good runs rejected. They do not, because attribution never excluded an item in a run where no fault had affected anything. Across the 116 dev, held-out and silent runs where a fault affected at least one item, and the 62 faulted runs where every fault was absorbed, the share of items excluded behaves like this:</p>
     <div class="table-wrap"><table>
@@ -293,14 +372,15 @@
       <tr><td>Runs with affected items that are flagged</td><td>100%</td><td>90%</td><td>66%</td><td>59%</td><td>47%</td><td>39%</td></tr>
       <tr><td>Runs with no affected items that are flagged</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td></tr>
     </table></div>
-    <p class="caption">Table 7. Agent score only. The judge-score rule adds the one wrong flag discussed above.</p>
-    <p>So in this setup the thresholds are not about accuracy. They are a reporting policy: how many excluded items a team will accept before it stops publishing a score at all. At 2% a run with a single affected ticket out of 60 still reports a plain score; at 0% it reports the valid-items score with the exclusion beside it. The trade-off would appear in a pipeline where attribution makes mistakes, which this one, with faults whose signals I designed, does not.</p>
+    <p class="caption">Table 9. Agent score only. The judge-score rule adds the one wrong flag discussed above.</p>
+    <p>So in this setup the thresholds are not about accuracy. They are a reporting policy: how many excluded items a team will accept before it stops publishing a score at all. At 2% a run with a single affected ticket out of 60 is still valid; at 0% it is marked degraded, and its report says so. The trade-off would appear in a pipeline where attribution makes mistakes, which this one, with faults whose signals I designed, does not.</p>
 
     <h3>6.5 Score on valid items (RQ4)</h3>
+    <p>One caveat comes first. The score on valid items is computed on fewer tickets than a clean run. If the excluded tickets are not a random sample, the remaining set is easier or harder than the full one, and a score close to the clean mean does not make the two runs comparable. The task-defect row of Table 10 shows this happening.</p>
     <p>Across the 136 dev and held-out runs with item-level faults, the plain score sat a median 3.0 points below the clean mean, and as far as 63 points below. After excluding the items the gate attributed to faults, the score on the remaining items sat a median 0.3 points above it, almost all of it inside the clean noise band. Measured as distance in either direction, the median gap fell from 3.0 points to 2.0 on dev and 1.6 on held-out, which is close to the clean runs' own standard deviation of 2.2.</p>
     <figure>
       <img src="run-valid/fig-recovery.png" alt="Two rows of dots. Plain score: spread from 63 points below the clean mean up to a few points above, median 3.0 below. Score on valid items: clustered around the clean mean, median 0.3 above, with a few runs 10 to 20 points below.">
-      <figcaption>Figure 3. Distance from the clean mean for runs with item-level faults, before and after excluding the items the gate attributed to faults. Black bars are medians; the shaded band is the clean runs ± 2 standard deviations. The runs still well below are ones where a third or more of the tickets were excluded, so the score is over a different, smaller subset: a wrong key on the last 20 tickets leaves the first 40, which happen to hold more of the hard cases. All of them were marked invalid, so no score was reported.</figcaption>
+      <figcaption>Figure 4. Distance from the clean mean for runs with item-level faults, before and after excluding the items the gate attributed to faults. Black bars are medians; the shaded band is the clean runs ± 2 standard deviations. The runs still well below are ones where a third or more of the tickets were excluded, so the score is over a different, smaller subset: a wrong key on the last 20 tickets leaves the first 40, which happen to hold more of the hard cases. All of them were marked invalid, so no score was reported.</figcaption>
     </figure>
     <div class="table-wrap"><table>
       <tr><th>Injected cause</th><th>Runs</th><th>Plain score vs clean mean</th><th>Valid items vs clean mean</th></tr>
@@ -309,7 +389,7 @@
       <tr><td>Task or dataset defect</td><td>16</td><td>−5.6 [−8.3, −3.1]</td><td>+2.0 [+0.9, +3.1]</td></tr>
       <tr><td>Judge failure</td><td>20</td><td>0.0 [−0.7, 0.6]</td><td>0.0 [−0.7, 0.6]</td></tr>
     </table></div>
-    <p class="caption">Table 8. Mean points from the clean mean, with 95% bootstrap intervals over runs, pooled over the dev, held-out and silent batches. Runs with no score are left out: the four that stopped at preflight with Jev down (infrastructure: 46 + 46 + 28 − 4 = 116), the four with an always-on scorer bug, which preflight also stopped (harness: 10 + 10 − 4 = 16), and the eight duplicated-ticket runs, where the dataset itself changed (task defect: 12 + 12 − 8 = 16). Judge failure: 8 + 8 + 4 = 20.</p>
+    <p class="caption">Table 10. Mean points from the clean mean, with 95% bootstrap intervals over runs, pooled over the dev, held-out and silent batches. Runs with no score are left out: the four that stopped at preflight with Jev down (infrastructure: 46 + 46 + 28 − 4 = 116), the four with an always-on scorer bug, which preflight also stopped (harness: 10 + 10 − 4 = 16), and the eight duplicated-ticket runs, where the dataset itself changed (task defect: 12 + 12 − 8 = 16). Judge failure: 8 + 8 + 4 = 20.</p>
     <p>For infrastructure and harness faults the valid-items score is indistinguishable from a clean run. For task defects it lands about two points above: the stale and missing records the gate excludes are not a random sample of tickets, so the tickets left over are slightly easier. Excluding bad items removes the fault's damage, but it can also change which tickets are being scored, and a report should say which were left out.</p>
 <h3>6.6 Silent fallbacks and the wrong key</h3>
     <p>With the silent error policy, a failed Jev call does not stop the item: the agent replies and takes no other action, and the judge votes "fail". In 34 silent runs the gate flagged all 30 that should have been flagged and none of the 4 that should not, with the exact verdict level matching on all 34. Attribution named the cause of all 381 affected items and wrongly excluded none of 1,659 unaffected ones. It can do this because the transport records the failed call in the trace even when the agent code swallows it, so a ticket with no successful decision call is a missed eval, not a wrong answer.</p>
@@ -321,10 +401,10 @@
       <tr><td>Jev down for tickets 20 to 39</td><td>57.9%</td><td>70.8%</td><td>invalid</td></tr>
       <tr><td>Wrong key for the first 20 tickets</td><td>57.5%</td><td>58.3%</td><td>invalid</td></tr>
     </table></div>
-    <p class="caption">Table 9. Mean plain score per policy (four loud runs, two silent). Clean runs score 83%.</p>
+    <p class="caption">Table 11. Mean plain score per policy (four loud runs, two silent). Clean runs score 83%.</p>
     <figure>
       <img src="run-valid/fig-silent.png" alt="Dumbbell chart for five faults. For each, the plain score with loud error handling is lower than with silent handling: tool 500, 27 to 50 percent; Jev 401 from ticket 30, 40 to 62; wrong key on the last 20 tickets, 49 to 63; Jev down for tickets 20 to 39, 58 to 71; wrong key on the first 20 tickets, 58 to 58. All are well below the clean band at 83 percent.">
-      <figcaption>Figure 4. The same faults with loud and silent error handling. The silent fallback recovers up to 23 points of plain score without a single extra call succeeding. The gate marked every one of these runs invalid under both policies.</figcaption>
+      <figcaption>Figure 5. The same faults with loud and silent error handling. The silent fallback recovers up to 23 points of plain score without a single extra call succeeding. The gate marked every one of these runs invalid under both policies.</figcaption>
     </figure>
     <p>Silent fallbacks make a broken run look less broken. The default action, reply only, happens to be right for many tickets, so the plain score recovers up to 23 points without a single extra call succeeding. The three faults that cost a third of the decisions (Jev down for 20 tickets, a wrong key for the first or last 20) read as a 12 to 25 point drop under the silent policy, against 25 to 34 points under the loud one. Across the silent batch the median gap between the plain score and the clean mean was 8.8 points; on the items the gate kept it was 2.1.</p>
     <p><strong>Real and simulated failures.</strong> The wrong-key fault sends a real invalid key and gets a real 401 from TypeSafe; faultd's 401 is simulated. The two spans are identical in status, error type, HTTP status code, attempt count and events. The one difference is latency: about 150 ms for the real call and under 1 ms for the simulated one. Attribution does not use latency, so this does not change any result here, but it is a tell a reader could use, and a later version of faultd should add realistic delay.</p>
@@ -340,15 +420,16 @@
       <tr><td>Dependencies resolved to older versions</td><td>82 to 87%</td><td>degraded ×3</td><td>environment differs in <code>packages</code></td></tr>
       <tr><td>Different Python version</td><td>82 to 83%</td><td>degraded ×3</td><td>environment differs in <code>python_version</code></td></tr>
     </table></div>
-    <p class="caption">Table 10. Pipeline faults on a clean eval. The ten clean runs score 83.0% (observed range 80.0 to 88.3%). Expected verdicts matched on all 21 runs.</p>
+    <p class="caption">Table 12. Pipeline faults on a clean eval. The ten clean runs score 83.0% (observed range 80.0 to 88.3%). Expected verdicts matched on all 21 runs.</p>
     <p>None of these faults leaves a trace inside the agent, and several leave the plain score inside or near the clean range. Lost traces scored 78 to 85%, which looks like a normal run. Two are worth naming. A missing <code>POLICY_VERSION</code> made the code fall back to an older policy without the refund limit, and the run looked like an ordinary mediocre run. And checking out the previous commit of the agent code, which carries the older policy wording, scored 88 to 90%, at or above the best clean run (88.3%) and well above the clean mean. A plain score comparison would have reported an improvement. Only the fingerprint shows that the code under test was not the code anyone meant to test.</p>
     <p><strong>The collect step.</strong> The last two faults happen after the runs, when results are gathered. Merging a run's results twice leaves the plain score unchanged, because every ticket is counted twice, while the item count doubles and makes any interval look twice as tight as it should. Mixing two runs' results into one folder produces an average of two runs that never happened. The gate marked all 48 invalid: every item record carries its run ID and fingerprint hash, so a repeated item index or a foreign run ID is caught before any score is computed.</p>
 
     <h3>6.8 The control</h3>
     <p>The control removes stock levels from Jev's context and declares the change in the manifest. Its four runs scored 78.3%, 78.3%, 78.3% and 76.7%, about five points below the clean mean, and the gate marked all four valid: a real, declared regression goes through. The same change made without declaring it was marked invalid in all four runs, as were all twelve undeclared config-drift runs.</p>
 
-    <h3>6.9 Repeating a judge does not catch a confidently wrong judge</h3>
-    <p>A common health check for an LLM judge is to ask it twice and see whether it agrees with itself. This eval has something most evals lack, a deterministic score for every item, so the check can be tested against the truth.</p>
+    <h3>6.9 Repeated-judge self-consistency does not catch a consistently wrong judge</h3>
+    <p>A cheap health check for an LLM judge is test-retest: call the same judge twice on the same item, with the same prompt, and see whether the two answers agree. That is the check tested here: two calls to one judge (Jev), not a panel of different judges or a larger sample. This eval has something most evals lack, a deterministic score for every item, so the check can be compared with a reference that does not come from the judge.</p>
+    <p>An example from the baseline run shows the failure. Ticket V005 is an order that shipped exactly 14 days ago and has not arrived. Rule 1 of the policy says to reply with the status and take no other action, and the agent did that, so the deterministic score is PASS. Both judge calls answered FAIL. The two calls agree, so a repeat check sees a stable judge, but the judge is wrong both times.</p>
     <div class="table-wrap"><table>
       <tr><th>Clean runs, 600 items</th><th>Share of items</th></tr>
       <tr><td>Judge's first vote disagrees with the deterministic score</td><td>24.5%</td></tr>
@@ -356,9 +437,9 @@
       <tr><td>At least one vote is wrong</td><td>26.3% (158 items)</td></tr>
       <tr><td>Both votes wrong, in the same way</td><td>22.8% (137 items)</td></tr>
     </table></div>
-    <p class="caption">Table 11. The judge against the deterministic score in clean runs.</p>
+    <p class="caption">Table 13. The judge against the deterministic score in clean runs.</p>
     <p>The judge was wrong about one time in four. Of the 158 items where at least one of its two votes was wrong, the votes disagreed on 21 (13%), so a repeat check would have flagged about one in eight; on the other 137, both votes were wrong in the same way. Counted by the first vote alone, the judge was wrong on 147 items, and the second vote disagreed on only 10 of them (7%). The injected faults show the same thing from the other side. When faultd flipped judge votes, the gate caught every flip that left the two votes disagreeing, and missed every case where both votes were flipped the same way (7 items on dev, 11 on held-out).</p>
-    <p>Repeat agreement measures whether a judge is stable, not whether it is right. A judge used to make or check decisions needs a reference that does not come from the judge: a deterministic score where one exists, or a small set of human-labeled items scored on every run, with disagreement against that set tracked as its own metric.</p>
+    <p>Repeat agreement measures whether a judge is stable, not whether it is right. This matches what Ding (2026) reports for agreement among samples in general, and it is the other side of the inconsistency Haldar and Hockenmaier (2025) document: a judge can fail by changing its answer, or by giving the same wrong answer every time, and a repeat check only sees the first. These figures are for one judge, one prompt and one dataset. Another judge could be less consistent or more accurate, and the 3.5% and 24.5% should not be read as general rates. The claim is narrower: a two-call self-consistency check can pass while the judge is wrong on a quarter of items, so it cannot stand in for a reference. A judge used to make or check decisions needs a reference that does not come from the judge: a deterministic score where one exists, or a small set of human-labeled items scored on every run, with disagreement against that set tracked as its own metric.</p>
 
     <h2>7. Recommendation: a validity gate as a pipeline stage</h2>
     <p>The practical result of this paper is one stage to add to any eval pipeline. It sits between running the eval and publishing or comparing its score, and a score moves forward only if the run passes. Three of its checks need no model call and cost almost nothing, so they can be added to an existing CI job without changing the eval.</p>
@@ -370,8 +451,8 @@
       <tr><td>Integrity</td><td>When results are collected</td><td>Completed items equal planned items, each item appears once, and every record carries its run ID and fingerprint hash</td><td>Killed runners, timeouts, lost traces, results merged twice, two runs mixed together</td></tr>
       <tr><td>Report</td><td>Before publishing</td><td>Publish the score on valid items with the list of excluded items and their causes, not the plain score. Compare two runs only if both passed.</td><td>Brought faulted runs from a median 3.0 points off the clean mean to 1.6 to 2.0</td></tr>
     </table></div>
-    <p class="caption">Table 12. The gate as pipeline stages. Fingerprint, coverage and integrity need no model call.</p>
-    <p>One more recommendation applies to anyone using an LLM judge: do not treat agreement between repeated judge calls as a health check. Here the judge was wrong on about a quarter of items but disagreed with itself on only 3.5% of them. A judge that is consistently wrong passes a repeat check every time. Catching it takes a reference: a deterministic score where one exists, or a small set of human-labeled items checked on every run.</p>
+    <p class="caption">Table 14. The gate as pipeline stages. Fingerprint, coverage and integrity need no model call.</p>
+    <p>One more recommendation applies to anyone using an LLM judge: do not treat agreement between two calls to the same judge as a health check on its own. In this eval the judge was wrong on about a quarter of items but its two calls disagreed on only 3.5% of them. A judge that is consistently wrong passes a repeat check every time. Catching it takes a reference: a deterministic score where one exists, or a small set of human-labeled items checked on every run.</p>
     <p>Teams that cannot add code can still ask the same questions of each run before reading its score:</p>
     <ol>
       <li>Did preflight pass: are dependencies reachable, does the judge parse a known answer, does the scorer pass known cases, do the fixtures match their checksums?</li>
@@ -423,30 +504,30 @@
           <text x="372" y="22" text-anchor="middle" font-size="12" fill="#666">GitHub Actions jobs; each stage is python -m validity.stages &lt;stage&gt;</text>
         </g>
       </svg>
-      <figcaption>Figure 5. The reference pipeline (<code>.github/workflows/eval.yml</code>). A run only reaches the report if it passes preflight and validation.</figcaption>
+      <figcaption>Figure 6. The reference pipeline (<code>.github/workflows/eval.yml</code>). A run only reaches the report if it passes preflight and validation.</figcaption>
     </figure>
     <p>I started the pipeline four times on the real API, each with one fault injected, to show where it stops. The runs are public.</p>
     <div class="table-wrap"><table>
       <tr><th>Injected fault</th><th>Where it stopped</th><th>Why</th><th>Run</th></tr>
-      <tr><td>None</td><td>Passed all four jobs</td><td>Report: 81.7% on all 60 items, within the clean band (mean ± 2 standard deviations of 13 clean runs: 79.2% to 86.8%)</td><td><a href="https://github.com/bfalkowski/eval-run-validity/actions/runs/37049432289">37049432289</a></td></tr>
+      <tr><td>None</td><td>Passed all four jobs</td><td>Report: 81.7% on all 60 items, within the clean band (mean ± 2 standard deviations of 13 clean runs: 79.2% to 86.8%)<sup><a href="#note-13">1</a></sup></td><td><a href="https://github.com/bfalkowski/eval-run-validity/actions/runs/37049432289">37049432289</a></td></tr>
       <tr><td>Missing <code>POLICY_VERSION</code></td><td>preflight, after 6 seconds</td><td>Fingerprint: <code>policy_hash</code> changed and was not declared</td><td><a href="https://github.com/bfalkowski/eval-run-validity/actions/runs/37049828906">37049828906</a></td></tr>
       <tr><td>Jev down for tickets 20 to 39, silent fallback</td><td>validate</td><td>Coverage: 20 tickets with no successful model call. Gate: invalid, 20 of 60 items excluded (33%)</td><td><a href="https://github.com/bfalkowski/eval-run-validity/actions/runs/37049951030">37049951030</a></td></tr>
       <tr><td>Judge votes flipped on 25% of calls</td><td>Passed all four jobs, as degraded</td><td>Report marked degraded: the judge score was withheld, and the agent's score, 83.3% on all 60 items, was published, within the clean range. Judge faults do not touch the agent's score.</td><td><a href="https://github.com/bfalkowski/eval-run-validity/actions/runs/37050267138">37050267138</a></td></tr>
     </table></div>
-    <p class="caption">Table 13. The reference pipeline on four real runs. A clean run takes about a minute across the four jobs.</p>
+    <p class="caption">Table 15. The reference pipeline on four real runs. A clean run takes about a minute across the four jobs.</p>
     <figure>
       <img src="run-valid/pipeline-stop.png" alt="GitHub Actions job graph for the silent-fallback run: preflight passed in 10 seconds, run passed in 1 minute 11 seconds, validate failed after 10 seconds, and report was skipped.">
-      <figcaption>Figure 6. The silent-fallback run in GitHub Actions. The eval job succeeds and every ticket has an answer, but validate fails on coverage and the report never runs, so no score is published.</figcaption>
+      <figcaption>Figure 7. The silent-fallback run in GitHub Actions. The eval job succeeds and every ticket has an answer, but validate fails on coverage and the report never runs, so no score is published.</figcaption>
     </figure>
     <figure>
       <img src="run-valid/pipeline-pass.png" alt="GitHub Actions job graph for the judge-flip run: preflight, run, validate and report all passed.">
-      <figcaption>Figure 7. The judge-flip run passes all four jobs. Its report is marked degraded: the agent's score is published and the judge score is withheld.</figcaption>
+      <figcaption>Figure 8. The judge-flip run passes all four jobs. Its report is marked degraded: the agent's score is published and the judge score is withheld.</figcaption>
     </figure>
     <p>The silent-fallback run is the case a plain pipeline gets wrong: the run job succeeds, every ticket has an answer, and the score would have been published. Here it stops at validation with the list of missed tickets. Every run in this paper can also be browsed in a <a href="../review/">run review page</a>: a queue of runs with the ones the gate stopped first, the reasons, the fingerprint, the excluded tickets and the trace for any ticket. It is the view an investigator would want when a gate stops a run. The pipeline is specific to this repo's run format (a manifest, item records and OpenTelemetry traces), but the stages only read those three files, so another eval that writes them can use the same checks.</p>
 
     <h2>8. Limitations</h2>
     <ul>
-      <li>Injected faults are cleaner than natural ones. One fault per run, at known doses, is easier to attribute than a real bad day where several things go wrong together. The incidents from paper 1 are the natural evidence; the injected faults are a controlled test.</li>
+      <li>Injected faults are cleaner than natural ones. One fault per run, at known doses, is easier to attribute than a real bad day where several things go wrong together. The incidents from paper 1 and the natural incidents in Section 6 are the natural evidence; the injected faults are a controlled test, and the attribution and gate results are results on that test.</li>
       <li>One small eval family: two agents built for this study, both on Jev. The categories and checks are general; the thresholds are not.</li>
       <li>I wrote both the faults and the attribution rules. Rules and thresholds are frozen on a development split before held-out runs are scored, but a reviewer with different faults in mind would find gaps.</li>
       <li>Some checks rely on things this eval has and others may not: a deterministic scorer to compare the judge against, and a reference policy to check expected answers against their fixtures.</li>
@@ -455,7 +536,7 @@
       <li>Two post-freeze fixes. Held-out scoring found a rounding bug in the gate and a bug in my answer key. Both results are reported as frozen and after the fix.</li>
       <li>A shared rate limit across parallel CI jobs is not simulated, because each job runs its own fault service.</li>
       <li>Simulated failures are faster than real ones. A simulated 401 returns in under a millisecond; a real one takes about 150. Nothing here uses latency, but a check that did would separate them.</li>
-      <li>One model. Jev makes every decision, for the agent and the judge. The judge findings in particular (wrong on a quarter of items, inconsistent on few) may not hold for other judges.</li>
+      <li>One model. Jev makes every decision, for the agent and the judge. The judge findings (wrong on a quarter of items, inconsistent on few) are for this judge, this prompt and this dataset, and may not hold for other judges. Only the cheapest consistency check was tested: two calls to the same judge.</li>
       <li>Repeating the judge only catches judge errors that change between votes. Most of the judge's errors here were consistent, and only the deterministic score exposed them. Many real evals have no deterministic score to check against.</li>
     </ul>
 
@@ -469,6 +550,31 @@ python -m validity.gate runs/wk-01 --baseline baselines/manifest.json</pre>
     <p><strong>How this was made.</strong> I designed the study, chose the research questions, faults and claims, ran every batch in CI and reviewed the results. I worked with Claude throughout, in the Claude desktop app, on October 2, 2026: it wrote most of the code and drafts of the text with me, and ran the analysis scripts, which I checked against the raw runs. The session was configured for model ID <code>claude-opus-5-5</code> (Claude Opus 5.5). The service can route individual turns to a different model, so that is the configured model, not a guarantee for every turn. Two outside reviews by other AI models also shaped the final version.</p>
     <p><strong>Model versions.</strong> Every Jev call, for the agent and the judge, used the model alias <code>jev-latest</code> on TypeSafe's System One API on October 2, 2026. An alias can later point to a different model, so a rerun may not reproduce these exact scores; the run manifests record the alias and the date of every run.</p>
 
+    <h2>Notes</h2>
+    <ol>
+      <li id="note-13">Two clean bands appear in this paper. All analysis uses the 10 clean runs listed in Appendix A (mean 83.0%, band 78.6% to 87.4%). The reference pipeline in Section 7.1 was built after the pipeline batch, so its report stage compares against 13 clean runs: the same 10 plus the three clean runs from the pipeline batch. Its stored baseline (mean 83.0%, standard deviation 1.9 points) gives a band of 79.2% to 86.8%. The bands differ by under a point at each end, and no run in this paper falls between them.</li>
+    </ol>
+
+    <h2>Appendix A. Clean run scores</h2>
+    <div class="table-wrap"><table>
+      <tr><th>Run</th><th>Batch</th><th>Correct of 60</th><th>Plain score</th></tr>
+      <tr><td><code>gh37012503737</code></td><td>Baseline (final policy)</td><td>50</td><td>83.3%</td></tr>
+      <tr><td><code>gh37014038090</code> r1</td><td>Noise floor</td><td>50</td><td>83.3%</td></tr>
+      <tr><td><code>gh37014038090</code> r2</td><td>Noise floor</td><td>49</td><td>81.7%</td></tr>
+      <tr><td><code>gh37014038090</code> r3</td><td>Noise floor</td><td>53</td><td>88.3%</td></tr>
+      <tr><td><code>gh37014038090</code> r4</td><td>Noise floor</td><td>50</td><td>83.3%</td></tr>
+      <tr><td><code>gh37014038090</code> r5</td><td>Noise floor</td><td>49</td><td>81.7%</td></tr>
+      <tr><td><code>gh37014574123</code> r1</td><td>Development</td><td>48</td><td>80.0%</td></tr>
+      <tr><td><code>gh37014574123</code> r2</td><td>Development</td><td>50</td><td>83.3%</td></tr>
+      <tr><td><code>gh37019134878</code> r3</td><td>Held-out</td><td>49</td><td>81.7%</td></tr>
+      <tr><td><code>gh37019134878</code> r4</td><td>Held-out</td><td>50</td><td>83.3%</td></tr>
+      <tr><th colspan="2">Ten clean runs</th><th>498 of 600</th><th>83.0%, sd 2.19</th></tr>
+      <tr><td><code>gh37023643915</code> none r1</td><td>Pipeline (13-run band only)</td><td>50</td><td>83.3%</td></tr>
+      <tr><td><code>gh37023643915</code> none r2</td><td>Pipeline (13-run band only)</td><td>49</td><td>81.7%</td></tr>
+      <tr><td><code>gh37023643915</code> none r3</td><td>Pipeline (13-run band only)</td><td>50</td><td>83.3%</td></tr>
+    </table></div>
+    <p class="caption">Table 16. Every clean run on the final policy. The band used in the analysis is 83.0 ± 2 × 2.19 = 78.6% to 87.4%. The best clean run, 88.3%, is above that band, which is a reminder that the band is a reporting convention, not a hard limit on what a clean run can score. Raw items and traces for each run are on the <code>data</code> branch.</p>
+
     <h2>References</h2>
     <ul>
       <li>Luo, Hariri, Eloussi and Marinov. <a href="https://mir.cs.illinois.edu/lamyaa/publications/fse14.pdf">An Empirical Analysis of Flaky Tests</a>. FSE 2014.</li>
@@ -479,6 +585,9 @@ python -m validity.gate runs/wk-01 --baseline baselines/manifest.json</pre>
       <li>Biderman et al. <a href="https://arxiv.org/abs/2405.14782">Lessons from the Trenches on Reproducible Evaluation of Language Models</a>. 2024.</li>
       <li>Tu et al. <a href="https://arxiv.org/abs/2604.24955">BenchGuard: Who Guards the Benchmarks? Automated Auditing of LLM Agent Benchmarks</a>. 2026.</li>
       <li>Miller. <a href="https://arxiv.org/abs/2411.00640">Adding Error Bars to Evals: A Statistical Approach to Language Model Evaluations</a>. 2024.</li>
+      <li>Haldar and Hockenmaier. <a href="https://aclanthology.org/2025.findings-emnlp.1361/">Rating Roulette: Self-Inconsistency in LLM-As-A-Judge Frameworks</a>. Findings of EMNLP 2025.</li>
+      <li>Ding. <a href="https://arxiv.org/abs/2607.08065">When LLMs Agree, Are They Right? Auditing Self-Consistency and Cross-Model Agreement as Confidence Signals</a>. 2026.</li>
+      <li>Verga et al. <a href="https://arxiv.org/abs/2404.18796">Replacing Judges with Juries: Evaluating LLM Generations with a Panel of Diverse Models</a>. 2024.</li>
       <li>OpenTelemetry. <a href="https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/">GenAI semantic conventions</a>.</li>
       <li>Falkowski. <a href="cant-tell.html">Can a Browser Test Agent Tell When It Can't Tell?</a> 2026.</li>
       <li>TypeSafe. <a href="https://typesafe.ai/blog/introducing-system-one-models-and-jev">Introducing System One models and Jev</a>.</li>
