@@ -199,6 +199,32 @@
             <a class="item-link" href="https://github.com/bfalkowski/edd-platform-docs">Docs</a>
           </div>
         </div>
+        <div class="item" data-tags="evals judges">
+          <h3 class="item-title"><a href="https://github.com/bfalkowski/judge-tpr-tnr">LLM Judge Calibration (TPR/TNR)</a></h3>
+          <p class="item-desc">Measures an LLM judge against an answer key, improves it step by step on TPR and TNR, tests it once on held-out data, and corrects its raw scores.</p>
+          <p class="item-meta">Python, GitHub Actions</p>
+          <div class="item-links">
+            <a class="item-link" href="https://github.com/bfalkowski/judge-tpr-tnr">Code</a>
+            <a class="item-link" href="writing/judge-score.html">Primer</a>
+          </div>
+        </div>
+        <div class="item" data-tags="evals infra">
+          <h3 class="item-title"><a href="https://github.com/bfalkowski/eval-run-validity">Eval Run Validity Gate</a></h3>
+          <p class="item-desc">Checks whether an eval run worked before its score is trusted: run fingerprints, OpenTelemetry traces and a validity gate, tested with injected faults in a GitHub Actions pipeline.</p>
+          <p class="item-meta">Python, OpenTelemetry, GitHub Actions</p>
+          <div class="item-links">
+            <a class="item-link" href="https://github.com/bfalkowski/eval-run-validity">Code</a>
+            <a class="item-link" href="writing/run-valid.html">Paper</a>
+          </div>
+        </div>
+        <div class="item" data-tags="agents evals">
+          <h3 class="item-title"><a href="https://github.com/bfalkowski/jev-experiments">Browser Agent Dashboard (Jev vs Claude)</a></h3>
+          <p class="item-desc">A split-screen dashboard that runs a purpose-built decision model (Jev) and a Claude agent driving playwright-mcp on the same browser test, with the element picked, confidence, latency, cost and a screenshot for each step.</p>
+          <p class="item-meta">Python, Playwright</p>
+          <div class="item-links">
+            <a class="item-link" href="https://github.com/bfalkowski/jev-experiments">Code</a>
+          </div>
+        </div>
         <div class="item" data-tags="evals agents">
           <h3 class="item-title"><a href="https://github.com/bfalkowski/edd-agent-lab">EDD Agent Lab</a></h3>
           <p class="item-desc">A local workspace for building LangGraph agents through evaluation-driven design: targets, rules, eval contracts, runs, failure evidence, and verified fixes.</p>
