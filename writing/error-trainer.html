@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="author" content="Bryan Falkowski">
-  <meta name="description" content="Design notes for Second Look, an app that teaches people to review LLM traces and measures whether they get better, using TPR and TNR on held-out traces with no coaching.">
+  <meta name="description" content="Design notes for Second Look, an app that trains people to judge AI support conversations pass or fail and measures whether they get better, using TPR and TNR on held-out conversations with no coaching.">
   <title>Is the Reviewer Getting Better? | Bryan Falkowski</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,6 +32,8 @@
     h1 { font-size: 36px; font-weight: 600; line-height: 1.2; margin: 0 0 10px; }
     .byline { color: var(--muted); font-size: 15px; margin: 0 0 36px; }
     h2 { font-size: 24px; font-weight: 700; margin: 44px 0 14px; }
+    h3 { font-size: 19px; font-weight: 600; margin: 28px 0 10px; }
+    .refs { font-size: 15px; }
     p { margin: 0 0 14px; }
     ul, ol { margin: 0 0 16px; padding-left: 24px; }
     li { margin-bottom: 6px; }
@@ -60,96 +62,87 @@
   </div>
 
   <article class="container">
-    <h1>Is the Reviewer Getting Better? Design Notes for an Error Analysis Trainer</h1>
-    <p class="byline">Bryan Falkowski · October 18, 2026 · Design notes · <a href="https://bfalkowski.github.io/second-look/">Try it</a> · <a href="https://github.com/bfalkowski/second-look">Code</a></p>
+    <h1>Is the Reviewer Getting Better? Design Notes on Training People to Judge AI Output</h1>
+    <p class="byline">Bryan Falkowski · Updated October 18, 2026 · Design notes · <a href="https://bfalkowski.github.io/second-look/">Try it</a> · <a href="https://github.com/bfalkowski/second-look">Code</a></p>
 
     <div class="tldr">
-      <p>Second Look is a small app that teaches people to review LLM traces and measures whether they actually get better at it. The learner labels a support conversation pass or fail, sees the reference label, and gets coached on the ones they miss.</p>
-      <p>The main design decision is how improvement is measured. Accuracy while the coach is helping measures the tool, not the person. So the learner is scored on conversations they haven't seen, with no coaching, before and after practice, using the same TPR and TNR I use for LLM judges.</p>
-      <p>It also works with the Bluetooth remotes people use to flip Anki cards, with notes spoken instead of typed, and that may turn out to be the best way to review.</p>
+      <p>Second Look is a small app that trains people to judge AI support conversations pass or fail, and measures whether they get better at it. The learner labels a conversation, sees the reference label, and is coached on the ones they miss.</p>
+      <p>The main design decision is how improvement is measured. Accuracy while the coach is helping measures the learner and the tool together. So in a measured session the learner is scored on conversations they haven't seen, with no coaching, before and after practice, using the TPR and TNR used for LLM judges.</p>
+      <p>It is designed to work with the Bluetooth remotes people use to flip Anki cards, with notes spoken instead of typed.</p>
     </div>
 
-    <h2>Why build this</h2>
-    <p>Error analysis means reading real traces, writing down what went wrong, and grouping the failures into categories you can count and fix. It is the step that tells you which evals to write, and it is the one most teams skip or rush.</p>
-    <p>The conversations in this app are an extremely simplified version of the proprietary traces I work with: a fictional internet provider, ten short support rules, and one planted failure per conversation. Real traces are longer and messier, but the skill is the same. You get better at it by labeling traces and finding out which ones you got wrong, and that feedback usually depends on someone more experienced checking your labels.</p>
-    <p>A tool can give feedback on every label. The risk is that it ends up doing the reviewing for the learner. If the coach points at the failure every time, the learner's numbers go up inside the app and nothing carries over to their own traces. Most of the design below is about avoiding that.</p>
+    <h2>Why judging is a skill</h2>
+    <p>Anyone who ships an LLM product ends up reading its output and deciding whether it was good enough. That call takes skill: knowing the rules well enough to spot a confident wrong answer, noticing the question the agent quietly skipped, and not failing a conversation just because the customer left unhappy. People get better at it by judging real output and finding out which calls they got wrong, and that feedback usually depends on someone more experienced checking their labels.</p>
+    <p>A tool can give feedback on every label. The risk is that it ends up doing the judging for the learner. If the coach points at the failure every time, the learner's numbers go up inside the app and nothing carries over to their own product. An app can either build the skill or do the judging for you, and most of the design below is about staying on the first side of that line.</p>
+
+    <h2>What it trains</h2>
+    <p>Error analysis means reading real traces, writing down what went wrong, and grouping the failures into categories you can count and fix. It is the step that tells you which evals to write.</p>
+    <p>Second Look trains the first half of that: judging. The learner decides pass or fail against a known set of rules, and for a fail names the one failure that was planted in the conversation. It doesn't train finding new kinds of failure or grouping notes into categories. Those come after judging, and the app leaves them out.</p>
+    <p>The conversations are much simpler than production traces: a fictional internet provider, ten short support rules, and at most one planted failure per conversation. Real traces are longer and messier, but the judgment is the same kind.</p>
 
     <h2>The loop</h2>
-    <p>A session has three phases. Only the first and last are used to measure skill.</p>
+    <p>There are two ways to start. A practice session goes straight into coached practice rounds. A measured session puts a check set before and after the practice rounds, and only those check sets measure skill.</p>
     <div class="diagram"><pre class="mermaid">
 flowchart LR
-  A[Pre-check<br/>10 traces, no coaching] --> B[Practice<br/>up to 24, coached]
-  B --> C[Post-check<br/>10 new traces, no coaching]
-  C --> D[Compare TPR and TNR<br/>pre vs post]
+  S([Start]) -->|Practice session| P1[Practice rounds<br/>1 to 3 rounds of 8, coached]
+  P1 --> R1[Results<br/>first looks by round,<br/>no claim of improvement]
+  S -->|Measured session| A[Pre-check<br/>10 conversations, no coaching]
+  A --> B[Practice rounds<br/>1 to 3 rounds of 8, coached]
+  B --> C[Post-check<br/>10 new conversations, no coaching]
+  C --> D[Results<br/>TPR and TNR, pre vs post]
     </pre></div>
-    <p>Each practice item works like this:</p>
+    <p>Ten unscored conversations before any feedback is a lot to ask of someone who just wants to practice, which is why the practice session exists. Its results show first looks round by round and say plainly that they don't measure improvement, since nothing was scored beforehand. Either kind of session can stop after any practice round. The exact sizes are in the <a href="https://github.com/bfalkowski/second-look#how-a-session-runs">README</a>.</p>
+    <p>Each conversation in a practice round works like this:</p>
     <ol>
-      <li><strong>Read and label.</strong> The learner reads one conversation, marks it pass or fail, and writes a one-line note on what went wrong. The note is required for a fail, because naming the failure is the actual skill.</li>
+      <li><strong>First look.</strong> The learner reads one conversation, marks it pass or fail, and writes a one-line note on what went wrong. The note is required for a fail, because naming the failure is the skill.</li>
       <li><strong>Reveal.</strong> The learner sees whether their label matched the reference.</li>
-      <li><strong>Coach on misses.</strong> On a miss, the coach asks a question that points at the evidence, for example "look at turn 4, what did the customer ask for?", and the learner writes a second look before anything is explained.</li>
+      <li><strong>Coach on misses.</strong> On a miss, the coach may ask a question that points at the evidence, for example "look at turn 4, what did the customer ask for?", and the learner writes a second look before anything is explained.</li>
       <li><strong>Explain.</strong> The reference note, the failure type and an explanation appear next to the learner's own note.</li>
     </ol>
-    <p>One thing changed once I started building. With only two labels, telling someone they missed also tells them the answer, so a second look can't be a second guess at the label. It's a second try at naming what actually happened, which is the harder half of the skill anyway.</p>
-    <p>Another changed after trying it. Ten unscored conversations before any feedback is a lot to ask of someone who just wants to practice, so the app now starts two ways. Practice begins coached rounds right away and can stop after any round. Its results show first looks round by round and say plainly that this doesn't measure improvement, since nothing was scored beforehand. Measuring yourself keeps the pre-check, practice and post-check, and can also stop after any round.</p>
+    <p>Committing to an answer before being told, even a wrong one, improves what people learn from the answer that follows. The evidence for this, and for trying again before the explanation, comes from studies with word lists and prose rather than judgment tasks (<a href="https://doi.org/10.1037/a0015729">Kornell, Hays &amp; Bjork, 2009</a>; <a href="https://doi.org/10.1037/a0016496">Richland, Kornell &amp; Kao, 2009</a>).</p>
+    <p>With only two labels, telling someone they missed also tells them the answer. So a second look isn't a second guess at the label. It's a second try at naming what actually happened, which is the harder half of the skill.</p>
+    <p>The explanation comes after the attempt because feedback matters most after a miss: in a word-pair study, giving the right answer after an error greatly improved what people remembered a week later, while feedback after a correct answer changed little (<a href="https://doi.org/10.1037/0278-7393.31.1.3">Pashler, Cepeda, Wixted &amp; Rohrer, 2005</a>).</p>
 
-    <h2>Reviewing with an Anki remote</h2>
-    <p>Second Look works with the small Bluetooth remotes people use to flip Anki cards. Most of them act as a keyboard, so the app asks you to press the button you want for Pass, Fail and Next, and from then on those three buttons run the whole session: label, submit, move past the hint and the explanation, and start the next round.</p>
-    <p>This may be the better interface for review. You sit back and read the conversation instead of hovering over a keyboard, and each decision is one press, the same rhythm Anki users already know. Most of the work in error analysis is reading, and the remote keeps the hands out of the way.</p>
-    <p>The obvious gap is notes. A fail should come with a note on what went wrong, and a remote can't type. So pressing Fail on the remote also turns on the microphone. You say what went wrong, the words show up in the note as you talk, and Next submits it. Pressing Fail again stops listening. The second look after a hint works the same way. If you press Next on a fail without saying anything, the app asks once before moving on, so a fail with no note is a choice and not an accident.</p>
-    <p>The speech recognition comes from the browser. Chrome, Edge and Safari support it and Firefox doesn't. Chrome does the recognition by sending the audio to Google, and Second Look keeps only the text. That's fine for these practice conversations. For real traces it's worth knowing before you read a customer's account details out loud, and on-device recognition would be the better choice.</p>
+    <h2>Reviewing with a remote and spoken notes</h2>
+    <p>Second Look is built to work with the small Bluetooth remotes people use to flip Anki cards. Most of them act as a keyboard, so the app asks you to press the button you want for Pass, Fail and Next. From then on those three buttons are meant to run the whole session: label, submit, move past the hint and the explanation, and start the next round. Setup details are in the <a href="https://github.com/bfalkowski/second-look#how-a-session-runs">README</a>.</p>
+    <p>The idea is that you sit back and read the conversation instead of hovering over a keyboard, and each decision is one press, the rhythm Anki users already know. Most of the work in judging is reading. Whether that holds up is still open: the remote support hasn't been tried with a real remote yet.</p>
+    <p>The obvious gap is notes, since a remote can't type. So with the remote on, pressing Fail also turns on the microphone. You say what went wrong, the words show up in the note, and Next submits it. Pressing Fail again stops listening, and the second look after a hint works the same way. If you press Next on a fail with no note, the app asks once before moving on, so a fail with no note is a choice and not an accident.</p>
+    <p>Every note field also has a Dictate button, so notes can be spoken without a remote.</p>
+    <p>The speech recognition comes from the browser, so it works in Chrome, Edge and Safari but not Firefox. Chrome does the recognition by sending the audio to Google, and Second Look keeps only the text. That's fine for these made-up conversations. For real traces it's worth knowing before you read a customer's account details out loud.</p>
 
     <h2>Fading the help</h2>
-    <p>The help on a miss depends on the learner's last four first looks:</p>
-    <div class="table-wrap"><table>
-      <tr><th>Recent first-look accuracy</th><th>Help on a miss</th></tr>
-      <tr><td>Below 50%, or fewer than two items</td><td>A question that points at the key turn, then a second look</td></tr>
-      <tr><td>50% to 74%</td><td>"Take another look", with no pointer, then a second look</td></tr>
-      <tr><td>75% or more</td><td>No hint; the explanation comes right away</td></tr>
-    </table></div>
-    <p>The coach should make itself less necessary as the learner improves. If a learner keeps getting full hints round after round, the practice isn't working.</p>
+    <p>The coach should make itself less necessary as the learner improves. The help on a miss is set by the help level, which comes from the learner's last four first looks: a question pointing at the key turn while those are mostly wrong, a plain "take another look" once about half are right, and straight to the explanation once most are right. The exact cutoffs are in the <a href="https://github.com/bfalkowski/second-look#the-coach">README</a>. The four-item window and the 50% and 75% cutoffs are design choices, not numbers from the research.</p>
+    <p>The direction comes from the research. Support that helps a beginner can get in an expert's way, the expertise reversal effect (<a href="https://doi.org/10.1207/S15326985EP3801_4">Kalyuga, Ayres, Chandler &amp; Sweller, 2003</a>), and adapting instruction to quick checks of what the learner can already do has beaten the same instruction given without adapting (<a href="https://doi.org/10.1007/BF02504800">Kalyuga &amp; Sweller, 2005</a>).</p>
+    <p>The coach decides when to help, rather than leaving a hint button for the learner to press, because learners left to choose tend to wait too long and then go for the most specific hint available (<a href="https://doi.org/10.1007/3-540-45108-0_33">Aleven &amp; Koedinger, 2000</a>).</p>
 
     <h2>What "better" means</h2>
-    <p>The learner is acting as a judge, so I measure them the way I measure an LLM judge (see <a href="judge-score.html">the TPR and TNR primer</a>). Against the reference labels:</p>
+    <p>The learner is acting as a judge, so they are measured the way an LLM judge is (see <a href="judge-score.html">the TPR and TNR primer</a>). Against the reference labels:</p>
     <ul>
       <li><strong>TPR:</strong> of the conversations that should pass, the share the learner passed.</li>
-      <li><strong>TNR:</strong> of the conversations that should fail, the share the learner failed. I expect this to be the weak number for most new reviewers, for the same reason it was weak for the judge in the primer: failures that look fine on the surface get passed.</li>
+      <li><strong>TNR:</strong> of the conversations that should fail, the share the learner failed. This is likely to be the weak number for new reviewers, for the same reason it was weak for the judge in the primer: failures that look fine on the surface get passed.</li>
     </ul>
-    <p>The app records several numbers, and only some of them measure skill:</p>
-    <div class="table-wrap"><table>
-      <tr><th>Measurement</th><th>When</th><th>What it tells you</th></tr>
-      <tr><td>Second look found it</td><td>Practice, after a hint, self-reported</td><td>Whether the hint helped. Not skill.</td></tr>
-      <tr><td>First-look TPR and TNR</td><td>Practice, before any hint</td><td>Progress on this practice set. Useful feedback for the learner, but inflated by learning the set itself.</td></tr>
-      <tr><td>Pre-check TPR and TNR</td><td>Before practice, no coaching</td><td>Starting skill</td></tr>
-      <tr><td>Post-check TPR and TNR</td><td>After practice, no coaching</td><td>Skill the learner keeps without help, on conversations they have not seen</td></tr>
-      <tr><td>Note match</td><td>Check-set conversations the learner failed</td><td>Whether the learner named the right failure, not only the right label</td></tr>
-    </table></div>
-    <p>Only the change from pre-check to post-check counts as improvement.</p>
+    <p>Only the check sets in a measured session count as improvement. Accuracy after a hint measures the learner and the coach together, and first-look accuracy in practice rounds is inflated by learning the practice set. The app shows those numbers as feedback but never calls them improvement, because how well someone does while being coached is a poor guide to what they've learned (<a href="https://doi.org/10.1177/1745691615569000">Soderstrom &amp; Bjork, 2015</a>).</p>
+    <p>Each rate comes with a 95% Wilson range, which is wide with five conversations per row, and the results page says so instead of declaring a win. A fail label can also be right for the wrong reason, so the learner grades their note against the reference note for each check-set conversation that both they and the reference failed. Details are in the <a href="https://github.com/bfalkowski/second-look#what-counts-as-improvement">README</a>.</p>
 
-    <h2>The traces</h2>
+    <h2>The conversations</h2>
     <ul>
       <li><strong>Source.</strong> 44 conversations with the support agent for Larkhill Fiber, a fictional internet provider with ten support rules. Every customer, address and account is made up.</li>
-      <li><strong>Seeded failures.</strong> Each failing conversation has exactly one planted failure, from five types: a wrong policy stated with confidence, part of the customer's question ignored, a tool problem the agent hides, a polite reply that resolves nothing, and a required check or disclosure skipped.</li>
+      <li><strong>Planted failures.</strong> Each failing conversation has exactly one planted failure, from five types: a wrong policy stated with confidence, part of the customer's question ignored, a tool problem the agent hides, a polite reply that resolves nothing, and a required check or disclosure skipped.</li>
       <li><strong>Passes that look bad.</strong> Some passing conversations are built to be failed by a careless reviewer: an agent turning down a credit the rules don't allow, a tool error the agent reports honestly, a refusal to share a balance before verification. These are what TPR catches.</li>
-      <li><strong>Reference material.</strong> Each conversation has a reference label, a one-line note, the key turn, a scripted hint and an explanation, all written before any learner sees it.</li>
-      <li><strong>Splits.</strong> The pre-check and post-check have 10 conversations each, 5 pass and 5 fail, with one of each failure type. Practice has 24, in three rounds of 8 with 4 of each label. No conversation appears in two sets.</li>
+      <li><strong>Reference material.</strong> Each conversation has a reference label, a reference note, a key turn, a scripted hint and an explanation, all written before any learner sees it.</li>
+      <li><strong>Sets.</strong> The practice set is used only for coaching. The two check sets are balanced between pass and fail, with one of each failure type, and no conversation appears in two sets. Sizes are in the <a href="https://github.com/bfalkowski/second-look#the-conversations">README</a>.</li>
     </ul>
 
     <h2>Checking the coach</h2>
-    <p>The coach is Claude when an API key is configured, and a scripted coach otherwise. Claude is an LLM, so it needs its own evals:</p>
-    <div class="table-wrap"><table>
-      <tr><th>Rule</th><th>How it's checked</th></tr>
-      <tr><td>A hint never gives the answer away</td><td>No verdict words (correct, wrong, mistake) and none of the trace's giveaway terms, which are written per trace</td></tr>
-      <tr><td>A full hint points at the evidence</td><td>It names the key turn by number and ends with a question</td></tr>
-      <tr><td>The explanation comes only after the second look</td><td>Order of events in the session log</td></tr>
-      <tr><td>Help fades as the learner improves</td><td>The logged help level matches the policy above, recomputed from the logged first looks</td></tr>
-    </table></div>
-    <p>The first two rules run on every hint Claude writes, before the learner sees it. A hint that breaks one is replaced by the scripted hint, and the broken rule goes into the session log. The same checks run on all 44 scripted hints in the dataset tests, which caught six scripted hints that weren't questions. All four rules run over a finished session with a small report script.</p>
+    <p>The coach is Claude when the backend runs with an API key, and the scripted coach otherwise. The live demo runs the front end alone, so for now it uses the scripted coach. Claude coaching needs the backend, which you can run locally (see the <a href="https://github.com/bfalkowski/second-look#running-it">README</a>).</p>
+    <p>When Claude is coaching, it writes the pointer question and the explanation after a miss, using the learner's notes. "Take another look" is fixed text, and after a correct first look the explanation shown is always the scripted one.</p>
+    <p>Claude is an LLM, so its coaching needs its own evals. Four coaching rules say what good coaching looks like here: a hint never gives the answer away, a full hint points at the evidence and ends in a question, the explanation comes only after the second look, and help fades as the learner improves. The first two are checked on every hint Claude writes, before the learner sees it, and a hint that breaks one is replaced by the scripted hint with the broken rule written to the session log. The same checks run on every scripted hint in the dataset tests, and all four run over a finished session with a report script. How each rule is checked is in the <a href="https://github.com/bfalkowski/second-look#the-coach">README</a>.</p>
 
     <h2>Interaction details</h2>
     <p>A labeling tool gets used for long stretches, so speed and clear feedback matter more than decoration.</p>
     <ul>
-      <li><strong>Keyboard first.</strong> P and F to label, Enter to submit, K and J to move back and forward, R for the rules.</li>
-      <li><strong>Undo in the check sets.</strong> A slip on P or F can be taken back until the results appear, with the note put back in the form.</li>
+      <li><strong>Keyboard first.</strong> P and F to label, Enter to submit, J and K or the arrow keys to move, R for the rules. The full list is in the <a href="https://github.com/bfalkowski/second-look#how-a-session-runs">README</a>.</li>
+      <li><strong>Undo in the check sets.</strong> A slip on P or F can be taken back, with the note put back in the form. A pre-check answer can be undone until practice starts, and a post-check answer until the last one opens the results.</li>
       <li><strong>References are links.</strong> "turn 7" or "R3" in the coach's text scrolls to that turn or opens that rule.</li>
       <li><strong>The reveal.</strong> The learner's label and the reference sit side by side, then the learner's note next to the reference note.</li>
       <li><strong>Follow the hint.</strong> When the coach points at a turn, the conversation scrolls to it and a highlighter mark sweeps across it.</li>
@@ -159,35 +152,44 @@ flowchart LR
     <h2>Stack</h2>
     <p>React, TypeScript and Vite on the front end, with Motion for transitions. A small FastAPI service calls the Claude API (Haiku 5.5 by default) for hints, explanations and note grading, and stores session events in SQLite. The conversations, reference labels and coaching rules live in the repo, and the front end and backend read the same file. The <a href="https://bfalkowski.github.io/second-look/">demo</a> runs the front end alone with the scripted coach.</p>
 
-    <h2>Left out of v1</h2>
+    <h2>Limits and not built yet</h2>
     <ul>
-      <li><strong>Accounts and multiple users.</strong> A session lives in one browser.</li>
-      <li><strong>Grouping notes into categories.</strong> This is the second half of error analysis (axial coding) and deserves its own pass once labeling works.</li>
-      <li><strong>Disagreeing with the reference.</strong> Some traces are ambiguous enough that reasonable reviewers disagree. There's no way yet to flag a reference label, and flagged traces should be reviewed rather than counted as learner errors.</li>
+      <li><strong>Accounts and multiple users.</strong> Not built. A session lives in one browser.</li>
+      <li><strong>Grouping notes into categories.</strong> Not built. This is the second half of error analysis (axial coding) and needs its own design once judging works.</li>
+      <li><strong>Disagreeing with the reference.</strong> Not built. Some conversations are ambiguous enough that reasonable reviewers disagree. There's no way yet to flag a reference label, and flagged conversations should be reviewed rather than counted as learner errors.</li>
+      <li><strong>Claude grading notes on its own.</strong> Notes are self-graded. When Claude is coaching it grades the same notes and the results page shows how often the two agree, but Claude as a grader hasn't been checked against a person yet.</li>
     </ul>
-
-    <h2>Next step: your own rules and traces</h2>
-    <p>The next version lets a team upload its own rules and its own traces, so people practice on the product they actually review. That changes what has to come with the upload:</p>
+    <h3>Planned: your own rules and traces</h3>
+    <p>Not built yet. The plan is to let a team upload its own rules and its own traces, so people practice on the product they actually review. That changes what has to come with the upload:</p>
     <ul>
       <li><strong>Practice needs a reference for each trace.</strong> At minimum a label and a one-line note from someone the team trusts. The coach can write the pointer question and the explanation from those, and the same guardrail checks it.</li>
       <li><strong>Measuring needs held-out check sets.</strong> A pre-check and post-check drawn from the uploaded traces, balanced between pass and fail and never used in practice.</li>
-      <li><strong>The reference labels are now the weak point.</strong> In the built-in dataset every label was written and checked up front. With a team's traces, a wrong reference teaches the wrong lesson, so labels should come from two reviewers, with disagreements settled before anyone practices on them.</li>
+      <li><strong>The reference labels become the weak point.</strong> In the built-in dataset every label is written and checked up front. With a team's traces, a wrong reference teaches the wrong lesson, so labels should come from two reviewers, with disagreements settled before anyone practices on them.</li>
     </ul>
 
     <h2>Open questions</h2>
-    <p>These are the things the current version can't answer yet.</p>
     <ul>
-      <li><strong>Are 5 conversations per check enough?</strong> Not for one person. If you catch 3 of the 5 failing conversations, your real rate could be anywhere from about 23% to 88%. So one learner's improvement only shows up if it's large. Bigger check sets, or combining results across many learners, would fix that.</li>
-      <li><strong>Is it teaching the skill, or just these five failure types?</strong> Practice and the checks use different conversations but the same five kinds of failure. A better post-check shows you can spot those five in new conversations. It doesn't show you'd catch a kind of failure you've never seen. A check set with new failure types would test that.</li>
-      <li><strong>Can Claude grade the notes?</strong> Right now you grade your own notes against the reference, and Claude's grades are recorded next to yours. Before Claude's grades count on their own, they need to be checked against a person's grades, the same way an LLM judge is checked in the primer.</li>
-      <li><strong>Are spoken notes as good as typed ones?</strong> Talking is faster, but spoken notes tend to run longer and looser. They might name the failure less precisely, or they might capture more of what the reviewer noticed. Comparing note grades between remote and keyboard sessions would show which.</li>
-      <li><strong>Does it carry over to real work?</strong> The real test is whether someone reviews their own product's traces better afterward. That needs a follow-up on real traces, labeled by a second reviewer.</li>
+      <li><strong>Are 5 conversations per row enough?</strong> Not for one person. If you catch 3 of the 5 failing conversations, your real rate could be anywhere from about 23% to 88%. So one learner's improvement only shows up if it's large. Bigger check sets, or combining results across many learners, would fix that.</li>
+      <li><strong>Is it teaching the skill, or just these five failure types?</strong> Practice and the check sets use different conversations but the same five kinds of failure. A better post-check shows you can spot those five in new conversations. It doesn't show you'd catch a kind of failure you've never seen. A check set with new failure types would test that.</li>
+      <li><strong>Can Claude grade the notes?</strong> Before Claude's grades count on their own, they need to be checked against a person's grades, the same way an LLM judge is checked in the primer.</li>
+      <li><strong>Are spoken notes as good as typed ones?</strong> Talking is faster, but spoken notes tend to run longer and looser. They might name the failure less precisely, or capture more of what the reviewer noticed. Comparing note grades between remote and keyboard sessions would show which.</li>
+      <li><strong>Does it carry over to real work?</strong> The real test is whether someone judges their own product's traces better afterward. That needs a follow-up on real traces, labeled by a second reviewer.</li>
     </ul>
 
     <h2>Related</h2>
     <ul>
       <li><a href="judge-score.html">Can You Trust Your Judge's Score? A Primer on TPR and TNR for LLM Judges</a></li>
       <li>The open coding and axial coding process for error analysis taught in Hamel Husain's evals course</li>
+    </ul>
+    <h3>References</h3>
+    <ul class="refs">
+      <li>Aleven, V., &amp; Koedinger, K. R. (2000). Limitations of student control: Do students know when they need help? <em>Intelligent Tutoring Systems: 5th International Conference, ITS 2000</em>, 292–303. <a href="https://doi.org/10.1007/3-540-45108-0_33">doi:10.1007/3-540-45108-0_33</a></li>
+      <li>Kalyuga, S., Ayres, P., Chandler, P., &amp; Sweller, J. (2003). The expertise reversal effect. <em>Educational Psychologist, 38</em>(1), 23–31. <a href="https://doi.org/10.1207/S15326985EP3801_4">doi:10.1207/S15326985EP3801_4</a></li>
+      <li>Kalyuga, S., &amp; Sweller, J. (2005). Rapid dynamic assessment of expertise to improve the efficiency of adaptive e-learning. <em>Educational Technology Research and Development, 53</em>(3), 83–93. <a href="https://doi.org/10.1007/BF02504800">doi:10.1007/BF02504800</a></li>
+      <li>Kornell, N., Hays, M. J., &amp; Bjork, R. A. (2009). Unsuccessful retrieval attempts enhance subsequent learning. <em>Journal of Experimental Psychology: Learning, Memory, and Cognition, 35</em>(4), 989–998. <a href="https://doi.org/10.1037/a0015729">doi:10.1037/a0015729</a></li>
+      <li>Pashler, H., Cepeda, N. J., Wixted, J. T., &amp; Rohrer, D. (2005). When does feedback facilitate learning of words? <em>Journal of Experimental Psychology: Learning, Memory, and Cognition, 31</em>(1), 3–8. <a href="https://doi.org/10.1037/0278-7393.31.1.3">doi:10.1037/0278-7393.31.1.3</a></li>
+      <li>Richland, L. E., Kornell, N., &amp; Kao, L. S. (2009). The pretesting effect: Do unsuccessful retrieval attempts enhance learning? <em>Journal of Experimental Psychology: Applied, 15</em>(3), 243–257. <a href="https://doi.org/10.1037/a0016496">doi:10.1037/a0016496</a></li>
+      <li>Soderstrom, N. C., &amp; Bjork, R. A. (2015). Learning versus performance: An integrative review. <em>Perspectives on Psychological Science, 10</em>(2), 176–199. <a href="https://doi.org/10.1177/1745691615569000">doi:10.1177/1745691615569000</a></li>
     </ul>
   </article>
 
