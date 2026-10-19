@@ -68,13 +68,14 @@
     <p class="byline">Bryan Falkowski · October 19, 2026 · Builds on <a href="https://robikovacs.com/blog/coding-hands-free-claude-code-wispr-flow/">Robert Kovacs's post on coding hands-free with Claude Code and Wispr Flow</a></p>
 
     <div class="tldr">
-      <p>Working with a coding agent comes down to two inputs. You say what you want, and you decide on what the agent did. Neither one needs a keyboard. I think keyboards will come to look as dated as typewriters, and the design principles for whatever replaces them are older than any AI tool.</p>
-      <p>To test that, I built an interface from speech and an 8BitDo Micro game controller, using what I learned in an HCI course, and ran Claude Code without touching the keyboard. It works. This post covers what I built, what HCI says is good and bad about it, and the open question it raises. Does making approval this easy keep the person holding the controller a careful reviewer?</p>
+      <p>When we make delegating work to AI effortless, do we also make careful supervision less likely?</p>
+      <p>I ran into that question by building an interface for Claude Code from speech and an 8BitDo Micro game controller. Speech says what I want, and a thumb press approves what the agent did. It works, and a full session needed no keyboard. It also makes approving a change cost almost nothing, while reading the change costs what it always did.</p>
+      <p>This post covers what I built, what the HCI course I took says is good and bad about it, and how to test whether easy approval makes reviewers careless. It separates what I saw from what I only suspect.</p>
     </div>
 
     <h2>Two inputs</h2>
     <p>Don Norman wrote <em>The Design of Everyday Things</em> about doors, stoves and light switches. He could not have pictured Claude Code. His principles still apply to it, because they are about people, and people have not changed.</p>
-    <p>Not long ago, writing code without opening an editor was new. With agents like Claude Code, you describe the change and approve what the agent does. "Writing code" is a loose term for that, since Claude writes it and I steer. If steering is the work, the input devices can be designed around it, and the keyboard is one choice among several.</p>
+    <p>Not long ago, writing code without opening an editor was new. With agents like Claude Code, you describe the change and approve what the agent does. "Writing code" is a loose term for that, since Claude writes it and I steer. If steering is the work, the input devices can be designed around it, and the keyboard is one choice among several. My guess, and it is only a guess, is that keyboards will one day look as dated as typewriters.</p>
     <p>In <a href="https://robikovacs.com/blog/coding-hands-free-claude-code-wispr-flow/">a post from April 13, 2026</a>, Robert Kovacs described steering Claude Code this way daily for several weeks, with the same controller and Wispr Flow for dictation. He found that talking makes him state the intent, constraints and edge cases up front, so Claude's first attempt lands closer. He also found that speech cannot approve anything. Saying "yes" types the word "yes" into the chat box, so approvals need a real key.</p>
     <p>His first finding is about skill more than speed. Stating the intent, the constraints and the edge cases is the part of working with an agent that the agent cannot do for you. My guess is that speaking trains it, because a vague request sounds vague when you say it out loud, and a typed one is easy to send anyway.</p>
     <p>That is the lens for the rest of this post. An interface for working with AI changes how fast you go, and it also changes what you practise. Speech may train you to say what you mean. One-press approval may train you to stop reading.</p>
@@ -120,6 +121,7 @@
 
     <h2>Reading it as an HCI problem</h2>
     <p>I took Foundations of Human Computer Interaction at RIT during my master's degree. It was an elective, and one of the more interesting subjects in the program. The course splits human error into two kinds. A mistake is choosing the wrong goal. A slip is having the right goal and doing the wrong thing, and the fix for a slip is better interface design. Almost everything that went wrong here is a slip, and the course has a name for each one.</p>
+    <p>These principles answer one question, whether people can use an interface. The next section asks a different one, what the interface trains people to do. Usability tells you whether you can approve with one press. It does not tell you whether you read first.</p>
     <ul>
       <li><strong>No signifiers.</strong> A signifier is Don Norman's term for a visible cue that tells you what an action will do. The buttons say A, B, X and Y, not Accept and Reject, so the mapping lives in your memory or on a table beside you. A label on screen that names each button's current action would fix this, and Claude Code's status line could show one.</li>
       <li><strong>No feedback.</strong> In round two, a broken remap and a working one with a typo looked the same. The Principles of Universal Design ask for "effective prompting and feedback during and after task completion". The setup gave none. Only a log file did.</li>
@@ -139,10 +141,29 @@
       <li><strong>Make risky approvals cost more.</strong> Norman calls this a forcing function, a step that stops you from doing something by accident. Karabiner can make A act only when held for a second, another spring-loaded action. It cannot tell a risky prompt from a routine one, so the tool asking for approval would have to say which is which.</li>
       <li><strong>Tell reviewers when they missed one.</strong> The course's remedies for vigilance include knowledge of results when an event is missed. Mixing in items with known answers, and saying when one was approved by mistake, gives the reviewer that feedback while they work.</li>
     </ul>
-    <p>Whether the controller makes reviewers worse can be measured instead of guessed. Use a review task where the right answers are known in advance, and alternate batches between the keyboard and the controller. Discard the first batches with each input, so learning the controller does not count against it. Then compare how many wrong answers got approved with each. That number, not the time per decision, says whether the interface made the person a better reviewer.</p>
+    <p>Whether the controller makes reviewers worse can be tested instead of guessed. A fair test needs more care than counting mistakes.</p>
+    <ul>
+      <li><strong>Use review items with known answers</strong>, some routine and some risky, with the risky ones rare, as they are in real work.</li>
+      <li><strong>Score both directions.</strong> Count the problems the reviewer caught and the good items the reviewer wrongly rejected. A reviewer who rejects everything catches every problem, so accuracy alone would reward them. My <a href="judge-score.html">primer</a> uses the same two rates, TPR and TNR, to check an LLM judge.</li>
+      <li><strong>Check the reasons.</strong> A rejection that names the real problem shows the reviewer read the item. One that names something else was a lucky guess.</li>
+      <li><strong>Record the time per decision</strong>, as a cost to weigh, not as the goal.</li>
+      <li><strong>Account for learning.</strong> Alternate batches between the keyboard and the controller, and discard the first batches with each, so learning the controller does not count against it.</li>
+    </ul>
+    <p>Even then, a short study shows what happens in the first few hours. Whether one-press approval wears down reviewing habits over months would take longer to see.</p>
+
+    <h2>What I saw and what I suspect</h2>
+    <div class="table-wrap"><table>
+      <tr><th>Claim</th><th>Status</th></tr>
+      <tr><td>A full Claude Code session, with prompts, approvals, menus and commands, runs without the keyboard</td><td>Observed, in my own sessions</td></tr>
+      <tr><td>The setup fails silently when permissions are missing or Karabiner is not running</td><td>Observed</td></tr>
+      <tr><td>Speaking makes prompts state intent and edge cases more clearly</td><td>Reported by Kovacs, not tested by me</td></tr>
+      <tr><td>Speaking trains that skill over time</td><td>My guess</td></tr>
+      <tr><td>One-press approval leads to approving without reading</td><td>Hypothesis, based on capture errors and vigilance. It needs the test above.</td></tr>
+      <tr><td>Keyboards will look dated</td><td>A prediction, not a finding</td></tr>
+    </table></div>
 
     <h2>Time will tell</h2>
-    <p>I do not know yet whether I will keep using this. Habits are strong, and some things, like an exact file path, may still be easier to type. But the experiment answered the question I started with. A full session of steering Claude Code, from prompts to approvals to commands, worked without the keyboard.</p>
+    <p>I do not know yet whether I will keep using this. Habits are strong, and some things, like an exact file path, may still be easier to type. What the experiment shows is narrower than a prediction about keyboards. For one workflow, steering Claude Code, from prompts to approvals to commands, the keyboard turned out to be optional. Whether that is good for the person steering is the question this post leaves open.</p>
     <p>None of this is new for everyone. People who cannot use a keyboard have had other ways in for a long time, such as voice control and switch access, both built into macOS. What has changed is the work. When what we do at the computer becomes describing and deciding, the rest of us can step back from the keyboard too, and the old HCI principles tell us what to watch for when we do.</p>
 
     <h2 id="setup">Appendix: set it up yourself</h2>
