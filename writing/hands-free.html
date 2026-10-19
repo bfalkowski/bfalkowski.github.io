@@ -75,6 +75,7 @@
     <h2>Where this comes from</h2>
     <p>Not long ago, writing code without opening an editor was new. With agents like Claude Code, you describe the change and approve what the agent does. Now that work doesn't need the keyboard either. "Writing code" is a loose term here, since Claude writes it and I steer.</p>
     <p>In <a href="https://robikovacs.com/blog/coding-hands-free-claude-code-wispr-flow/">a post from April 13, 2026</a>, Robert Kovacs described doing this daily for several weeks with the same controller and Wispr Flow. He found that talking makes him state the intent, constraints and edge cases up front, so Claude's first attempt lands closer. He also found that speech cannot approve anything. Saying "yes" types the word "yes" into the chat box, so approvals need a real key.</p>
+    <p>His first finding is about skill more than speed. Stating the intent, the constraints and the edge cases is the part of working with an agent that the agent cannot do for you. My guess is that speaking trains it, because a vague request sounds vague when you say it out loud, and a typed one is easy to send anyway.</p>
     <p>My setup differs in three places. FluidVoice transcribes on the Mac instead of in the cloud. I remapped the controller on the Mac with Karabiner, because 8BitDo's remapping app has no macOS version. And I kept a log of every time I had to reach for the keyboard, because that count is the honest measure of whether the setup works.</p>
 
     <h2>What you need</h2>
@@ -179,6 +180,15 @@
     <h2>Does a one-press yes change what you approve?</h2>
     <p>With this setup, approving a change costs one press of the thumb. Reading what you approve costs the same as it did before. I expect that gap to pull toward approving without reading, and Kovacs's post does not look at it.</p>
     <p>This could be measured instead of guessed. Use a review task where the right answers are known in advance, and alternate batches between the keyboard and the controller. Discard the first batches with each input, so learning the controller does not count against it. Then compare how many wrong answers got approved with each.</p>
+    <p>The answer matters past this setup. Checking an AI system depends on people who review its output carefully. My <a href="judge-score.html">primer on LLM judges</a> measures a judge against human labels, and those numbers are only as good as the labels. A reviewer who approves without reading makes a judge look better than it is.</p>
+
+    <h2>What an easy yes needs</h2>
+    <p>If approving is cheap, the interface has to protect the reading that should come before it. Three changes would help, and none of them makes the controller slower for routine work.</p>
+    <ul>
+      <li><strong>Decide before you see the AI's answer.</strong> When you review a verdict or a summary, form your own view first, then compare. Once the AI's answer is on screen, agreeing with it takes the least effort.</li>
+      <li><strong>Make a reason cheap to give.</strong> With voice, a spoken reason costs a few seconds. Asking for one on every rejection, and on a sample of approvals, makes you read the thing you are judging.</li>
+      <li><strong>Make risky approvals cost more.</strong> Norman calls this a forcing function, a step that stops you from doing something by accident. Karabiner can make A act only when held for a second. It cannot tell a risky prompt from a routine one, so the tool asking for approval would have to say which is which.</li>
+    </ul>
 
     <h2>References</h2>
     <ul>
@@ -188,6 +198,7 @@
       <li><a href="https://www.8bitdo.com/micro/">8BitDo Micro</a></li>
       <li><a href="https://github.com/cursor/plugins/tree/main/pstack">pstack</a>, the plugin installed in the first session</li>
       <li>Don Norman, <em>The Design of Everyday Things</em>, revised edition, Basic Books, 2013</li>
+      <li><a href="judge-score.html">Can You Trust Your Judge's Score? A Primer on TPR and TNR for LLM Judges</a>, on this site</li>
     </ul>
   </article>
 
