@@ -42,6 +42,9 @@
     code { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 0.9em; }
     pre { background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; margin: 0 0 18px; overflow-x: auto; font-size: 14px; line-height: 1.45; }
     pre code { font-size: 1em; }
+    figure { margin: 0 0 18px; text-align: center; }
+    figure img { width: 100%; max-width: 360px; height: auto; border-radius: 6px; }
+    figcaption { color: var(--muted); font-size: 15px; margin-top: 6px; }
     .tldr { background: var(--alt-bg); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 6px 6px 0; }
     .tldr p:last-child { margin-bottom: 0; }
     footer { text-align: center; color: var(--muted); font-size: 14px; padding: 32px; border-top: 1px solid var(--line); }
@@ -75,11 +78,15 @@
 
     <h2>What you need</h2>
     <ul>
-      <li><strong>An <a href="https://www.8bitdo.com/micro/">8BitDo Micro</a>.</strong> A Bluetooth controller about the size of a keychain, sold for page turning and Anki. It has a keyboard mode, so the Mac sees it as a keyboard.</li>
+      <li><strong>An <a href="https://www.8bitdo.com/micro/">8BitDo Micro</a>.</strong> A Bluetooth controller about the size of a keychain, sold for page turning and Anki. It has a keyboard mode, so the Mac sees it as a keyboard. I bought mine <a href="https://www.amazon.com/dp/B0CDG5HCCH">on Amazon</a>.</li>
       <li><strong><a href="https://github.com/altic-dev/FluidVoice">FluidVoice</a>.</strong> A free, open-source dictation app for macOS. You hold a key, talk, and release, and it types the text wherever the cursor is. It runs speech models on your Mac unless you turn on a cloud provider.</li>
       <li><strong><a href="https://karabiner-elements.pqrs.org/">Karabiner-Elements</a>.</strong> A free, open-source key remapper for macOS. It can apply a rule to one device only, which is what makes this work.</li>
       <li><strong>Claude Code</strong> in a terminal.</li>
     </ul>
+    <figure>
+      <img src="hands-free-micro.jpg" width="900" height="1086" alt="An 8BitDo Micro held in one hand, small enough that the fingers wrap around it. It has a D-pad and A, B, X and Y buttons.">
+      <figcaption>The 8BitDo Micro. The shoulder buttons L and R sit on the top edge, under the fingers.</figcaption>
+    </figure>
 
     <h2>Find out what the controller sends</h2>
     <ol>
