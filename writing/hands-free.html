@@ -79,6 +79,7 @@
     <p>In <a href="https://robikovacs.com/blog/coding-hands-free-claude-code-wispr-flow/">a post from April 13, 2026</a>, Robert Kovacs described steering Claude Code this way daily for several weeks, with the same controller and Wispr Flow for dictation. He found that talking makes him state the intent, constraints and edge cases up front, so Claude's first attempt lands closer. He also found that speech cannot approve anything. Saying "yes" types the word "yes" into the chat box, so approvals need a real key.</p>
     <p>His first finding is about skill more than speed. Stating the intent, the constraints and the edge cases is the part of working with an agent that the agent cannot do for you. My guess is that speaking trains it, because a vague request sounds vague when you say it out loud, and a typed one is easy to send anyway.</p>
     <p>That is the lens for the rest of this post. An interface for working with AI changes how fast you go, and it also changes what you practise. Speech may train you to say what you mean. One-press approval may train you to stop reading.</p>
+    <p>So the goal is not to take all the effort out of working with AI. It is to remove the effort that gets in the way of good work and keep the effort that builds skill. If speaking makes me clearer about what I want, that effort is worth encouraging. If one-press approval makes me less likely to examine a change, the effort it removed was the useful kind. Both are usability questions, but only one is about whether I can operate the interface. The other is about what the interface helps me get better at.</p>
 
     <h2>The prototype</h2>
     <p>The prototype has three parts, all on a Mac:</p>
@@ -130,10 +131,18 @@
       <li><strong>Low physical effort.</strong> Universal Design's sixth principle asks for a neutral body position and fewer repetitive actions. Leaning back with a controller in one hand meets both better than a keyboard does, which is the strain Kovacs was trying to reduce.</li>
     </ul>
 
+    <h2>The next version</h2>
+    <p>The prototype is usable, not polished. Its value so far is that it works well enough to expose real design problems. Two choices held up and are worth keeping. Hold-to-talk keeps the microphone under the thumb's control. Speech for intent and a short menu for decisions give each input the part it handles well, which is why the slash command fix works. The next version would add three things:</p>
+    <ul>
+      <li><strong>Button labels on screen.</strong> A strip in Claude Code's status line naming what A, B, X and the D-pad do right now, so the controller has the signifiers it lacks.</li>
+      <li><strong>A visible permission mode.</strong> The current mode shown wherever approvals happen, so pressing R can never leave you in auto-accept without knowing it.</li>
+      <li><strong>A check that the remap is live.</strong> A small signal that Karabiner has taken over the controller, so a missing permission or a quit app shows up on screen instead of in a log.</li>
+    </ul>
+
     <h2>Easier is not the same as better</h2>
     <p>With this interface, approving a change costs one press of the thumb. Reading what you approve costs the same as it did before. I expect that gap to pull toward approving without reading. Kovacs's post does not look at it.</p>
     <p>The course has names for this risk too. A capture error happens when a frequent action takes over a rarer one that starts the same way. If A approves fifty routine prompts in a row, the press on the fifty-first prompt, the one that needed reading, is the same thumb movement. Reviewing AI output is also a vigilance task, meaning continuous attention to a long, monotonous stream where the rare problem is easy to miss. Universal Design principle 5d says what to do about it: "Discourage unconscious action in tasks that require vigilance."</p>
-    <p>Speed is the wrong measure for a review step. Checking an AI system depends on people who review its output carefully. My <a href="judge-score.html">primer on LLM judges</a> measures a judge against human labels, and those numbers are only as good as the labels. A reviewer who approves without reading makes a judge look better than it is.</p>
+    <p>Speed is the wrong measure for a review step, and the cost of careless review reaches past one change. Teams check AI systems against human judgments. My <a href="judge-score.html">primer on LLM judges</a> measures a judge against human labels, and its numbers are only as good as those labels. A reviewer who approves without reading makes the judge look better than it is, and every decision based on that number inherits the error. The interface a reviewer uses is part of the measurement, so how it shapes their attention is a measurement question as well as a design one.</p>
     <p>If approving is cheap, the interface has to protect the reading that should come before it. These changes would help, and none of them slows down routine work:</p>
     <ul>
       <li><strong>Decide before you see the AI's answer.</strong> When you review a verdict or a summary, form your own view first, then compare. Once the AI's answer is on screen, agreeing with it takes the least effort.</li>
@@ -149,7 +158,7 @@
       <li><strong>Record the time per decision</strong>, as a cost to weigh, not as the goal.</li>
       <li><strong>Account for learning.</strong> Alternate batches between the keyboard and the controller, and discard the first batches with each, so learning the controller does not count against it.</li>
     </ul>
-    <p>Even then, a short study shows what happens in the first few hours. Whether one-press approval wears down reviewing habits over months would take longer to see.</p>
+    <p>Even then, a short study measures performance, not capability. It could tell me whether the controller changes how well people review in one session. It would not tell me whether the controller helps or hurts them as reviewers over time. That would take measuring whether people improve with practice, keep what they learn, and carry it over to unfamiliar kinds of change.</p>
 
     <h2>What I saw and what I suspect</h2>
     <div class="table-wrap"><table>
@@ -165,6 +174,7 @@
     <h2>Time will tell</h2>
     <p>I do not know yet whether I will keep using this. Habits are strong, and some things, like an exact file path, may still be easier to type. What the experiment shows is narrower than a prediction about keyboards. For one workflow, steering Claude Code, from prompts to approvals to commands, the keyboard turned out to be optional. Whether that is good for the person steering is the question this post leaves open.</p>
     <p>None of this is new for everyone. People who cannot use a keyboard have had other ways in for a long time, such as voice control and switch access, both built into macOS. What has changed is the work. When what we do at the computer becomes describing and deciding, the rest of us can step back from the keyboard too, and the old HCI principles tell us what to watch for when we do.</p>
+    <p>The controller is a small experiment, but the question applies to any AI tool that separates doing the work from approving it. Such tools should be judged on more than whether people can finish the task. They should also be judged on whether they help people make better decisions about the result.</p>
 
     <h2 id="setup">Appendix: set it up yourself</h2>
     <p>You need the three pieces above and Claude Code in a terminal. I bought the Micro <a href="https://www.amazon.com/dp/B0CDG5HCCH">on Amazon</a>.</p>
