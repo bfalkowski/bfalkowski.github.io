@@ -69,7 +69,7 @@
 
     <div class="tldr">
       <p>A Claude Code session needs two kinds of input from you. You describe what you want, and you answer Claude's questions with yes, no, or one of a few choices. Speech handles the first. A handful of buttons handles the second.</p>
-      <p>This post sets that up on a Mac with an 8BitDo Micro controller, FluidVoice for dictation, and Karabiner-Elements to remap only the controller. In my first session I installed and configured a Claude Code plugin without touching the keyboard. Slash commands were the one thing speech could not do.</p>
+      <p>This post sets that up on a Mac with an 8BitDo Micro controller, FluidVoice for dictation, and Karabiner-Elements to remap only the controller. In my first session I installed and configured a Claude Code plugin without touching the keyboard. Slash commands were the one thing speech could not do, and a button for <code>/</code> fixed that.</p>
     </div>
 
     <h2>Where this comes from</h2>
@@ -113,7 +113,7 @@
     <p>Open Karabiner-Elements and follow its prompts. In System Settings, under Privacy &amp; Security, turn on Karabiner-Core-Service in both <strong>Input Monitoring</strong> and <strong>Accessibility</strong>. Karabiner sees every key you type once you grant these, which is how any remapper works. Read <a href="https://github.com/pqrs-org/Karabiner-Elements">its source</a> if that matters to you.</p>
     <p>The rule below goes in <code>~/.config/karabiner/karabiner.json</code>, under <code>profiles[0].complex_modifications.rules</code>. Each line turns one letter into one key. The <code>device_if</code> condition limits the rule to the Micro by its vendor and product IDs, so your real keyboard still types <code>g</code>. Run <code>system_profiler SPBluetoothDataType</code> to confirm the IDs for your unit. Mine reported vendor <code>0x2DC8</code> (11720) and product <code>0x9021</code> (36897).</p>
     <pre><code>{
-  "description": "8BitDo Micro: A=Enter, B=Esc, D-pad=arrows, L=FluidVoice, R=Shift+Tab",
+  "description": "8BitDo Micro: A=Enter, B=Esc, D-pad=arrows, L=FluidVoice, R=Shift+Tab, X=/",
   "manipulators": [
     { "from": "g", "to": "return_or_enter" },
     { "from": "j", "to": "escape" },
@@ -122,10 +122,11 @@
     { "from": "e", "to": "left_arrow" },
     { "from": "f", "to": "right_arrow" },
     { "from": "l", "to": "right_option" },
-    { "from": "r", "to": "tab", "modifiers": ["left_shift"] }
+    { "from": "r", "to": "tab", "modifiers": ["left_shift"] },
+    { "from": "h", "to": "slash" }
   ]
 }</code></pre>
-    <p>That is shorthand. Karabiner wants each line written out in full, with the device condition on every one. Here is the first line in Karabiner's format. The other seven follow the same shape.</p>
+    <p>That is shorthand. Karabiner wants each line written out in full, with the device condition on every one. Here is the first line in Karabiner's format. The others follow the same shape.</p>
     <pre><code>{
   "type": "basic",
   "from": { "key_code": "g", "modifiers": { "optional": ["any"] } },
@@ -145,9 +146,10 @@
       <tr><td>D-pad</td><td>Arrow keys</td><td>Move between options in a question or a permission prompt</td></tr>
       <tr><td>L, held</td><td>Right Option</td><td>FluidVoice listens while you hold it</td></tr>
       <tr><td>R</td><td>Shift+Tab</td><td>Switch Claude Code's permission mode</td></tr>
+      <tr><td>X</td><td><code>/</code></td><td>Open the command menu</td></tr>
     </table></div>
     <p>FluidVoice's hotkey was already right Option, so the L button only had to send that key. Kovacs used a key combination for Wispr Flow because Wispr's default key, <code>fn</code>, could not be assigned to a controller button in 8BitDo's app. Karabiner sends a plain right Option, so no combination was needed.</p>
-    <p>I left X, Y, plus, minus and the other two buttons alone. They still type letters, so a stray press puts a letter in your prompt. Map them to <code>vk_none</code> in the same rule if that happens to you.</p>
+    <p>I left Y, plus, minus and the other two buttons alone. They still type letters, so a stray press puts a letter in your prompt. Map them to <code>vk_none</code> in the same rule if that happens to you.</p>
 
     <h2>What went wrong during setup</h2>
     <ul>
@@ -165,9 +167,10 @@
       <tr><td>Install Karabiner</td><td>1</td><td>The installer asks for the Mac password, before the controller works</td></tr>
       <tr><td>Install the pstack plugin</td><td>0</td><td></td></tr>
       <tr><td>Run a slash command by voice</td><td>None, but it failed</td><td>FluidVoice typed "Slash pstack setup p stack" as plain words</td></tr>
+      <tr><td>Run a slash command with the X button</td><td>0</td><td></td></tr>
       <tr><td>Configure pstack (four questions)</td><td>0</td><td></td></tr>
     </table></div>
-    <p>Slash commands are the gap. Dictation writes what it hears as words, and Claude Code only treats text as a command when it starts with a typed <code>/</code>. My workaround was to ask in plain words, "run the pstack setup", and let Claude follow the plugin's steps. Mapping a spare button to <code>/</code> is another option I have not tried.</p>
+    <p>Slash commands are the gap. Dictation writes what it hears as words, and Claude Code only treats text as a command when it starts with a typed <code>/</code>. My first workaround was to ask in plain words, "run the pstack setup", and let Claude follow the plugin's steps. The fix was to map X to <code>/</code>. Pressing X opens Claude Code's command menu. Dictating one word, such as "setup", narrows the list. The D-pad picks the command and A runs it. Dictation only has to get one ordinary word right, and choosing from a short list is what the controller does well.</p>
     <p>This is one session, so it shows the setup works. It says nothing yet about whether I work faster or better this way.</p>
 
     <h2>Two things the buttons do not tell you</h2>
