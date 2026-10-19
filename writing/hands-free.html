@@ -68,12 +68,13 @@
     <p class="byline">Bryan Falkowski · October 19, 2026 · Builds on <a href="https://robikovacs.com/blog/coding-hands-free-claude-code-wispr-flow/">Robert Kovacs's post on coding hands-free with Claude Code and Wispr Flow</a></p>
 
     <div class="tldr">
-      <p>Working with a coding agent comes down to two inputs. You say what you want, and you decide on what the agent did. I built an interface for exactly those two, with speech for the first and an 8BitDo Micro game controller for the second, and used it to run Claude Code without touching the keyboard.</p>
-      <p>It works. Getting there took three rounds of fixes, and the problems along the way say more than the result. The interface makes approving almost free, and the open question is whether that makes the person holding the controller a better reviewer or a careless one.</p>
+      <p>Working with a coding agent comes down to two inputs. You say what you want, and you decide on what the agent did. Neither one needs a keyboard. I think keyboards will come to look as dated as typewriters, and the design principles for whatever replaces them are older than any AI tool.</p>
+      <p>To test that, I built an interface from speech and an 8BitDo Micro game controller, using what I learned in an HCI course, and ran Claude Code without touching the keyboard. It works. This post covers what I built, what HCI says is good and bad about it, and the open question it raises. Does making approval this easy keep the person holding the controller a careful reviewer?</p>
     </div>
 
     <h2>Two inputs</h2>
-    <p>Not long ago, writing code without opening an editor was new. With agents like Claude Code, you describe the change and approve what the agent does. "Writing code" is a loose term for that, since Claude writes it and I steer. If steering is the work, the input devices can be designed around it.</p>
+    <p>Don Norman wrote <em>The Design of Everyday Things</em> about doors, stoves and light switches. He could not have pictured Claude Code. His principles still apply to it, because they are about people, and people have not changed.</p>
+    <p>Not long ago, writing code without opening an editor was new. With agents like Claude Code, you describe the change and approve what the agent does. "Writing code" is a loose term for that, since Claude writes it and I steer. If steering is the work, the input devices can be designed around it, and the keyboard is one choice among several.</p>
     <p>In <a href="https://robikovacs.com/blog/coding-hands-free-claude-code-wispr-flow/">a post from April 13, 2026</a>, Robert Kovacs described steering Claude Code this way daily for several weeks, with the same controller and Wispr Flow for dictation. He found that talking makes him state the intent, constraints and edge cases up front, so Claude's first attempt lands closer. He also found that speech cannot approve anything. Saying "yes" types the word "yes" into the chat box, so approvals need a real key.</p>
     <p>His first finding is about skill more than speed. Stating the intent, the constraints and the edge cases is the part of working with an agent that the agent cannot do for you. My guess is that speaking trains it, because a vague request sounds vague when you say it out loud, and a typed one is easy to send anyway.</p>
     <p>That is the lens for the rest of this post. An interface for working with AI changes how fast you go, and it also changes what you practise. Speech may train you to say what you mean. One-press approval may train you to stop reading.</p>
@@ -139,6 +140,10 @@
       <li><strong>Tell reviewers when they missed one.</strong> The course's remedies for vigilance include knowledge of results when an event is missed. Mixing in items with known answers, and saying when one was approved by mistake, gives the reviewer that feedback while they work.</li>
     </ul>
     <p>Whether the controller makes reviewers worse can be measured instead of guessed. Use a review task where the right answers are known in advance, and alternate batches between the keyboard and the controller. Discard the first batches with each input, so learning the controller does not count against it. Then compare how many wrong answers got approved with each. That number, not the time per decision, says whether the interface made the person a better reviewer.</p>
+
+    <h2>Time will tell</h2>
+    <p>I do not know yet whether I will keep using this. Habits are strong, and some things, like an exact file path, may still be easier to type. But the experiment answered the question I started with. A full session of steering Claude Code, from prompts to approvals to commands, worked without the keyboard.</p>
+    <p>None of this is new for everyone. People who cannot use a keyboard have had other ways in for a long time, such as voice control and switch access, both built into macOS. What has changed is the work. When what we do at the computer becomes describing and deciding, the rest of us can step back from the keyboard too, and the old HCI principles tell us what to watch for when we do.</p>
 
     <h2 id="setup">Appendix: set it up yourself</h2>
     <p>You need the three pieces above and Claude Code in a terminal. I bought the Micro <a href="https://www.amazon.com/dp/B0CDG5HCCH">on Amazon</a>.</p>
