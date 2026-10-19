@@ -154,7 +154,6 @@
     <h2>What went wrong during setup</h2>
     <ul>
       <li><strong>8BitDo's own app.</strong> 8BitDo Ultimate Software V2 has no macOS version, and the iPhone version had a one-star rating when I looked. Kovacs remapped through the iPhone app, and it worked for him. I used Karabiner instead.</li>
-      <li><strong>The controller connected to the wrong device.</strong> The Micro reconnects to the last device it paired with, which for me was the phone. The Mac's Bluetooth list did not show it at all until I made the phone forget it and paired it again.</li>
       <li><strong>Permissions that looked granted.</strong> After I approved Karabiner's prompts, the controller still typed letters. Karabiner's log said <code>device_grabber is not started because the required permissions are not granted</code>. Its setup window had stopped at the Accessibility step. Granting that fixed it.</li>
       <li><strong>Quitting Karabiner stops the remap silently.</strong> I quit it to restart it after granting permissions. Until it was open again, the buttons typed letters with no warning.</li>
     </ul>
