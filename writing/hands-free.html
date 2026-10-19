@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Bryan Falkowski">
+  <meta name="description" content="How to drive Claude Code with voice and an 8BitDo Micro game controller on a Mac, using FluidVoice for dictation and Karabiner-Elements to remap only the controller. Setup, the problems along the way, and a log of the first session.">
+  <title>Claude Code Without the Keyboard: Voice and a Game Controller | Bryan Falkowski</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --text: #2c2c2c;
+      --muted: #666666;
+      --line: #e0e0e0;
+      --alt-bg: #fafafa;
+      --accent: #1d3f72;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: #fff; color: var(--text);
+      font: 17px/1.6 "Source Sans 3", "Source Sans Pro", sans-serif;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .topbar { border-bottom: 1px solid var(--line); padding: 14px 32px; }
+    .topbar .container { display: flex; justify-content: space-between; font-size: 15px; }
+    .topbar a.home { color: var(--text); font-weight: 600; }
+    .container { max-width: 760px; margin: 0 auto; }
+    article { padding: 48px 32px 64px; }
+    h1 { font-size: 36px; font-weight: 600; line-height: 1.2; margin: 0 0 10px; }
+    .byline { color: var(--muted); font-size: 15px; margin: 0 0 36px; }
+    h2 { font-size: 24px; font-weight: 700; margin: 44px 0 14px; }
+    p { margin: 0 0 14px; }
+    ul, ol { margin: 0 0 16px; padding-left: 24px; }
+    li { margin-bottom: 6px; }
+    .table-wrap { overflow-x: auto; margin: 0 0 18px; }
+    table { border-collapse: collapse; width: 100%; font-size: 15px; }
+    th, td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; vertical-align: top; }
+    th { background: var(--alt-bg); font-weight: 600; }
+    code { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 0.9em; }
+    pre { background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; margin: 0 0 18px; overflow-x: auto; font-size: 14px; line-height: 1.45; }
+    pre code { font-size: 1em; }
+    .tldr { background: var(--alt-bg); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 6px 6px 0; }
+    .tldr p:last-child { margin-bottom: 0; }
+    footer { text-align: center; color: var(--muted); font-size: 14px; padding: 32px; border-top: 1px solid var(--line); }
+    @media (max-width: 720px) {
+      .topbar, article { padding-left: 16px; padding-right: 16px; }
+      h1 { font-size: 30px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="container">
+      <a class="home" href="../">Bryan Falkowski</a>
+      <a href="../#writing">All writing</a>
+    </div>
+  </div>
+
+  <article class="container">
+    <h1>Claude Code Without the Keyboard: Voice and a Game Controller</h1>
+    <p class="byline">Bryan Falkowski · October 19, 2026 · Builds on <a href="https://robikovacs.com/blog/coding-hands-free-claude-code-wispr-flow/">Robert Kovacs's post on coding hands-free with Claude Code and Wispr Flow</a></p>
+
+    <div class="tldr">
+      <p>A Claude Code session needs two kinds of input from you. You describe what you want, and you answer Claude's questions with yes, no, or one of a few choices. Speech handles the first. A handful of buttons handles the second.</p>
+      <p>This post sets that up on a Mac with an 8BitDo Micro controller, FluidVoice for dictation, and Karabiner-Elements to remap only the controller. In my first session I installed and configured a Claude Code plugin without touching the keyboard. Slash commands were the one thing speech could not do.</p>
+    </div>
+
+    <h2>Where this comes from</h2>
+    <p>Robert Kovacs wrote about doing this daily for several weeks with the same controller and Wispr Flow. He found that talking makes him state the intent, constraints and edge cases up front, so Claude's first attempt lands closer. He also found that speech cannot approve anything. Saying "yes" types the word "yes" into the chat box, so approvals need a real key.</p>
+    <p>My setup differs in three places. FluidVoice transcribes on the Mac instead of in the cloud. I remapped the controller on the Mac with Karabiner, because 8BitDo's remapping app has no macOS version. And I kept a log of every time I had to reach for the keyboard, because that count is the honest measure of whether the setup works.</p>
+
+    <h2>What you need</h2>
+    <ul>
+      <li><strong>An <a href="https://www.8bitdo.com/micro/">8BitDo Micro</a>.</strong> A Bluetooth controller about the size of a keychain, sold for page turning and Anki. It has a keyboard mode, so the Mac sees it as a keyboard.</li>
+      <li><strong><a href="https://github.com/altic-dev/FluidVoice">FluidVoice</a>.</strong> A free, open-source dictation app for macOS. You hold a key, talk, and release, and it types the text wherever the cursor is. It runs speech models on your Mac unless you turn on a cloud provider.</li>
+      <li><strong><a href="https://karabiner-elements.pqrs.org/">Karabiner-Elements</a>.</strong> A free, open-source key remapper for macOS. It can apply a rule to one device only, which is what makes this work.</li>
+      <li><strong>Claude Code</strong> in a terminal.</li>
+    </ul>
+
+    <h2>Find out what the controller sends</h2>
+    <ol>
+      <li>Slide the Micro's mode switch to <strong>K</strong>.</li>
+      <li>Hold the pair button on the top edge for about 3 seconds, until the light blinks fast.</li>
+      <li>On the Mac, open System Settings, then Bluetooth, and connect to "8BitDo Micro gamepad".</li>
+      <li>Open TextEdit and press each button in a known order.</li>
+    </ol>
+    <p>In keyboard mode, every button types a letter. Mine typed these:</p>
+    <div class="table-wrap"><table>
+      <tr><th>Button</th><th>Sends</th></tr>
+      <tr><td>A, B, X, Y</td><td><code>g</code>, <code>j</code>, <code>h</code>, <code>i</code></td></tr>
+      <tr><td>D-pad up, down, left, right</td><td><code>c</code>, <code>d</code>, <code>e</code>, <code>f</code></td></tr>
+      <tr><td>L, R</td><td><code>l</code>, <code>r</code></td></tr>
+      <tr><td>Plus, minus</td><td><code>o</code>, <code>n</code></td></tr>
+      <tr><td>The two remaining buttons</td><td><code>k</code>, <code>m</code></td></tr>
+    </table></div>
+    <p>Claude Code ignores all of these. It listens for Enter, Esc, the arrow keys and Shift+Tab, so the controller needs remapping.</p>
+
+    <h2>Remap only the controller</h2>
+    <p>Install Karabiner with Homebrew. The installer adds a keyboard driver, so it asks for your password.</p>
+    <pre><code>brew install --cask karabiner-elements</code></pre>
+    <p>Open Karabiner-Elements and follow its prompts. In System Settings, under Privacy &amp; Security, turn on Karabiner-Core-Service in both <strong>Input Monitoring</strong> and <strong>Accessibility</strong>. Karabiner sees every key you type once you grant these, which is how any remapper works. Read <a href="https://github.com/pqrs-org/Karabiner-Elements">its source</a> if that matters to you.</p>
+    <p>The rule below goes in <code>~/.config/karabiner/karabiner.json</code>, under <code>profiles[0].complex_modifications.rules</code>. Each line turns one letter into one key. The <code>device_if</code> condition limits the rule to the Micro by its vendor and product IDs, so your real keyboard still types <code>g</code>. Run <code>system_profiler SPBluetoothDataType</code> to confirm the IDs for your unit. Mine reported vendor <code>0x2DC8</code> (11720) and product <code>0x9021</code> (36897).</p>
+    <pre><code>{
+  "description": "8BitDo Micro: A=Enter, B=Esc, D-pad=arrows, L=FluidVoice, R=Shift+Tab",
+  "manipulators": [
+    { "from": "g", "to": "return_or_enter" },
+    { "from": "j", "to": "escape" },
+    { "from": "c", "to": "up_arrow" },
+    { "from": "d", "to": "down_arrow" },
+    { "from": "e", "to": "left_arrow" },
+    { "from": "f", "to": "right_arrow" },
+    { "from": "l", "to": "right_option" },
+    { "from": "r", "to": "tab", "modifiers": ["left_shift"] }
+  ]
+}</code></pre>
+    <p>That is shorthand. Karabiner wants each line written out in full, with the device condition on every one. Here is the first line in Karabiner's format. The other seven follow the same shape.</p>
+    <pre><code>{
+  "type": "basic",
+  "from": { "key_code": "g", "modifiers": { "optional": ["any"] } },
+  "to": [{ "key_code": "return_or_enter" }],
+  "conditions": [{
+    "type": "device_if",
+    "identifiers": [{ "vendor_id": 11720, "product_id": 36897 }]
+  }]
+}</code></pre>
+    <p>Karabiner reloads the file when it changes. Press A in TextEdit to check. It should start a new line instead of typing <code>g</code>.</p>
+
+    <h2>The button map</h2>
+    <div class="table-wrap"><table>
+      <tr><th>Button</th><th>Key</th><th>In Claude Code</th></tr>
+      <tr><td>A</td><td>Enter</td><td>Accept, submit, or pick the highlighted option</td></tr>
+      <tr><td>B</td><td>Esc</td><td>Reject, or interrupt Claude while it works</td></tr>
+      <tr><td>D-pad</td><td>Arrow keys</td><td>Move between options in a question or a permission prompt</td></tr>
+      <tr><td>L, held</td><td>Right Option</td><td>FluidVoice listens while you hold it</td></tr>
+      <tr><td>R</td><td>Shift+Tab</td><td>Switch Claude Code's permission mode</td></tr>
+    </table></div>
+    <p>FluidVoice's hotkey was already right Option, so the L button only had to send that key. Kovacs used a key combination for Wispr Flow because Wispr's default key, <code>fn</code>, could not be assigned to a controller button in 8BitDo's app. Karabiner sends a plain right Option, so no combination was needed.</p>
+    <p>I left X, Y, plus, minus and the other two buttons alone. They still type letters, so a stray press puts a letter in your prompt. Map them to <code>vk_none</code> in the same rule if that happens to you.</p>
+
+    <h2>What went wrong during setup</h2>
+    <ul>
+      <li><strong>8BitDo's own app.</strong> 8BitDo Ultimate Software V2 has no macOS version, and the iPhone version had a one-star rating when I looked. Kovacs remapped through the iPhone app, and it worked for him. I used Karabiner instead.</li>
+      <li><strong>The controller connected to the wrong device.</strong> The Micro reconnects to the last device it paired with, which for me was the phone. The Mac's Bluetooth list did not show it at all until I made the phone forget it and paired it again.</li>
+      <li><strong>Permissions that looked granted.</strong> After I approved Karabiner's prompts, the controller still typed letters. Karabiner's log said <code>device_grabber is not started because the required permissions are not granted</code>. Its setup window had stopped at the Accessibility step. Granting that fixed it.</li>
+      <li><strong>Quitting Karabiner stops the remap silently.</strong> I quit it to restart it after granting permissions. Until it was open again, the buttons typed letters with no warning.</li>
+    </ul>
+    <p>Two of these share a cause. Nothing on the screen told me the setup was not working. The buttons kept typing letters, which looks the same as a rule with a typo. The only reliable signal was Karabiner's log at <code>/var/log/karabiner/core_service.log</code>, which says when it has taken over the controller.</p>
+
+    <h2>The first session</h2>
+    <p>Once the remap worked, I used speech and the controller for the rest of the session. In that time I installed a Claude Code plugin, <a href="https://github.com/cursor/plugins/tree/main/pstack">pstack</a>, and ran its setup. The setup asked four multiple-choice questions, and I answered each with the D-pad and A.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Task</th><th>Keyboard presses</th><th>Why</th></tr>
+      <tr><td>Install Karabiner</td><td>1</td><td>The installer asks for the Mac password, before the controller works</td></tr>
+      <tr><td>Install the pstack plugin</td><td>0</td><td></td></tr>
+      <tr><td>Run a slash command by voice</td><td>None, but it failed</td><td>FluidVoice typed "Slash pstack setup p stack" as plain words</td></tr>
+      <tr><td>Configure pstack (four questions)</td><td>0</td><td></td></tr>
+    </table></div>
+    <p>Slash commands are the gap. Dictation writes what it hears as words, and Claude Code only treats text as a command when it starts with a typed <code>/</code>. My workaround was to ask in plain words, "run the pstack setup", and let Claude follow the plugin's steps. Mapping a spare button to <code>/</code> is another option I have not tried.</p>
+    <p>This is one session, so it shows the setup works. It says nothing yet about whether I work faster or better this way.</p>
+
+    <h2>Two things the buttons do not tell you</h2>
+    <p>Don Norman's <em>The Design of Everyday Things</em> asks two questions of any control. Can you tell what it does by looking at it? Can you tell whether it worked?</p>
+    <p>The controller fails the first. The buttons say A, B, X and Y, not Accept and Reject, so the mapping lives in your memory or on a table beside you. A label on screen that names each button's current action would fix this, and Claude Code's status line could show one. The setup failed the second question, as described above, because a broken remap and a working one with a typo look the same.</p>
+
+    <h2>Does a one-press yes change what you approve?</h2>
+    <p>With this setup, approving a change costs one press of the thumb. Reading what you approve costs the same as it did before. I expect that gap to pull toward approving without reading, and Kovacs's post does not look at it.</p>
+    <p>I plan to measure it, not guess. The plan is a review task where the right answers are known in advance, done in alternating batches with the keyboard and with the controller. I would discard the first batches with each input, so learning the controller does not count against it. That is planned work, and this post will link to the results.</p>
+
+    <h2>References</h2>
+    <ul>
+      <li><a href="https://robikovacs.com/blog/coding-hands-free-claude-code-wispr-flow/">Coding hands-free with Claude Code and Wispr Flow</a>, Robert Kovacs, April 2026</li>
+      <li><a href="https://github.com/altic-dev/FluidVoice">FluidVoice</a>, open-source dictation for macOS (GPLv3)</li>
+      <li><a href="https://karabiner-elements.pqrs.org/">Karabiner-Elements</a>, key remapper for macOS</li>
+      <li><a href="https://www.8bitdo.com/micro/">8BitDo Micro</a></li>
+      <li><a href="https://github.com/cursor/plugins/tree/main/pstack">pstack</a>, the plugin installed in the first session</li>
+      <li>Don Norman, <em>The Design of Everyday Things</em>, revised edition, Basic Books, 2013</li>
+    </ul>
+  </article>
+
+  <footer>&copy; 2026 Bryan Falkowski · <a href="../">Home</a></footer>
+</body>
+</html>
