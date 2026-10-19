@@ -31,6 +31,7 @@
     article { padding: 48px 32px 64px; }
     h1 { font-size: 36px; font-weight: 600; line-height: 1.2; margin: 0 0 10px; }
     .byline { color: var(--muted); font-size: 15px; margin: 0 0 36px; }
+    .kicker { color: var(--muted); font-size: 14px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin: 0 0 8px; }
     h2 { font-size: 24px; font-weight: 700; margin: 44px 0 14px; }
     h3 { font-size: 19px; font-weight: 600; margin: 28px 0 10px; }
     .refs { font-size: 15px; }
@@ -62,6 +63,7 @@
   </div>
 
   <article class="container">
+    <p class="kicker">Part 1 of 2</p>
     <h1>Is the Reviewer Getting Better? Design Notes on Training People to Judge AI Output</h1>
     <p class="byline">Bryan Falkowski · Updated October 18, 2026 · Design notes · <a href="https://bfalkowski.github.io/second-look/">Try it</a> · <a href="https://github.com/bfalkowski/second-look">Code</a></p>
 
@@ -178,6 +180,13 @@ flowchart LR
       <li><strong>Can Claude grade the notes?</strong> Before Claude's grades count on their own, they need to be checked against a person's grades, the same way an LLM judge is checked in the primer.</li>
       <li><strong>Are spoken notes as good as typed ones?</strong> Talking is faster, but spoken notes tend to run longer and looser. They might name the failure less precisely, or capture more of what the reviewer noticed. Comparing note grades between remote and keyboard sessions would show which.</li>
       <li><strong>Does it carry over to real work?</strong> The real test is whether someone judges their own product's traces better afterward. That needs a follow-up on real traces, labeled by a second reviewer.</li>
+    </ul>
+
+    <h2>Coming in Part 2</h2>
+    <p>Part 2 is planned. It covers two things this post can only describe as intended:</p>
+    <ul>
+      <li><strong>Claude coaching in the live demo.</strong> What Claude's hints and explanations are like next to the scripted coach's, once the backend is hosted, and how often the coaching rules and the daily limit come into play.</li>
+      <li><strong>Reviewing with a real remote.</strong> What a full practice round run from an Anki-style remote, with spoken notes, is actually like.</li>
     </ul>
 
     <h2>Related</h2>
