@@ -102,6 +102,7 @@
       <tr><td>X</td><td><code>/</code></td><td>Open the command menu</td></tr>
       <tr><td>R</td><td>Shift+Tab</td><td>Switch Claude Code's permission mode</td></tr>
       <tr><td>Plus, minus</td><td>Cmd+Shift+], Cmd+Shift+[</td><td>Next and previous Terminal tab, one agent per tab</td></tr>
+      <tr><td>Y</td><td>Cmd+Tab</td><td>Switch back to the last app, such as from the browser to the terminal</td></tr>
     </table></div>
     <p>The <a href="#setup">appendix</a> has everything needed to copy it.</p>
 
@@ -120,7 +121,7 @@
       <tr><td>Actions I rejected</td><td>0</td></tr>
       <tr><td>Keyboard presses</td><td>1</td></tr>
     </table></div>
-    <p>The one keyboard press came when Claude opened the page in my browser. Getting back to the terminal took Cmd+Tab, and no button sent it. A spare button mapped to Cmd+Tab closes that gap.</p>
+    <p>The one keyboard press came when Claude opened the page in my browser. Getting back to the terminal took Cmd+Tab, and no button sent it. Afterwards I mapped the unused Y button to Cmd+Tab, which closes that gap.</p>
     <p>The more interesting number is a pattern. Claude asked its questions as multiple choice with a recommended option first, and I took the recommendation every time. Every approval was A. I knew the D-pad could move to another choice, and I never needed it. That could mean the recommendations were good. It could also be the start of the habit the rest of this post worries about, and from inside the session I could not tell which.</p>
     <p>I usually run several Claude Code agents at once, each in its own git worktree and its own Terminal tab. Plus and minus move to the next and previous tab, so going from one agent to the next is a single press. Getting to an agent is easy. Knowing which one is waiting for me is harder, because a tab does not say so from across the room.</p>
 
@@ -205,7 +206,7 @@
     <p>Open Karabiner-Elements and follow its prompts. In System Settings, under Privacy &amp; Security, turn on Karabiner-Core-Service in both <strong>Input Monitoring</strong> and <strong>Accessibility</strong>. Karabiner sees every key you type once you grant these, which is how any remapper works. Read <a href="https://github.com/pqrs-org/Karabiner-Elements">its source</a> if that matters to you. If the buttons still type letters, check <code>/var/log/karabiner/core_service.log</code>. It says when Karabiner has taken over the controller.</p>
     <p><strong>Add the rule.</strong> It goes in <code>~/.config/karabiner/karabiner.json</code>, under <code>profiles[0].complex_modifications.rules</code>. Each line turns one letter into one key. The <code>device_if</code> condition limits the rule to the Micro by its vendor and product IDs, so your real keyboard still types <code>g</code>. Run <code>system_profiler SPBluetoothDataType</code> to confirm the IDs for your unit. Mine reported vendor <code>0x2DC8</code> (11720) and product <code>0x9021</code> (36897).</p>
     <pre><code>{
-  "description": "8BitDo Micro: A=Enter, B=Esc, D-pad=arrows, L=FluidVoice, R=Shift+Tab, X=/, plus and minus=tabs",
+  "description": "8BitDo Micro: A=Enter, B=Esc, D-pad=arrows, L=FluidVoice, R=Shift+Tab, X=/, plus and minus=tabs, Y=Cmd+Tab",
   "manipulators": [
     { "from": "g", "to": "return_or_enter" },
     { "from": "j", "to": "escape" },
@@ -217,7 +218,8 @@
     { "from": "r", "to": "tab", "modifiers": ["left_shift"] },
     { "from": "h", "to": "slash" },
     { "from": "o", "to": "close_bracket", "modifiers": ["left_command", "left_shift"] },
-    { "from": "n", "to": "open_bracket", "modifiers": ["left_command", "left_shift"] }
+    { "from": "n", "to": "open_bracket", "modifiers": ["left_command", "left_shift"] },
+    { "from": "i", "to": "tab", "modifiers": ["left_command"] }
   ]
 }</code></pre>
     <p>That is shorthand. Karabiner wants each line written out in full, with the device condition on every one. Here is the first line in Karabiner's format. The others follow the same shape.</p>
@@ -231,7 +233,7 @@
   }]
 }</code></pre>
     <p>Karabiner reloads the file when it changes. Press A in TextEdit to check. It should start a new line instead of typing <code>g</code>.</p>
-    <p><strong>Notes.</strong> FluidVoice's hotkey was already right Option, set to start and stop on separate presses, so the L button only sends that key. Kovacs used a key combination for Wispr Flow because Wispr's default key, <code>fn</code>, could not be assigned to a controller button in 8BitDo's app. I left Y and the other two buttons alone. They still type letters, so a stray press puts a letter in your prompt. Map them to <code>vk_none</code> in the same rule if that happens to you.</p>
+    <p><strong>Notes.</strong> FluidVoice's hotkey was already right Option, set to start and stop on separate presses, so the L button only sends that key. Kovacs used a key combination for Wispr Flow because Wispr's default key, <code>fn</code>, could not be assigned to a controller button in 8BitDo's app. I left the two remaining buttons alone. They still type letters, so a stray press puts a letter in your prompt. Map them to <code>vk_none</code> in the same rule if that happens to you.</p>
 
     <h2>References</h2>
     <ul>
