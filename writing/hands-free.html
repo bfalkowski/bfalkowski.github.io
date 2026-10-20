@@ -69,7 +69,7 @@
 
     <div class="tldr">
       <p>When we make delegating work to AI effortless, do we also make careful supervision less likely?</p>
-      <p>I ran into that question by building an interface for Claude Code from speech and an 8BitDo Micro game controller. Speech says what I want, and a thumb press approves what the agent did. It works, and a full session needed no keyboard. It also makes approving a change cost almost nothing, while reading the change costs what it always did.</p>
+      <p>I ran into that question by building an interface for Claude Code from speech and an 8BitDo Micro game controller. Speech says what I want, and a thumb press approves what the agent did. It works. Building a small web app with it took one keyboard press. It also makes approving a change cost almost nothing, while reading the change costs what it always did.</p>
       <p>This post covers what I built, what the HCI course I took says is good and bad about it, and how to test whether easy approval makes reviewers careless. It separates what I saw from what I only suspect.</p>
     </div>
 
@@ -111,15 +111,17 @@
     <p><strong>Round three: slash commands.</strong> Claude Code runs a command only when the message starts with a typed <code>/</code>. When I said "slash", FluidVoice typed the word. The fix was to map X to <code>/</code>. Pressing X opens Claude Code's command menu. Then I press L, say one word from the command's name, such as "setup", and press L again. The menu shows only the commands that match. The D-pad moves to the right one, and A runs it. Dictation only has to get one ordinary word right, and picking from a short list is what the controller does well.</p>
 
     <h2>Using it</h2>
-    <p>After round two, I used speech and the controller for the rest of the session. I installed a Claude Code plugin, <a href="https://github.com/cursor/plugins/tree/main/pstack">pstack</a>, and ran its setup, which asked four multiple-choice questions. I kept a count of every time I had to reach for the keyboard, because that count is the honest test of whether the interface works.</p>
+    <p>To test the interface on real work, I built a small web app with Claude Code from the controller: the <a href="https://bfalkowski.github.io/micro-tester/">Micro Tester</a>. It draws the Micro, labels each button with its action, and lights a button up when you press it. That makes it the first item on the next-version list below, built with the thing it fixes. The build took about twelve minutes, from an empty folder to a tested, deployed page. The counts come from Claude Code's session file, apart from the keyboard presses, which I kept track of myself.</p>
     <div class="table-wrap"><table>
-      <tr><th>Task</th><th>Keyboard presses</th><th>Why</th></tr>
-      <tr><td>Install Karabiner</td><td>1</td><td>The installer asks for the Mac password, before the controller works</td></tr>
-      <tr><td>Install the pstack plugin</td><td>0</td><td></td></tr>
-      <tr><td>Run a slash command by voice</td><td>None, but it failed</td><td>FluidVoice typed "Slash pstack setup p stack" as plain words</td></tr>
-      <tr><td>Run a slash command with the X button</td><td>0</td><td></td></tr>
-      <tr><td>Configure pstack (four questions)</td><td>0</td><td></td></tr>
+      <tr><th>What happened</th><th>Count</th></tr>
+      <tr><td>Files Claude wrote or edited</td><td>12</td></tr>
+      <tr><td>Shell commands Claude ran, for installing, testing, building and deploying</td><td>13</td></tr>
+      <tr><td>Design decisions I made with the D-pad and A</td><td>4</td></tr>
+      <tr><td>Actions I rejected</td><td>0</td></tr>
+      <tr><td>Keyboard presses</td><td>1</td></tr>
     </table></div>
+    <p>The one keyboard press came when Claude opened the page in my browser. Getting back to the terminal took Cmd+Tab, and no button sent it. A spare button mapped to Cmd+Tab closes that gap.</p>
+    <p>The more interesting number is a pattern. Claude asked its questions as multiple choice with a recommended option first, and I took the recommendation every time. Every approval was A. I knew the D-pad could move to another choice, and I never needed it. That could mean the recommendations were good. It could also be the start of the habit the rest of this post worries about, and from inside the session I could not tell which.</p>
     <p>I usually run several Claude Code agents at once, each in its own git worktree and its own Terminal tab. Plus and minus move to the next and previous tab, so going from one agent to the next is a single press. Getting to an agent is easy. Knowing which one is waiting for me is harder, because a tab does not say so from across the room.</p>
 
     <h2>Reading it as an HCI problem</h2>
@@ -136,7 +138,7 @@
     <h2>The next version</h2>
     <p>The prototype is usable, not polished. Its value so far is that it works well enough to expose real design problems. One choice held up and is worth keeping. Speech for intent and a short menu for decisions give each input the part it handles well, which is why the slash command fix works. The next version would add four things:</p>
     <ul>
-      <li><strong>Button labels on screen.</strong> A strip in Claude Code's status line naming what A, B, X and the D-pad do right now, so the controller has the signifiers it lacks.</li>
+      <li><strong>Button labels on screen.</strong> The Micro Tester shows them on a web page. Inside Claude Code, a strip in the status line could name what A, B, X and the D-pad do right now, so the controller has the signifiers it lacks where they are needed.</li>
       <li><strong>A visible permission mode.</strong> The current mode shown wherever approvals happen, so pressing R can never leave you in auto-accept without knowing it.</li>
       <li><strong>A check that the remap is live.</strong> A small signal that Karabiner has taken over the controller, so a missing permission or a quit app shows up on screen instead of in a log.</li>
       <li><strong>A sign of which agent is waiting.</strong> With one agent per Terminal tab, plus and minus get me to any of them, but nothing tells me which one needs an answer. A sound or a notification when an agent stops would close that gap.</li>
@@ -166,8 +168,9 @@
     <h2>What I saw and what I suspect</h2>
     <div class="table-wrap"><table>
       <tr><th>Claim</th><th>Status</th></tr>
-      <tr><td>A full Claude Code session, with prompts, approvals, menus and commands, runs without the keyboard</td><td>Observed, in my own sessions</td></tr>
+      <tr><td>Building a small web app with Claude Code, with prompts, approvals, menus and commands, needs almost no keyboard</td><td>Observed, one keyboard press in the build</td></tr>
       <tr><td>The setup fails silently when permissions are missing or Karabiner is not running</td><td>Observed</td></tr>
+      <tr><td>With a recommended option shown first, I accepted it every time</td><td>Observed, in one twelve-minute build</td></tr>
       <tr><td>Speaking makes prompts state intent and edge cases more clearly</td><td>Reported by Kovacs, not tested by me</td></tr>
       <tr><td>Speaking trains that skill over time</td><td>My guess</td></tr>
       <tr><td>One-press approval leads to approving without reading</td><td>Hypothesis, based on capture errors and vigilance. It needs the test above.</td></tr>
@@ -175,7 +178,7 @@
     </table></div>
 
     <h2>Time will tell</h2>
-    <p>I do not know yet whether I will keep using this. Habits are strong, and some things, like an exact file path, may still be easier to type. What the experiment shows is narrower than a prediction about keyboards. For one workflow, steering Claude Code, from prompts to approvals to commands, the keyboard turned out to be optional. Whether that is good for the person steering is the question this post leaves open.</p>
+    <p>I do not know yet whether I will keep using this. Habits are strong, and some things, like an exact file path, may still be easier to type. What the experiment shows is narrower than a prediction about keyboards. For one workflow, steering Claude Code, from prompts to approvals to commands, the keyboard turned out to be almost optional, and the one press it still needed has a fix. Whether that is good for the person steering is the question this post leaves open.</p>
     <p>None of this is new for everyone. People who cannot use a keyboard have had other ways in for a long time, such as voice control and switch access, both built into macOS. What has changed is the work. When what we do at the computer becomes describing and deciding, the rest of us can step back from the keyboard too, and the old HCI principles tell us what to watch for when we do.</p>
     <p>The controller is a small experiment, but the question applies to any AI tool that separates doing the work from approving it. Such tools should be judged on more than whether people can finish the task. They should also be judged on whether they help people make better decisions about the result.</p>
 
@@ -236,7 +239,7 @@
       <li><a href="https://github.com/altic-dev/FluidVoice">FluidVoice</a>, open-source dictation for macOS (GPLv3)</li>
       <li><a href="https://karabiner-elements.pqrs.org/">Karabiner-Elements</a>, key remapper for macOS</li>
       <li><a href="https://www.8bitdo.com/micro/">8BitDo Micro</a></li>
-      <li><a href="https://github.com/cursor/plugins/tree/main/pstack">pstack</a>, the plugin installed while testing</li>
+      <li><a href="https://github.com/bfalkowski/micro-tester">Micro Tester</a>, the page built for this post, and its <a href="https://bfalkowski.github.io/micro-tester/">live version</a></li>
       <li>Don Norman, <em>The Design of Everyday Things</em>, revised edition, Basic Books, 2013</li>
       <li>Foundations of Human Computer Interaction (HCIN 610), Rochester Institute of Technology, lecture modules by Matt Huenerfauth: HCI overview, Norman's principles, and attention, mistakes and slips</li>
       <li>Connell, Jones, Mace, Mueller, Mullick, Ostroff, Sanford, Steinfeld, Story and Vanderheiden, <em>The Principles of Universal Design</em>, version 2.0, Center for Universal Design, NC State University, 1997</li>
