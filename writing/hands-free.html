@@ -65,7 +65,7 @@
 
   <article class="container">
     <h1>Steering Claude Code Without a Keyboard</h1>
-    <p class="byline">Bryan Falkowski · October 19, 2026 · Builds on <a href="https://robikovacs.com/blog/coding-hands-free-claude-code-wispr-flow/">Robert Kovacs's post on coding hands-free with Claude Code and Wispr Flow</a></p>
+    <p class="byline">Bryan Falkowski · October 19, 2026 · Updated October 20, 2026 · Builds on <a href="https://robikovacs.com/blog/coding-hands-free-claude-code-wispr-flow/">Robert Kovacs's post on coding hands-free with Claude Code and Wispr Flow</a></p>
 
     <div class="tldr">
       <p>When we make delegating work to AI effortless, do we also make careful supervision less likely?</p>
@@ -85,7 +85,7 @@
     <p>The prototype has three parts, all on a Mac:</p>
     <ul>
       <li><strong>An <a href="https://www.8bitdo.com/micro/">8BitDo Micro</a></strong>, a Bluetooth controller about the size of a keychain, sold for page turning and Anki. In keyboard mode the Mac sees it as a keyboard.</li>
-      <li><strong><a href="https://github.com/altic-dev/FluidVoice">FluidVoice</a></strong>, a free, open-source dictation app. You hold a key, talk, and release, and it types the text wherever the cursor is. It runs speech models on the Mac unless you turn on a cloud provider.</li>
+      <li><strong><a href="https://github.com/altic-dev/FluidVoice">FluidVoice</a></strong>, a free, open-source dictation app. You press a key, talk, and press it again, and it types the text wherever the cursor is. It runs speech models on the Mac unless you turn on a cloud provider.</li>
       <li><strong><a href="https://karabiner-elements.pqrs.org/">Karabiner-Elements</a></strong>, a free, open-source key remapper. It can apply a rule to one device only, so the controller changes and the real keyboard does not.</li>
     </ul>
     <figure>
@@ -95,19 +95,20 @@
     <p>Each button does one thing in Claude Code:</p>
     <div class="table-wrap"><table>
       <tr><th>Button</th><th>Key</th><th>In Claude Code</th></tr>
-      <tr><td>L, held</td><td>Right Option</td><td>FluidVoice listens while you hold it</td></tr>
+      <tr><td>L</td><td>Right Option</td><td>Start FluidVoice listening, and press again to stop</td></tr>
       <tr><td>A</td><td>Enter</td><td>Accept, submit, or pick the highlighted option</td></tr>
       <tr><td>B</td><td>Esc</td><td>Reject, or interrupt Claude while it works</td></tr>
       <tr><td>D-pad</td><td>Arrow keys</td><td>Move between options in a question or a permission prompt</td></tr>
       <tr><td>X</td><td><code>/</code></td><td>Open the command menu</td></tr>
       <tr><td>R</td><td>Shift+Tab</td><td>Switch Claude Code's permission mode</td></tr>
+      <tr><td>Plus, minus</td><td>Cmd+Shift+], Cmd+Shift+[</td><td>Next and previous Terminal tab, one agent per tab</td></tr>
     </table></div>
     <p>The <a href="#setup">appendix</a> has everything needed to copy it.</p>
 
     <h2>Three rounds to get it working</h2>
     <p><strong>Round one: every button typed a letter.</strong> In keyboard mode, A types <code>g</code>, B types <code>j</code>, and the D-pad types <code>c</code> to <code>f</code>. Claude Code listens for Enter, Esc and the arrow keys, so out of the box the controller did nothing useful. 8BitDo's remapping app has no macOS version, and the iPhone version had a one-star rating when I looked, so I wrote a Karabiner rule instead.</p>
     <p><strong>Round two: the remap failed without saying so.</strong> After I approved Karabiner's permission prompts, the buttons still typed letters. Karabiner's log said the permissions were not granted, because its setup had stopped at the Accessibility step. Later, quitting Karabiner to restart it turned the remap off, and the buttons went back to letters with no warning. Both times the screen looked exactly like a rule with a typo. Only the log said what was wrong.</p>
-    <p><strong>Round three: slash commands.</strong> Claude Code runs a command only when the message starts with a typed <code>/</code>. When I said "slash", FluidVoice typed the word. The fix was to map X to <code>/</code>. Pressing X opens Claude Code's command menu. Then I hold L and say one word from the command's name, such as "setup", and the menu shows only the commands that match. The D-pad moves to the right one, and A runs it. Dictation only has to get one ordinary word right, and picking from a short list is what the controller does well.</p>
+    <p><strong>Round three: slash commands.</strong> Claude Code runs a command only when the message starts with a typed <code>/</code>. When I said "slash", FluidVoice typed the word. The fix was to map X to <code>/</code>. Pressing X opens Claude Code's command menu. Then I press L, say one word from the command's name, such as "setup", and press L again. The menu shows only the commands that match. The D-pad moves to the right one, and A runs it. Dictation only has to get one ordinary word right, and picking from a short list is what the controller does well.</p>
 
     <h2>Using it</h2>
     <p>After round two, I used speech and the controller for the rest of the session. I installed a Claude Code plugin, <a href="https://github.com/cursor/plugins/tree/main/pstack">pstack</a>, and ran its setup, which asked four multiple-choice questions. I kept a count of every time I had to reach for the keyboard, because that count is the honest test of whether the interface works.</p>
@@ -119,6 +120,7 @@
       <tr><td>Run a slash command with the X button</td><td>0</td><td></td></tr>
       <tr><td>Configure pstack (four questions)</td><td>0</td><td></td></tr>
     </table></div>
+    <p>I usually run several Claude Code agents at once, each in its own git worktree and its own Terminal tab. Plus and minus move to the next and previous tab, so going from one agent to the next is a single press. Getting to an agent is easy. Knowing which one is waiting for me is harder, because a tab does not say so from across the room.</p>
 
     <h2>Reading it as an HCI problem</h2>
     <p>I took Foundations of Human Computer Interaction at RIT during my master's degree. It was an elective, and one of the more interesting subjects in the program. The course splits human error into two kinds. A mistake is choosing the wrong goal. A slip is having the right goal and doing the wrong thing, and the fix for a slip is better interface design. Almost everything that went wrong here is a slip, and the course has a name for each one.</p>
@@ -127,16 +129,17 @@
       <li><strong>No signifiers.</strong> A signifier is Don Norman's term for a visible cue that tells you what an action will do. The buttons say A, B, X and Y, not Accept and Reject, so the mapping lives in your memory or on a table beside you. A label on screen that names each button's current action would fix this, and Claude Code's status line could show one.</li>
       <li><strong>No feedback.</strong> In round two, a broken remap and a working one with a typo looked the same. The Principles of Universal Design ask for "effective prompting and feedback during and after task completion". The setup gave none. Only a log file did.</li>
       <li><strong>A mode error waiting to happen.</strong> R switches Claude Code's permission mode, and in auto-accept mode Claude edits files without asking. The controller shows nothing about which mode you are in. The course defines a mode error as the same action meaning different things in different system states, and notes it is "more common with poor visibility of system state".</li>
-      <li><strong>One thing it gets right.</strong> Holding L to talk is what the course calls a spring-loaded mode. FluidVoice listens only while the button is held, so you cannot leave the microphone on by forgetting which mode you are in.</li>
+      <li><strong>A mode I chose on purpose.</strong> L works as a toggle. Press it once and FluidVoice listens, press it again and it stops. That is easier than holding a button through a long request, but it is a mode, and the course warns that modes cause errors when their state is hard to see. If I forgot to press L again, the microphone would keep typing whatever I said next. The course's alternative is a spring-loaded mode, one that lasts only while a button is held. Push-to-talk is that design, and it trades the risk for a tired thumb on long requests.</li>
       <li><strong>Low physical effort.</strong> Universal Design's sixth principle asks for a neutral body position and fewer repetitive actions. Leaning back with a controller in one hand meets both better than a keyboard does, which is the strain Kovacs was trying to reduce.</li>
     </ul>
 
     <h2>The next version</h2>
-    <p>The prototype is usable, not polished. Its value so far is that it works well enough to expose real design problems. Two choices held up and are worth keeping. Hold-to-talk keeps the microphone under the thumb's control. Speech for intent and a short menu for decisions give each input the part it handles well, which is why the slash command fix works. The next version would add three things:</p>
+    <p>The prototype is usable, not polished. Its value so far is that it works well enough to expose real design problems. One choice held up and is worth keeping. Speech for intent and a short menu for decisions give each input the part it handles well, which is why the slash command fix works. The next version would add four things:</p>
     <ul>
       <li><strong>Button labels on screen.</strong> A strip in Claude Code's status line naming what A, B, X and the D-pad do right now, so the controller has the signifiers it lacks.</li>
       <li><strong>A visible permission mode.</strong> The current mode shown wherever approvals happen, so pressing R can never leave you in auto-accept without knowing it.</li>
       <li><strong>A check that the remap is live.</strong> A small signal that Karabiner has taken over the controller, so a missing permission or a quit app shows up on screen instead of in a log.</li>
+      <li><strong>A sign of which agent is waiting.</strong> With one agent per Terminal tab, plus and minus get me to any of them, but nothing tells me which one needs an answer. A sound or a notification when an agent stops would close that gap.</li>
     </ul>
 
     <h2>Easier is not the same as better</h2>
@@ -199,7 +202,7 @@
     <p>Open Karabiner-Elements and follow its prompts. In System Settings, under Privacy &amp; Security, turn on Karabiner-Core-Service in both <strong>Input Monitoring</strong> and <strong>Accessibility</strong>. Karabiner sees every key you type once you grant these, which is how any remapper works. Read <a href="https://github.com/pqrs-org/Karabiner-Elements">its source</a> if that matters to you. If the buttons still type letters, check <code>/var/log/karabiner/core_service.log</code>. It says when Karabiner has taken over the controller.</p>
     <p><strong>Add the rule.</strong> It goes in <code>~/.config/karabiner/karabiner.json</code>, under <code>profiles[0].complex_modifications.rules</code>. Each line turns one letter into one key. The <code>device_if</code> condition limits the rule to the Micro by its vendor and product IDs, so your real keyboard still types <code>g</code>. Run <code>system_profiler SPBluetoothDataType</code> to confirm the IDs for your unit. Mine reported vendor <code>0x2DC8</code> (11720) and product <code>0x9021</code> (36897).</p>
     <pre><code>{
-  "description": "8BitDo Micro: A=Enter, B=Esc, D-pad=arrows, L=FluidVoice, R=Shift+Tab, X=/",
+  "description": "8BitDo Micro: A=Enter, B=Esc, D-pad=arrows, L=FluidVoice, R=Shift+Tab, X=/, plus and minus=tabs",
   "manipulators": [
     { "from": "g", "to": "return_or_enter" },
     { "from": "j", "to": "escape" },
@@ -209,7 +212,9 @@
     { "from": "f", "to": "right_arrow" },
     { "from": "l", "to": "right_option" },
     { "from": "r", "to": "tab", "modifiers": ["left_shift"] },
-    { "from": "h", "to": "slash" }
+    { "from": "h", "to": "slash" },
+    { "from": "o", "to": "close_bracket", "modifiers": ["left_command", "left_shift"] },
+    { "from": "n", "to": "open_bracket", "modifiers": ["left_command", "left_shift"] }
   ]
 }</code></pre>
     <p>That is shorthand. Karabiner wants each line written out in full, with the device condition on every one. Here is the first line in Karabiner's format. The others follow the same shape.</p>
@@ -223,7 +228,7 @@
   }]
 }</code></pre>
     <p>Karabiner reloads the file when it changes. Press A in TextEdit to check. It should start a new line instead of typing <code>g</code>.</p>
-    <p><strong>Notes.</strong> FluidVoice's hotkey was already right Option, so the L button only sends that key. Kovacs used a key combination for Wispr Flow because Wispr's default key, <code>fn</code>, could not be assigned to a controller button in 8BitDo's app. I left Y, plus, minus and the other two buttons alone. They still type letters, so a stray press puts a letter in your prompt. Map them to <code>vk_none</code> in the same rule if that happens to you.</p>
+    <p><strong>Notes.</strong> FluidVoice's hotkey was already right Option, set to start and stop on separate presses, so the L button only sends that key. Kovacs used a key combination for Wispr Flow because Wispr's default key, <code>fn</code>, could not be assigned to a controller button in 8BitDo's app. I left Y and the other two buttons alone. They still type letters, so a stray press puts a letter in your prompt. Map them to <code>vk_none</code> in the same rule if that happens to you.</p>
 
     <h2>References</h2>
     <ul>
