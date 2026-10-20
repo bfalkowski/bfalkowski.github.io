@@ -115,9 +115,10 @@
 
     <h2>Using it</h2>
     <p>To test the interface on real work, I built a small web app with Claude Code from the controller: the <a href="https://bfalkowski.github.io/micro-tester/">Micro Tester</a>. It draws the Micro, labels each button with its action, and lights a button up when you press it. That makes it the first item on the next-version list below, built with the thing it fixes. The build took about twelve minutes, from an empty folder to a tested, deployed page. The counts come from Claude Code's session file, apart from the keyboard presses, which I kept track of myself.</p>
+    <p>The tester below is a display, not a controller. If you have a Micro paired with your computer in keyboard mode, click the box and press the real buttons. The matching button in the drawing lights up and shows what it does. Without a Micro, the keyboard keys it sends work too, such as <code>g</code> for A and <code>j</code> for B.</p>
     <figure>
       <div class="embed"><iframe id="micro-tester" src="https://bfalkowski.github.io/micro-tester/?embed" title="Micro Tester: press a button on an 8BitDo Micro to see what it does" loading="lazy"></iframe></div>
-      <figcaption>The Micro Tester. Click it, then press a button on a Micro, or press <code>g</code>, <code>j</code> or the arrow keys on a keyboard.</figcaption>
+      <figcaption>The Micro Tester shows presses from a real controller. Clicking the drawing does not press anything.</figcaption>
     </figure>
     <div class="table-wrap"><table>
       <tr><th>What happened</th><th>Count</th></tr>
@@ -128,7 +129,7 @@
       <tr><td>Keyboard presses</td><td>1</td></tr>
     </table></div>
     <p>The one keyboard press came when Claude opened the page in my browser. Getting back to the terminal took Cmd+Tab, and no button sent it. Afterwards I mapped the unused Y button to Cmd+Tab, which closes that gap.</p>
-    <p>The more interesting number is a pattern. Claude asked its questions as multiple choice with a recommended option first, and I took the recommendation every time. Every approval was A. I knew the D-pad could move to another choice, and I never needed it. That could mean the recommendations were good. It could also be the start of the habit the rest of this post worries about, and from inside the session I could not tell which.</p>
+    <p>The more interesting number is a pattern. Claude asked its questions as multiple choice with a recommended option first, and I took the recommendation every time. Every approval was A. I knew the D-pad could move to another choice, and I never needed it. That could mean the recommendations were good. It could also be the start of the habit the rest of this post worries about, and from inside the session I could not tell which. The first time I moved off a recommendation came after the build. Claude asked whether to publish this post, and I used the D-pad to choose to talk instead, because the embedded tester looked like on-screen controls. That is the fix described above it.</p>
     <p>I usually run several Claude Code agents at once, each in its own git worktree and its own Terminal tab. Plus and minus move to the next and previous tab, so going from one agent to the next is a single press. Getting to an agent is easy. Knowing which one is waiting for me is harder, because a tab does not say so from across the room.</p>
 
     <h2>Reading it as an HCI problem</h2>
