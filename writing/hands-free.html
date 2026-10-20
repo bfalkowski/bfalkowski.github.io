@@ -45,6 +45,8 @@
     figure { margin: 0 0 18px; text-align: center; }
     figure img { width: 100%; max-width: 360px; height: auto; border-radius: 6px; }
     figcaption { color: var(--muted); font-size: 15px; margin-top: 6px; }
+    .embed { border: 1px solid var(--line); border-radius: 6px; background: var(--alt-bg); padding: 8px 12px 4px; }
+    .embed iframe { display: block; width: 100%; height: 420px; border: 0; background: transparent; }
     .tldr { background: var(--alt-bg); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 6px 6px 0; }
     .tldr p:last-child { margin-bottom: 0; }
     footer { text-align: center; color: var(--muted); font-size: 14px; padding: 32px; border-top: 1px solid var(--line); }
@@ -113,6 +115,10 @@
 
     <h2>Using it</h2>
     <p>To test the interface on real work, I built a small web app with Claude Code from the controller: the <a href="https://bfalkowski.github.io/micro-tester/">Micro Tester</a>. It draws the Micro, labels each button with its action, and lights a button up when you press it. That makes it the first item on the next-version list below, built with the thing it fixes. The build took about twelve minutes, from an empty folder to a tested, deployed page. The counts come from Claude Code's session file, apart from the keyboard presses, which I kept track of myself.</p>
+    <figure>
+      <div class="embed"><iframe id="micro-tester" src="https://bfalkowski.github.io/micro-tester/?embed" title="Micro Tester: press a button on an 8BitDo Micro to see what it does" loading="lazy"></iframe></div>
+      <figcaption>The Micro Tester. Click it, then press a button on a Micro, or press <code>g</code>, <code>j</code> or the arrow keys on a keyboard.</figcaption>
+    </figure>
     <div class="table-wrap"><table>
       <tr><th>What happened</th><th>Count</th></tr>
       <tr><td>Files Claude wrote or edited</td><td>12</td></tr>
@@ -250,5 +256,11 @@
   </article>
 
   <footer>&copy; 2026 Bryan Falkowski · <a href="../">Home</a></footer>
+  <script>
+    addEventListener("message", (e) => {
+      const h = e.data && e.data.microTesterHeight;
+      if (e.origin === "https://bfalkowski.github.io" && typeof h === "number") document.getElementById("micro-tester").style.height = h + "px";
+    });
+  </script>
 </body>
 </html>
