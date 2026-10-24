@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="author" content="Bryan Falkowski">
-  <meta name="description" content="Spec-driven frameworks like GitHub Spec Kit and skill packs like Matt Pocock's skills both help a coding agent build the right thing. The useful split is not how they are packaged but who decides what happens next, and where the decisions live. How they differ, where they are converging, which suits which kind of work, and how to combine them with one plan.">
+  <meta name="description" content="Spec-driven frameworks, skill packs and orchestration all help coding agents do more, but none of them tells you whether the work is right. Specifications establish intent, skills capture process, and verification closes the loop. That loop, and Lauren Tan's trust ladder, is what lets you give agents more responsibility as the evidence grows.">
   <title>Who Owns the Process? | Bryan Falkowski</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -61,167 +61,101 @@
   </div>
 
   <article class="container">
-    <h1>Who Owns the Process? Spec Frameworks and Skill Packs for Coding Agents</h1>
-    <p class="byline">Bryan Falkowski · October 23, 2026</p>
+    <h1>Who Owns the Process? Spec Frameworks, Skills, and the Trust Ladder for Coding Agents</h1>
+    <p class="byline">Bryan Falkowski · October 23, 2026 · Updated October 24, 2026</p>
 
     <div class="tldr">
-      <p>There are a lot of tools now trying to solve the same problem: how do you get a coding agent to build the right thing, and how do you make sure it understands the decisions that matter?</p>
-      <p>Some tools, including GitHub Spec Kit, Kiro, OpenSpec, BMAD and GSD, give you a structured process built around specifications. Others, like Matt Pocock's skills, offer smaller pieces that you can bring into a workflow as needed.</p>
-      <p>At first glance, this looks like a choice between frameworks and skill packs. But the distinction isn't quite that simple. Superpowers, for example, is packaged as a collection of skills but expects the agent to follow a defined workflow.</p>
-      <p>The more useful question is who decides what happens next. Does the tool prescribe the process, or does the developer choose which steps are worth taking? And when the work is done, what is the authoritative record of the decisions?</p>
-      <p>I've spent time with Spec Kit and Pocock's skills, and they represent two useful starting points for thinking about these questions. The other tools fall somewhere between them. Here's how I see the differences, where each approach makes sense, and what I've learned about using them together.</p>
+      <p>A growing set of tools tries to answer the same question: how should a coding agent know what to build, and how much of the work should it be trusted to do?</p>
+      <p>Spec-driven frameworks such as GitHub Spec Kit give agents an explicit plan to work from. Skill collections such as Matt Pocock's let developers teach agents specific ways of working. Other approaches combine these ideas, adding orchestration to coordinate agents and their work.</p>
+      <p>The interesting question is not which tool has the best workflow. It is how we get from an agent that needs constant supervision to one that can take on meaningful work with less intervention.</p>
+      <p>Specifications establish intent. Skills capture process. Verification closes the loop. That loop is what allows you to trust agents with more work.</p>
     </div>
 
     <h2>Where I first saw it</h2>
-    <p>In early June 2025, I spent two days at AWS headquarters in Crystal City, Virginia, working with Amazon Q and an early prototype of AI-DLC, the AI-Driven Development Life Cycle. The workflow was fairly straightforward: work with the AI to refine acceptance criteria, use those to produce a specification, iterate on the spec, and then use it to drive implementation. The IDE had tabs for the different documents, making each stage visible.</p>
-    <p>It was the first time I'd seen this approach up close, and I was interested enough to try it on the train ride home. I picked a real change in one of my projects: a refactor that would add an early version of an agent with tools.</p>
-    <p>It went badly. The process felt cumbersome, and the results weren't worth the effort. I came away thinking that the idea had promise, but the tooling wasn't there yet. I put it aside for a while.</p>
-    <p>The public releases followed over the next several months. <a href="https://kiro.dev/docs/specs/">Kiro</a> entered preview in mid-July 2025, AWS <a href="https://aws.amazon.com/blogs/devops/ai-driven-development-life-cycle/">published its AI-DLC approach</a> on July 31, and GitHub's <a href="https://github.com/github/spec-kit">Spec Kit</a> followed later that summer. In November, AWS <a href="https://aws.amazon.com/blogs/devops/open-sourcing-adaptive-workflows-for-ai-driven-development-life-cycle-ai-dlc/">open-sourced its AI-DLC workflows</a> for coding agents.</p>
-    <p>Looking back, the prototype I saw at AWS feels primitive compared with what agents can do with specifications today. But the basic idea was already there: make the requirements explicit, work through the decisions before implementation, and give the agent a plan it can follow. What's changed is how much of that work the agent can handle and how practical the whole process has become.</p>
+    <p>In early June 2025, I spent two days at AWS headquarters in Crystal City, Virginia, working with Amazon Q IDE and an early prototype of AI-DLC, the AI-Driven Development Life Cycle.</p>
+    <p>The workflow was straightforward in principle. We iterated on acceptance criteria, used those to generate a specification, refined the spec, and then used it to drive implementation. The specification was not just documentation written after the fact. It was an artifact that the agent could help create and then use as the basis for building.</p>
+    <p>On the Amtrak home, I tried applying the idea to a real project. Somewhere on that ride I realized I was facing two separate problems. The first was figuring out how to coordinate the work. The second was knowing whether the work was any good.</p>
+    <p>The first problem gets a lot of attention. How many agents should run? Which tools should they have? How should tasks be divided? Which model should handle each role?</p>
+    <p>The second problem is harder to ignore once you have tried to automate more than a small coding task. How do you know the agent actually did what you asked? How do you distinguish a convincing explanation from a correct result? And how much evidence do you need before you let it do more on its own?</p>
+    <p>That last question is where I have become most interested in evaluation.</p>
 
-    <h2>The problem they're trying to solve</h2>
-    <p>When an agent can write a lot of code, writing the code stops being the only challenge. The agent still needs to know what you're trying to accomplish, which constraints matter, and what decisions have already been made.</p>
-    <p>If that information lives only in a conversation, it can disappear when the context changes. Start a new session, switch models, or bring in another agent, and you may find yourself explaining the same things again. Leave too much unspecified, and the agent will fill in the gaps itself.</p>
-    <p>All of these tools try to address that problem. They give the agent some combination of requirements, plans, project rules, shared terminology and implementation guidance. Where they differ is how those pieces fit together.</p>
-    <p>There are two questions I find particularly useful.</p>
-    <p>First, who decides the next step? Some tools guide you through a sequence of stages. Others let you choose what you need for the task at hand.</p>
-    <p>Second, where do the decisions live? Is there a specification that the implementation is expected to follow, or is the lasting record spread across the code, project instructions and architecture decisions?</p>
-    <p>Spec Kit and Pocock's skills offer a useful contrast on both questions.</p>
+    <h2>Specifications and skills solve different problems</h2>
+    <p>A specification makes intent explicit. It gives the agent a description of the desired behaviour, constraints, and acceptance criteria instead of leaving it to infer everything from a conversation.</p>
+    <p>A skill captures a repeatable way of working. It might guide an agent through test-driven development, help it investigate a bug, or force it to work through the unresolved questions in a plan before writing code.</p>
+    <p>These are complementary. A good specification does not tell you everything about how to implement a change. A good skill does not necessarily tell you what the change should accomplish.</p>
+    <p>The distinction becomes clearer when comparing GitHub Spec Kit with Matt Pocock's skills.</p>
 
-    <h2>Spec Kit: start with the specification</h2>
-    <p>GitHub's <a href="https://github.com/github/spec-kit">Spec Kit</a> is built around spec-driven development. The idea is to make the specification an important part of the development process, rather than treating it as documentation that gets written and then forgotten.</p>
-    <p>Its familiar workflow uses a set of slash commands:</p>
-    <ul>
-      <li><code>/speckit-constitution</code> establishes the project's standing rules in <code>.specify/memory/constitution.md</code>.</li>
-      <li><code>/speckit-specify</code> describes what to build and why, without getting into the technology choices.</li>
-      <li><code>/speckit-plan</code> works out how to build it, including the technical approach, data model and contracts.</li>
-      <li><code>/speckit-tasks</code> breaks the plan into individual tasks.</li>
-      <li><code>/speckit-implement</code> carries out the implementation.</li>
-    </ul>
-    <p>Each stage produces material that the next stage can use. Instead of asking an agent to go straight from an idea to code, you work through the decisions in a more deliberate way.</p>
-    <p>The philosophy behind the project is captured in a line from its <a href="https://github.com/github/spec-kit/blob/main/spec-driven.md">design documentation</a>:</p>
-    <blockquote><p>Specifications don't serve code—code serves specifications.</p></blockquote>
-    <p>That doesn't mean every line of code is mechanically generated from a document. It means the specification is supposed to remain authoritative. If the requirements change, update the spec and then bring the implementation into line with it.</p>
-    <p>The constitution is another important part of the approach. It records rules that should apply across the project, rather than leaving the agent to rediscover them for every feature. Examples include library-first design and test-first development. The <a href="https://github.com/github/spec-kit/blob/main/templates/plan-template.md">plan template</a> checks the constitution at multiple points, helping ensure that those rules are considered throughout the process.</p>
-    <p>This structure is useful when you need consistency. A team can agree on a common way to describe requirements, work through technical decisions and hand implementation tasks to people or agents. The resulting documents give everyone something concrete to work from.</p>
-    <p>The downside is the overhead. Not every change needs a full specification, and a process that works well for a substantial feature can feel excessive for a small fix. There's also the question of maintenance: if the code changes but the specification doesn't, the document that was supposed to provide clarity becomes another source of confusion.</p>
+    <h3>Spec Kit: the process owns the work</h3>
+    <p><a href="https://github.com/github/spec-kit">Spec Kit</a> provides a structured approach to spec-driven development. Its workflow can establish project-wide rules, define what a feature should do, produce a technical plan, break that plan into tasks, and implement them.</p>
+    <p>The important idea is that the documents are connected. The implementation is supposed to follow the specification and plan, rather than allowing the code to become the only record of what was intended.</p>
+    <p>That creates useful discipline. A team can review a proposed change before implementation, agree on the requirements, and hand work to another developer or agent without relying on the original conversation. Project-wide rules can be written down once and applied across features.</p>
+    <p>The cost is process. If a task is exploratory or the requirements are still changing, formalizing every step can feel like overhead. The documents also need to stay current. A specification that no longer describes the code can become another source of confusion.</p>
+    <p>Spec Kit has evolved toward more flexible entry points, so it is no longer accurate to treat every use as a rigid sequence of mandatory phases. Still, its strength is the ability to make the plan a durable artifact.</p>
 
-    <h2>Pocock's skills: choose the steps you need</h2>
-    <p><a href="https://github.com/mattpocock/skills">Matt Pocock's skills</a> take a different approach. Rather than starting with a prescribed sequence, they provide individual capabilities that you can use when they make sense.</p>
-    <p>A few examples I've found useful:</p>
-    <ul>
-      <li><strong>Grilling:</strong> Work through a plan by answering questions until the important decisions and edge cases are clear.</li>
-      <li><strong>Domain modeling:</strong> Establish a shared vocabulary in <code>GLOSSARY.md</code> and record architectural decisions as ADRs.</li>
-      <li><strong>TDD:</strong> Work in small red-green-refactor cycles, writing a failing test before implementing the behaviour.</li>
-      <li><strong>Bug diagnosis, prototyping and code review:</strong> Investigate a problem, try out a design with throwaway code, or review a change before merging it.</li>
-    </ul>
-    <p>The important difference is that you don't have to use them in a fixed order. If the problem is poorly defined, start by working through the requirements. If you're unsure about a design, prototype it. If the change is obvious, you might go straight to a test and implementation.</p>
-    <p>Pocock's README is explicit about the trade-off. It argues that approaches such as GSD, BMAD and Spec Kit can take control away from the developer by owning the process, making problems with that process harder to work around.</p>
-    <p>The skills are intended to be small enough to understand, change and combine. Rather than requiring every task to pass through the same stages, they let the developer decide how much process the work needs.</p>
-    <p>That flexibility comes with a cost. The developer has to know when to use each skill, and different people may approach the same problem differently. There is no guarantee that everyone will follow the same steps or produce the same intermediate artifacts.</p>
-    <p>The lasting record also looks different. The code, project instructions, glossary and architecture decision records carry much of the context. There isn't necessarily one feature specification that the implementation must follow.</p>
+    <h3>Matt Pocock's skills: you own the process</h3>
+    <p><a href="https://github.com/mattpocock/skills">Pocock's skills</a> take a more modular approach. Instead of starting with a prescribed pipeline, you can choose the behaviour you need for the task in front of you.</p>
+    <p>A grilling skill helps resolve the unanswered questions in a plan. Domain modeling builds a shared glossary and records architectural decisions. A TDD skill guides implementation through red, green, and refactor. Other skills help with debugging, prototyping, and code review.</p>
+    <p>This works well when the right process depends on what you are trying to learn. If an idea is vague, start by exploring it. If the design is uncertain, prototype it. If the change is obvious, there may be no reason to run through a lengthy planning workflow.</p>
+    <p>The trade-off is that the developer must decide which process to use and make sure important decisions are recorded somewhere durable. Flexibility is useful, but it can also lead to inconsistency.</p>
+    <p>The difference is not that one approach has process and the other does not. Both do. The difference is how much of the process is prescribed and who decides what happens next.</p>
 
-    <h2>The two approaches side by side</h2>
-    <div class="table-wrap"><table>
-      <tr><th></th><th>Spec Kit</th><th>Pocock's skills</th></tr>
-      <tr><td>Source of truth</td><td>Specification and plan</td><td>Code, project instructions, glossary and ADRs</td></tr>
-      <tr><td>Who chooses the next step?</td><td>The workflow guides the process</td><td>The developer chooses the skills</td></tr>
-      <tr><td>Project-wide rules</td><td>Constitution, checked during planning</td><td><code>CLAUDE.md</code> and ADRs</td></tr>
-      <tr><td>Defining a feature</td><td>Formal specification</td><td>Discussion, grilling, then an issue or spec as needed</td></tr>
-      <tr><td>Shared vocabulary</td><td>Captured through the specification and related artifacts</td><td>Explicit glossary maintained over time</td></tr>
-      <tr><td>Testing</td><td>Can be required by the constitution</td><td>TDD skill used when appropriate</td></tr>
-      <tr><td>Best fit</td><td>Shared work that benefits from a consistent process</td><td>Exploratory work and developers who want to assemble their own workflow</td></tr>
-      <tr><td>Main drawback</td><td>Process overhead and specifications that can drift</td><td>More responsibility falls on the developer to apply the right structure</td></tr>
-    </table></div>
-    <p>I don't think either approach is inherently better. Spec Kit gives you a more consistent process, which can be valuable when several people or agents need to work from the same decisions. Pocock's skills give you more control, which is useful when the work is changing as you go.</p>
-    <p>The trade-off is between consistency and flexibility. How much of either you need depends on the work.</p>
+    <h2>The missing piece is verification</h2>
+    <p>Neither a specification nor a skill guarantees a correct result.</p>
+    <p>A specification can be clear and still be implemented incorrectly. A skill can describe a sound process and still produce a faulty change. An agent can follow every step and arrive at the wrong answer.</p>
+    <p>That is why verification matters so much.</p>
+    <p>Lauren Tan, known as poteto, makes this point in <a href="https://www.youtube.com/watch?v=MN9dGgmLyso">her conversation with Matt Pocock</a> about coding agents and scaling software development. She describes the problem of relying on herself as the intermediary between an agent and its output:</p>
+    <blockquote><p>"I was still relying on me as the proxy between my agent and the output."</p></blockquote>
+    <p>That is a useful description of the limit I had hit. The agent could generate code quickly, but I still had to inspect the result, decide whether it was right, and determine what should happen next. The coding work was automated, but the evaluation work was still mine.</p>
+    <p>Tan puts verification at the centre of improving that arrangement:</p>
+    <blockquote><p>"The single most important skill that should be in your toolkit is verification."</p></blockquote>
+    <p>The point is not simply to add more tests or ask another model whether the first model did a good job. It is to give the agent a reliable way to gather evidence about its own output.</p>
+    <p>Depending on the task, that evidence might come from running tests, checking types, comparing a result against acceptance criteria, inspecting a rendered interface, or evaluating an output against a defined rubric. Different tasks require different checks. A passing test suite is meaningful evidence, but it does not prove that every requirement has been met.</p>
+    <p>Verification also needs to happen early enough to influence the work. Tan makes the connection explicit:</p>
+    <blockquote><p>"If the agent can't actually see the result of its work there's no way it can actually iterate."</p></blockquote>
+    <p>An agent that cannot observe the consequences of its actions has to rely on assumptions. An agent that can inspect the result, compare it with the intended outcome, and use the feedback to make corrections has a path toward improving its work without requiring a human to mediate every step.</p>
+    <p>That changes the role of orchestration. Coordinating more agents may increase throughput, but it does not automatically increase confidence. If the system cannot tell good results from bad ones, it can simply produce more output that someone has to review.</p>
 
-    <h2>The other tools fall somewhere in between</h2>
-    <p>Spec Kit and Pocock's skills are useful reference points, but they aren't the whole landscape. Most of the other tools lean toward providing a process, although they differ in how rigid that process is.</p>
-    <div class="table-wrap"><table>
-      <tr><th>Tool</th><th>What it does</th><th>Who chooses the next step?</th></tr>
-      <tr><td><a href="https://kiro.dev/docs/specs/">Kiro</a></td><td>An AWS coding environment with built-in specs that produce <code>requirements.md</code>, <code>design.md</code> and <code>tasks.md</code></td><td>The tool guides the workflow in the editor</td></tr>
-      <tr><td><a href="https://github.com/github/spec-kit">Spec Kit</a></td><td>GitHub's toolkit for spec-driven development</td><td>The developer invokes the stages, with increasing flexibility</td></tr>
-      <tr><td><a href="https://github.com/awslabs/aidlc-workflows">AWS AI-DLC</a></td><td>A development method that uses adaptive workflows for coding agents</td><td>The AI proposes stages; people review and approve</td></tr>
-      <tr><td><a href="https://github.com/bmad-code-org/BMAD-METHOD">BMAD Method</a></td><td>A framework with product, architecture, UX, development and testing perspectives</td><td>The framework organizes the process</td></tr>
-      <tr><td><a href="https://github.com/open-gsd/gsd-core">GSD</a></td><td>A meta-prompting and context-engineering system for Claude Code; the original repository is archived, with a community continuation</td><td>The workflow guides the process</td></tr>
-      <tr><td><a href="https://github.com/Fission-AI/OpenSpec">OpenSpec</a></td><td>A change-oriented specification framework built around proposals, specs, designs and tasks</td><td>The tool provides structure but allows iteration</td></tr>
-      <tr><td><a href="https://github.com/obra/superpowers">Superpowers</a></td><td>A collection of skills for brainstorming, planning, implementation, TDD, debugging and review</td><td>The workflow is enforced by the skills</td></tr>
-      <tr><td><a href="https://github.com/mattpocock/skills">Pocock's skills</a></td><td>A collection of independent skills for planning, modeling, testing and implementation</td><td>The developer chooses</td></tr>
-    </table></div>
-    <p>Superpowers is worth calling out because it exposes the weakness in the usual framework-versus-skills distinction. It is packaged as a set of skills, much like Pocock's collection, but its README describes them as mandatory workflows, not suggestions.</p>
-    <p>In other words, how a tool is packaged doesn't tell you how much control you have over the process. A collection of skills can enforce a workflow, and a framework can offer increasingly independent entry points.</p>
-    <p>AI-DLC adds another variation. In its current open-source form, the agent chooses which stages make sense for the task and proposes a plan for people to approve. AWS describes the division of responsibility this way: "Humans decide and validate, AI plans and executes."</p>
-    <p>That puts the process somewhere between a fixed sequence and a developer assembling each step. The agent proposes the workflow, but people retain control over whether to proceed.</p>
-    <p>I've worked directly with Spec Kit and Pocock's skills, so those are the two I can compare from experience. For the other tools, I'm describing their documented approaches rather than claiming equivalent hands-on experience.</p>
+    <h2>Lauren Tan's trust ladder</h2>
+    <p>Tan's trust-ladder framing offers a useful way to think about what comes next. As confidence in an agent's work increases, you can give it more responsibility and scale the work it performs. Trust is not an initial setting that you choose once. It develops as the system demonstrates that it can produce reliable results.</p>
+    <p>This matters because there is a difference between an agent that can perform a task and an agent that can perform it reliably enough to be given the task with less supervision.</p>
+    <p>A successful demonstration is not enough. Nor is a single good result. You need to understand how often the approach works, where it fails, and whether the checks you rely on actually catch those failures.</p>
+    <p>This is where evaluation becomes part of the development process rather than an afterthought.</p>
+    <p>My own work on <a href="judge-score.html">LLM-as-a-judge reliability</a> grew out of that concern. If a model evaluates another model's output, how stable is the score? Would the same response receive a different rating on another run? Does the evaluation agree with itself often enough to support a decision? Are the results useful for distinguishing better outputs from worse ones?</p>
+    <p>Those questions matter because an evaluation can look authoritative without being reliable. A score is not evidence of quality simply because it is numerical. Before using a judge to decide whether an agent has done good work, we need to understand the judge's own behaviour.</p>
+    <p>This is my application of Tan's trust-ladder idea to evaluation: <strong>trust should grow with the evidence we have, not simply with how impressive the latest model looks.</strong></p>
+    <p>The practical goal is not to eliminate human judgment. It is to make human attention more valuable. People should spend their time on ambiguous requirements, difficult trade-offs, novel situations, and failures that need investigation, rather than repeatedly checking work that can be verified automatically.</p>
 
-    <h2>The gap is getting smaller</h2>
-    <p>The distinction between these approaches has become less clear over time.</p>
-    <p>Spec Kit's documentation now describes its commands as independent entry points rather than mandatory phases. It encourages starting with the smallest change that meets your needs and includes separate paths for things like fixing a bug or exploring an idea.</p>
-    <p>Pocock's collection has expanded in the other direction. It now includes skills such as <code>to-spec</code>, which turns a conversation into a specification; <code>to-tickets</code>, which breaks a spec into tickets; and <code>implement-spec</code>, which implements a specification using subagents.</p>
-    <p>That is much of a spec-driven workflow, but broken into pieces you can choose to use.</p>
-    <p>The difference, then, is increasingly about the default. Spec Kit gives you a structured process that you can pare back. Pocock's skills give you individual capabilities that you can assemble into a more structured process.</p>
-    <p>For me, that's a more useful way to think about the choice than deciding whether a tool belongs in the framework or skill-pack category.</p>
+    <h2>Where the tools fit</h2>
+    <p>The broader field is moving toward combinations of these ideas.</p>
+    <p><a href="https://kiro.dev/docs/specs/">Kiro</a> and Spec Kit put specifications at the centre of the workflow. <a href="https://aws.amazon.com/blogs/devops/ai-driven-development-life-cycle/">AWS AI-DLC</a> explores a process in which AI proposes and executes stages while people validate decisions. <a href="https://github.com/Fission-AI/OpenSpec">OpenSpec</a>, <a href="https://github.com/bmad-code-org/BMAD-METHOD">BMAD</a>, and <a href="https://github.com/open-gsd/gsd-core">GSD</a> offer other ways to structure specification and implementation. <a href="https://github.com/obra/superpowers">Superpowers</a> is a useful counterexample to the assumption that a skill pack always means a completely optional workflow: although it is packaged as skills, it can enforce a defined process.</p>
+    <p>Pocock's skills provide reusable techniques that can be applied where they are useful. Tan's <a href="https://github.com/cursor/plugins/tree/main/pstack">pstack</a> approaches the problem from another direction, focusing on how agents carry out work, how roles are assigned, and how results can be reviewed or compared.</p>
+    <p>These tools are not all trying to solve exactly the same problem. Some help define the work. Some guide how the work is done. Some coordinate execution. And verification determines whether the output is good enough to trust.</p>
+    <p>The categories overlap, but the distinctions are still useful. A specification can define acceptance criteria. A skill can guide the agent through a repeatable process. Orchestration can coordinate multiple attempts or roles. Evaluation can provide evidence about the result.</p>
+    <p>No one layer replaces the others.</p>
 
-    <h2>Where pstack fits</h2>
-    <p>I also use <a href="https://github.com/michael-denyer/pstack-claude">pstack</a>, a port of Lauren Tan's (poteto's) skill stack. I haven't included it in the main comparison because it addresses a different part of the problem.</p>
-    <p>Spec Kit and Pocock's skills help you decide what to build and how to reason about the work. Pstack focuses more on how agents carry out that work: which models take which roles, when to run multiple attempts and compare their results, and how review fits into the process.</p>
-    <p>Those concerns are complementary. You could use a spec-driven workflow to define the work and pstack to organize the agents that implement it. Or you could use Pocock's skills to guide the development process and pstack to handle agent orchestration.</p>
-    <p>The tools operate at different levels, so there's no reason to treat them as competing alternatives.</p>
+    <h2>A practical way to combine them</h2>
+    <p>For an exploratory project, I would start with skills. The requirements are likely to change as I learn, and I want to keep the process lightweight. I can use a grilling session to sharpen the idea, prototype a design question, and introduce TDD once the behaviour is clear enough to preserve.</p>
+    <p>For a shared feature with explicit requirements and handoffs, I would lean toward a specification framework. A durable plan is valuable when multiple people or agents need to agree on what is being built and how success will be judged.</p>
+    <p>For a behaviour-preserving refactor, the central challenge is different. The goal is to change the internal structure without changing what the system does. A formal feature spec may help with scope, but the most important evidence comes from tests and other checks that demonstrate the existing behaviour has been preserved.</p>
+    <p>In all three cases, I would want verification to be part of the workflow from the beginning. It should not be a final step that produces a green checkmark after all the important decisions have already been made.</p>
+    <p>And when combining tools, I would keep one authoritative home for the plan. A specification, glossary, or architecture decision record can be refined by different skills, but the agent should not have to choose between conflicting versions of the truth.</p>
 
-    <h2>Which approach would I use?</h2>
-    <p>I find it helpful to think about three kinds of work. The right amount of structure isn't necessarily determined by the size of the project. It's determined by how much is already known and how much coordination the work requires.</p>
-
-    <h3>An exploratory project: Pocock's skills</h3>
-    <p>Consider a learning dashboard I'm building for myself. I'm the only user, the requirements aren't fully clear, and I expect to discover what I want as I build it.</p>
-    <p>Writing a detailed specification at the beginning would mean documenting a lot of assumptions that might not survive the first working prototype. I'd rather use grilling to clarify the idea, prototype the parts I'm uncertain about, and introduce TDD as the behaviour becomes clear enough to keep.</p>
-    <p>That doesn't mean skipping planning altogether. It means spending time on decisions when there's enough information to make them useful.</p>
-
-    <h3>A behaviour-preserving refactor: probably Pocock's skills</h3>
-    <p>I initially thought a large refactor, particularly one that changes the boundaries between modules, was an ideal candidate for Spec Kit. The amount of planning seemed to justify a formal process.</p>
-    <p>I'm less convinced now.</p>
-    <p>A refactor is supposed to change the internal structure without changing what the system does. A feature specification doesn't necessarily help much with that. The harder questions are where the module boundaries should be, which responsibilities belong together, and how to prove that existing behaviour still works after the changes.</p>
-    <p>Pocock's skills seem better suited to those questions. Domain modeling can help clarify responsibilities and terminology, while TDD and code review can help keep the changes under control.</p>
-    <p>A formal plan could still be useful for a particularly large refactor, especially when several people are involved. But I'd start with the specific problems to solve rather than assume that a full spec-driven process is the answer.</p>
-
-    <h3>A feature shared across a team: Spec Kit</h3>
-    <p>Spec Kit makes more sense when a feature needs to be understood and implemented by several people or agents, possibly across multiple sessions.</p>
-    <p>In that situation, the plan needs to survive the conversation that created it. The requirements must be clear enough for someone else to pick up the work, and the decisions need to remain consistent as implementation progresses.</p>
-    <p>A specification gives everyone a shared reference. The constitution establishes the rules that apply across the project, while the plan and tasks make the work concrete.</p>
-    <p>The benefit isn't simply having more documentation. It's having an agreed-upon description of the work that can be checked as the implementation develops.</p>
-    <p>The pattern I see is that exploratory work benefits from flexibility, while shared work benefits from a durable plan. The size of the change matters less than whether the decisions need to be preserved and communicated.</p>
-    <p>These recommendations are my judgment, based on using Pocock's skills and looking at what the different tools are designed to do. The refactoring case is the one I'd most like to test directly: does the additional planning in Spec Kit actually pay for itself when the goal is to preserve behaviour while changing the internal design?</p>
-
-    <h2>Using both on the same project</h2>
-    <p>There's no reason a project has to choose one approach forever. You might start with Spec Kit and use individual skills for day-to-day development, or begin with a lightweight workflow and introduce formal specifications when the work becomes more complicated.</p>
-    <p>The thing I'd avoid is maintaining two competing versions of the plan.</p>
-    <p>Suppose the constitution says one thing and an ADR says another. Which should the agent follow? It might choose one, or behave differently depending on the context it sees. Either way, you've introduced uncertainty into the process that was supposed to remove it.</p>
-    <p>A <a href="https://github.com/mattpocock/skills/discussions/285">discussion in Pocock's repository</a> about OpenSpec arrives at a similar conclusion: let the specification tool own the plan, use skills to work through decisions, and feed the results back into the specification.</p>
-    <p>The <a href="https://github.com/lgw4/speckit-support-skills">speckit-support-skills</a> project takes this idea further. It adapts several of Pocock's skills to work with a Spec Kit project, using the constitution and <code>specs/</code> directory as the source of truth. Its code review checks changes against those documents, and its retrospective can propose amendments to the constitution.</p>
-    <p>You can follow the same principle without a dedicated integration. Point <code>CLAUDE.md</code> to the constitution so the skills know where the project rules live. Keep the feature plan in one place, whether that's <code>specs/</code> or your issue tracker. When a discussion resolves an important question, update the authoritative document rather than leaving the answer buried in the conversation.</p>
-    <p>The skills can still do their jobs. Grilling can expose a missing requirement, a glossary can clarify terminology, and an ADR can capture an architectural trade-off. Those are useful contributions to the plan, not reasons to create another one.</p>
-
-    <h2>One plan, however you get there</h2>
-    <p>I'm less interested now in whether a tool calls itself a framework or a collection of skills. The more important questions are whether it gives you the right amount of structure for the work and whether you can tell which decisions the agent is expected to follow.</p>
-    <p>Spec Kit and Pocock's skills offer different starting points. One makes a defined process the default; the other lets you assemble the process yourself. As both projects evolve, the practical difference is becoming more about how you work than what either tool can do.</p>
-    <p>I'd use the flexibility of skills when I'm still figuring things out, and lean toward a formal specification when the work needs a shared, lasting plan. There will be exceptions, and some projects will benefit from both.</p>
-    <p>But whichever approach I use, I want the same thing at the end: one authoritative place for the decisions that matter. The process can be flexible. The plan shouldn't be ambiguous.</p>
+    <h2>The goal is justified trust</h2>
+    <p>The debate over frameworks versus skills is useful, but it is not the end of the problem. We can debate how much process to prescribe, how many agents to coordinate, and which model should perform each task. Those decisions matter.</p>
+    <p>But the larger opportunity comes when the system can verify its own work and use the results to improve it.</p>
+    <p>Specifications establish intent. Skills capture process. Orchestration coordinates execution. Verification closes the loop.</p>
+    <p>Lauren Tan's trust ladder provides a useful framing for what that makes possible: giving agents more responsibility as confidence in their work grows. My interest in evaluation is in making that confidence measurable rather than assumed.</p>
+    <p>The goal is not to trust an agent because it can write code, follow a workflow, or produce a persuasive explanation. It is to trust it because we have evidence that the work meets the requirements, that the checks are meaningful, and that failures are likely to be caught.</p>
+    <p>That is what turns faster code generation into a development process that can reliably take on more work.</p>
 
     <h2>References</h2>
     <ul>
-      <li><a href="https://github.com/github/spec-kit#readme">GitHub Spec Kit README</a>, its <a href="https://github.com/github/spec-kit/blob/main/spec-driven.md">spec-driven development documentation</a>, and its <a href="https://github.com/github/spec-kit/blob/main/templates/plan-template.md">plan template</a></li>
-      <li><a href="https://github.com/mattpocock/skills#readme">mattpocock/skills README</a>, <em>Skills for Real Engineers</em></li>
-      <li><a href="https://github.com/mattpocock/skills/discussions/285">Discussion #285</a> on how Pocock's skills compare with OpenSpec and other spec-driven frameworks</li>
-      <li><a href="https://github.com/lgw4/speckit-support-skills#readme">speckit-support-skills README</a>, Pocock's skills adapted for Spec Kit</li>
+      <li>Matt Pocock with Lauren Tan (poteto), <a href="https://www.youtube.com/watch?v=MN9dGgmLyso">LIVE: Poteto (creator of pstack) on shipping 1,000's of PR's a month at SpaceX</a>, YouTube, on coding agents, verification and the trust ladder</li>
+      <li><a href="https://github.com/github/spec-kit">GitHub Spec Kit</a></li>
+      <li><a href="https://github.com/mattpocock/skills">Matt Pocock's skills</a></li>
+      <li><a href="https://github.com/cursor/plugins/tree/main/pstack">pstack</a>, Lauren Tan's skill stack in Cursor's plugins repository</li>
       <li>Raja SP, <a href="https://aws.amazon.com/blogs/devops/ai-driven-development-life-cycle/"><em>AI-Driven Development Life Cycle: Reimagining Software Engineering</em></a>, AWS DevOps Blog, July 31, 2025</li>
-      <li><a href="https://aws.amazon.com/blogs/devops/open-sourcing-adaptive-workflows-for-ai-driven-development-life-cycle-ai-dlc/"><em>Open-Sourcing Adaptive Workflows for AI-Driven Development Life Cycle (AI-DLC)</em></a>, AWS DevOps Blog, November 2025, and the <a href="https://github.com/awslabs/aidlc-workflows">aidlc-workflows</a> repository</li>
-      <li><a href="https://kiro.dev/docs/specs/">Kiro specs documentation</a></li>
-      <li><a href="https://github.com/bmad-code-org/BMAD-METHOD#readme">BMAD Method README</a></li>
-      <li><a href="https://github.com/open-gsd/gsd-core#readme">gsd-core README</a>, the community continuation of the archived <a href="https://github.com/gsd-build/get-shit-done">Get Shit Done</a> repository</li>
-      <li><a href="https://github.com/Fission-AI/OpenSpec#readme">OpenSpec README</a></li>
-      <li><a href="https://github.com/obra/superpowers#readme">Superpowers README</a></li>
-      <li><a href="https://dev.to/jamilxt/superpowers-vs-agent-skills-vs-pocock-three-philosophies-of-ai-coding-workflows-e6n"><em>Superpowers vs Agent Skills vs Pocock: Three Philosophies of AI Coding Workflows</em></a>, DEV Community</li>
-      <li><a href="https://github.com/michael-denyer/pstack-claude#readme">pstack-claude README</a>, a port of poteto's pstack to Claude Code and other agents</li>
+      <li><a href="judge-score.html">Can You Trust Your Judge's Score? A Primer on TPR and TNR for LLM Judges</a>, on this site</li>
     </ul>
   </article>
 
