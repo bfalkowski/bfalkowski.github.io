@@ -44,6 +44,34 @@
     code { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 0.9em; }
     .tldr { background: var(--alt-bg); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 6px 6px 0; }
     .tldr p:last-child { margin-bottom: 0; }
+    figure { margin: 0 0 22px; }
+    figcaption { color: var(--muted); font-size: 15px; margin-top: 8px; }
+    .video-card { position: relative; display: block; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+    .video-card img { display: block; width: 100%; height: auto; }
+    .video-card .play { position: absolute; left: 50%; top: 50%; width: 68px; height: 48px; margin: -24px 0 0 -34px; background: rgba(29, 63, 114, 0.9); border-radius: 12px; }
+    .video-card .play::after { content: ""; position: absolute; left: 28px; top: 14px; border-style: solid; border-width: 10px 0 10px 16px; border-color: transparent transparent transparent #fff; }
+    .video-card:hover .play { background: var(--accent); }
+    .tool-map td.dot, .tool-map th.layer { text-align: center; }
+    .tool-map td.dot span { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+    .tool-map th.layer small { display: block; font-weight: 400; color: var(--muted); }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .video-figure { max-width: 440px; margin-left: auto; margin-right: auto; text-align: center; }
+    .loop { padding: 28px 24px; border-radius: 14px; background: linear-gradient(160deg, #f4f8fe 0%, #e6eefa 100%); box-shadow: inset 0 0 0 1px #dbe6f5; }
+    .loop-steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px; }
+    .loop-steps li { position: relative; margin: 0; padding: 20px 14px; border-radius: 10px; text-align: center; color: #12305a; box-shadow: 0 1px 2px rgba(18, 48, 90, 0.10), 0 8px 20px rgba(18, 48, 90, 0.14); }
+    .loop-steps li:nth-child(1) { background: #ffffff; }
+    .loop-steps li:nth-child(2) { background: #d9e6f8; }
+    .loop-steps li:nth-child(3) { background: #a9c4ea; }
+    .loop-steps li:nth-child(4) { background: linear-gradient(160deg, #2a5aa0 0%, #1d3f72 100%); color: #fff; }
+    .loop-steps li:not(:last-child)::after { content: "\2192"; position: absolute; right: -24px; top: 50%; transform: translateY(-50%); color: var(--accent); font-weight: 700; font-size: 18px; }
+    .loop-steps .name { display: block; font-weight: 700; }
+    .loop-steps .job { display: block; font-size: 15px; opacity: 0.8; }
+    .loop-back { margin: 20px 0 0; padding: 12px 16px; border: 1.5px dashed #5f88c4; border-radius: 10px; background: rgba(255, 255, 255, 0.7); color: #12305a; text-align: center; font-size: 15px; }
+    @media (max-width: 720px) {
+      .loop-steps { grid-template-columns: 1fr; gap: 26px; }
+      .loop { padding: 20px 16px; }
+      .loop-steps li:not(:last-child)::after { content: "\2193"; right: auto; left: 50%; top: auto; bottom: -25px; transform: translateX(-50%); }
+    }
     footer { text-align: center; color: var(--muted); font-size: 14px; padding: 32px; border-top: 1px solid var(--line); }
     @media (max-width: 720px) {
       .topbar, article { padding-left: 16px; padding-right: 16px; }
@@ -104,6 +132,13 @@
     <p>A specification can be clear and still be implemented incorrectly. A skill can describe a sound process and still produce a faulty change. An agent can follow every step and arrive at the wrong answer.</p>
     <p>That is why verification matters so much.</p>
     <p>Lauren Tan, known as poteto, makes this point in <a href="https://www.youtube.com/watch?v=MN9dGgmLyso">her conversation with Matt Pocock</a> about coding agents and scaling software development. She describes the problem of relying on herself as the intermediary between an agent and its output:</p>
+    <figure class="video-figure">
+      <a class="video-card" href="https://www.youtube.com/watch?v=MN9dGgmLyso" aria-label="Watch on YouTube: LIVE: Poteto (creator of pstack) on shipping 1,000's of PR's a month at SpaceX">
+        <img src="https://i.ytimg.com/vi/MN9dGgmLyso/maxresdefault.jpg" width="1280" height="720" alt="Video thumbnail for Matt Pocock's live interview with Lauren Tan (poteto)" loading="lazy">
+        <span class="play" aria-hidden="true"></span>
+      </a>
+      <figcaption><a href="https://www.youtube.com/watch?v=MN9dGgmLyso">LIVE: Poteto (creator of pstack) on shipping 1,000's of PR's a month at SpaceX</a>, Matt Pocock's live interview with Lauren Tan, on YouTube.</figcaption>
+    </figure>
     <blockquote><p>"I was still relying on me as the proxy between my agent and the output."</p></blockquote>
     <p>That is a useful description of the limit I had hit. The agent could generate code quickly, but I still had to inspect the result, decide whether it was right, and determine what should happen next. The coding work was automated, but the evaluation work was still mine.</p>
     <p>Tan puts verification at the centre of improving that arrangement:</p>
@@ -132,6 +167,21 @@
     <p>These tools are not all trying to solve exactly the same problem. Some help define the work. Some guide how the work is done. Some coordinate execution. And verification determines whether the output is good enough to trust.</p>
     <p>The categories overlap, but the distinctions are still useful. A specification can define acceptance criteria. A skill can guide the agent through a repeatable process. Orchestration can coordinate multiple attempts or roles. Evaluation can provide evidence about the result.</p>
     <p>No one layer replaces the others.</p>
+    <figure>
+      <div class="table-wrap"><table class="tool-map">
+        <tr><th>Tool</th><th class="layer">Intent<small>define the work</small></th><th class="layer">Process<small>guide the work</small></th><th class="layer">Execution<small>coordinate agents</small></th><th class="layer">Evidence<small>verify the result</small></th></tr>
+        <tr><td><a href="https://kiro.dev/docs/specs/">Kiro</a></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td><td></td><td></td></tr>
+        <tr><td><a href="https://github.com/github/spec-kit">Spec Kit</a></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td><td></td><td></td></tr>
+        <tr><td><a href="https://github.com/Fission-AI/OpenSpec">OpenSpec</a></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td><td></td><td></td></tr>
+        <tr><td><a href="https://github.com/bmad-code-org/BMAD-METHOD">BMAD Method</a></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td><td></td></tr>
+        <tr><td><a href="https://github.com/awslabs/aidlc-workflows">AWS AI-DLC</a></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td></tr>
+        <tr><td><a href="https://github.com/open-gsd/gsd-core">GSD</a></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td></tr>
+        <tr><td><a href="https://github.com/obra/superpowers">Superpowers</a></td><td></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td></tr>
+        <tr><td><a href="https://github.com/mattpocock/skills">Pocock's skills</a></td><td></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td><td class="dot"><span></span><span class="sr-only">Yes</span></td></tr>
+        <tr><td><a href="https://github.com/cursor/plugins/tree/main/pstack">pstack</a></td><td></td><td></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td class="dot"><span></span><span class="sr-only">Yes</span></td></tr>
+      </table></div>
+      <figcaption>Where each tool puts its main focus, based on its own documentation. A dot means the tool is built around that layer, not that it ignores the others. Evidence has the fewest dots: in most projects, the checks that matter still have to be built for that codebase.</figcaption>
+    </figure>
 
     <h2>A practical way to combine them</h2>
     <p>For an exploratory project, I would start with skills. The requirements are likely to change as I learn, and I want to keep the process lightweight. I can use a grilling session to sharpen the idea, prototype a design question, and introduce TDD once the behaviour is clear enough to preserve.</p>
@@ -144,6 +194,15 @@
     <p>The debate over frameworks versus skills is useful, but it is not the end of the problem. We can debate how much process to prescribe, how many agents to coordinate, and which model should perform each task. Those decisions matter.</p>
     <p>But the larger opportunity comes when the system can verify its own work and use the results to improve it.</p>
     <p>Specifications establish intent. Skills capture process. Orchestration coordinates execution. Verification closes the loop.</p>
+    <figure class="loop">
+      <ol class="loop-steps" aria-label="The loop">
+        <li><span class="name">Specification</span><span class="job">establishes intent</span></li>
+        <li><span class="name">Skills</span><span class="job">capture process</span></li>
+        <li><span class="name">Orchestration</span><span class="job">coordinates execution</span></li>
+        <li><span class="name">Verification</span><span class="job">closes the loop</span></li>
+      </ol>
+      <p class="loop-back">&#8635; Evidence from verification flows back into the next attempt, and into how much the agent is trusted to do</p>
+    </figure>
     <p>Lauren Tan's trust ladder provides a useful framing for what that makes possible: giving agents more responsibility as confidence in their work grows. My interest in evaluation is in making that confidence measurable rather than assumed.</p>
     <p>The goal is not to trust an agent because it can write code, follow a workflow, or produce a persuasive explanation. It is to trust it because we have evidence that the work meets the requirements, that the checks are meaningful, and that failures are likely to be caught.</p>
     <p>That is what turns faster code generation into a development process that can reliably take on more work.</p>
