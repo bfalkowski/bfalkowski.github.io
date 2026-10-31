@@ -45,6 +45,10 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   visits Dale, who pets it. The inspector shows what each one is doing.
 - **Ask Dale the dog's name** (once there is a dog). Whatever dog you gave him, he thinks, then says "Doctor Bones." The log records it,
   then "Security answer accepted". Marjorie keeps doing her crossword.
+- **A glitch under the sink.** Now and then the cabinets under the sink show as a blue
+  wireframe for about a second, then turn solid again. The first one comes 8 to 20 seconds
+  into the run, then one every 15 to 40 seconds. It is one change on and one change off,
+  so it never flickers. It does not happen in wireframe view or with reduced motion.
 - **Wireframe view** shows the whole world as wireframes.
 - **Turn the run off.** Things go one at a time, Marjorie still writing near the end.
   The dog goes last and collapses into one dot. With no dog, the note says "Dale never got
@@ -74,6 +78,7 @@ Useful places in the script:
 | Add menu | `addBtn` click handler; `updateButtons()` decides which buttons are on |
 | Kitchen things | the "more of the kitchen" block after the painting; steam and radio notes in `animateDecor`; the phone's ringing in the frame loop (`state.nextRing`) |
 | Clock speed | `state.sim += dt * 4` (4 story seconds per real second) |
+| Sink glitch | `underSink` (the meshes that glitch), `sinkGlitch` and `setSinkGlitch`; the timing is in the frame loop after the spawn code |
 
 The figures are built from spheres, cylinders and boxes with the `ball`, `rod`, `limb`
 and `block` helpers. Arms, legs, necks and torsos that move are rebuilt every frame
