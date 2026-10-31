@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="author" content="Bryan Falkowski">
+<title>Doctor Bones Scene | Bryan Falkowski</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600&family=Roboto+Mono&display=swap" rel="stylesheet">
+<style>
+  /* Single column like the story page. The picture is the subject; controls sit in a quiet row under it. */
+  :root {
+    --bg: #ffffff;
+    --fg: #2c2c2c;
+    --muted: #666666;
+    --line: #e0e0e0;
+    --accent: #1d3f72;
+    --accent-fg: #ffffff;
+    --screen: #0b0b0c;
+    --sans: "Source Sans 3", "Source Sans Pro", system-ui, sans-serif;
+    --mono: "Roboto Mono", ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141619; --fg: #e6e6e6; --muted: #a0a4aa; --line: #2c3036;
+      --accent: #8fb0e3; --accent-fg: #0d1626; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141619; --fg: #e6e6e6; --muted: #a0a4aa; --line: #2c3036;
+    --accent: #8fb0e3; --accent-fg: #0d1626; color-scheme: dark;
+  }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    background: var(--bg); color: var(--fg);
+    font: 17px/1.6 var(--sans);
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  main { max-width: 760px; margin: 0 auto; padding-block: 40px 56px; display: grid; gap: 18px; }
+  h1 { font-size: 32px; font-weight: 600; line-height: 1.2; margin: 0; text-wrap: balance; }
+  .lede { color: var(--muted); margin: 0; max-width: 62ch; }
+  .scene { margin: 0; border-radius: 6px; overflow: hidden; background: var(--screen); }
+  .scene canvas, .scene img { display: block; width: 100%; height: auto; aspect-ratio: 1399 / 932; max-width: 100%; }
+  .scene [hidden], .controls [hidden] { display: none; }
+  .controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+  .run { font: 14px/1.4 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .run b { color: var(--fg); font-weight: 400; }
+  button {
+    font: 600 15px/1 var(--sans); cursor: pointer;
+    border: 1px solid var(--accent); border-radius: 4px; padding: 9px 16px;
+    background: var(--accent); color: var(--accent-fg);
+  }
+  button:hover { filter: brightness(1.08); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  button:disabled { opacity: 0.5; cursor: default; }
+</style>
+</head>
+<body>
+
+<main>
+  <h1>Doctor Bones</h1>
+  <p class="lede">A preview of the animated picture for the story. The room drifts a little, as if you are looking into it. Move your pointer over the picture to look around. Press the button to see how the run ends.</p>
+
+  <figure class="scene" id="scene">
+    <canvas id="scene-canvas" width="1399" height="932" aria-label="Marjorie works on a crossword at the kitchen table while Dale sits on the floor looking at a brown dog with a red collar."></canvas>
+    <img src="../kitchen.jpg" alt="Marjorie works on a crossword at the kitchen table while Dale sits on the floor looking at a brown dog with a red collar." hidden>
+  </figure>
+
+  <div class="controls">
+    <span class="run" id="run" aria-live="polite">Run <b>4,113</b> is running</span>
+    <span>
+      <button id="off" type="button">Turn Dale off</button>
+      <button id="again" type="button" hidden>Start the next run</button>
+    </span>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  var fig = document.getElementById('scene');
+  var canvas = document.getElementById('scene-canvas');
+  var fallback = fig.querySelector('img');
+  var offBtn = document.getElementById('off');
+  var againBtn = document.getElementById('again');
+  var runEl = document.getElementById('run');
+
+  var ASPECT = 1399 / 932, COLS = 240, ROWS = 160, ZOOM = 0.955;
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var run = 4113;
+
+  function setRun(text) { runEl.innerHTML = 'Run <b>' + run.toLocaleString('en-US') + '</b> ' + text; }
+  function showFallback() { canvas.hidden = true; fallback.hidden = false; offBtn.disabled = true; }
+
+  if (!window.THREE) { showFallback(); return; }
+  var renderer;
+  try { renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: false }); }
+  catch (e) { showFallback(); return; }
+  var pr = Math.min(window.devicePixelRatio || 1, 2);
+  renderer.setPixelRatio(pr);
+  renderer.setClearColor(0x0b0b0c, 1);
+
+  var scene = new THREE.Scene();
+  var cam = new THREE.OrthographicCamera(-ASPECT / 2, ASPECT / 2, 0.5, -0.5, -1, 1);
+
+  function loadImage(src) {
+    return new Promise(function (res, rej) {
+      var im = new Image(); im.onload = function () { res(im); }; im.onerror = rej; im.src = src;
+    });
+  }
+  function tex(img) {
+    var t = new THREE.Texture(img);
+    t.minFilter = THREE.LinearFilter; t.magFilter = THREE.LinearFilter;
+    t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.generateMipmaps = false; t.needsUpdate = true;
+    return t;
+  }
+
+  Promise.all([loadImage('../kitchen.jpg'), loadImage('depth.png')]).then(function (r) { build(r[0], r[1]); })
+    .catch(showFallback);
+
+  function build(img, dimg) {
+    var photo = tex(img), depth = tex(dimg);
+
+    // The living picture: one plane, each pixel shifted by its depth.
+    var liveMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uTex: { value: photo }, uDepth: { value: depth },
+        uOff: { value: new THREE.Vector2() }, uZoom: { value: ZOOM },
+        uPix: { value: 0 }, uFade: { value: 1 }
+      },
+      vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+      fragmentShader: [
+        'uniform sampler2D uTex; uniform sampler2D uDepth; uniform vec2 uOff; uniform float uZoom; uniform float uPix; uniform float uFade;',
+        'varying vec2 vUv;',
+        'void main(){',
+        '  vec2 grid = mix(vec2(1400.0, 932.0), vec2(' + COLS + '.0, ' + ROWS + '.0), uPix);',
+        '  vec2 cell = (floor(vUv * grid) + 0.5) / grid;',
+        '  vec2 s = mix(vUv, cell, step(0.001, uPix));',
+        '  vec2 uv = 0.5 + (s - 0.5) * uZoom;',
+        '  float d = texture2D(uDepth, uv).r;',
+        '  vec2 p = uv + uOff * (d - 0.45);',
+        '  d = texture2D(uDepth, p).r;',
+        '  p = uv + uOff * (d - 0.45);',
+        '  gl_FragColor = vec4(texture2D(uTex, p).rgb * uFade, 1.0);',
+        '}'
+      ].join('\n')
+    });
+    var live = new THREE.Mesh(new THREE.PlaneGeometry(ASPECT, 1), liveMat);
+    scene.add(live);
+
+    // Dust in the window light.
+    var DUST = 160, dPos = new Float32Array(DUST * 3), dSeed = new Float32Array(DUST * 3);
+    for (var k = 0; k < DUST; k++) {
+      dPos[k * 3] = (-0.12 + Math.random() * 0.5) * ASPECT;
+      dPos[k * 3 + 1] = -0.12 + Math.random() * 0.6;
+      dSeed[k * 3] = Math.random(); dSeed[k * 3 + 1] = Math.random(); dSeed[k * 3 + 2] = Math.random();
+    }
+    var dGeo = new THREE.BufferGeometry();
+    dGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
+    dGeo.setAttribute('aSeed', new THREE.BufferAttribute(dSeed, 3));
+    var dustMat = new THREE.ShaderMaterial({
+      uniforms: { uTime: { value: 0 }, uAmt: { value: reduce ? 0 : 1 }, uPr: { value: pr } },
+      vertexShader: [
+        'attribute vec3 aSeed; uniform float uTime; uniform float uPr; uniform float uAmt; varying float vA;',
+        'void main(){',
+        '  vec3 p = position;',
+        '  p.x += sin(uTime * 0.11 * (0.5 + aSeed.z) + aSeed.y * 6.283) * 0.035;',
+        '  p.y += sin(uTime * 0.08 * (0.6 + aSeed.x) + aSeed.z * 6.283) * 0.03 - mod(uTime * 0.004 * (0.5 + aSeed.x) + aSeed.y, 1.0) * 0.08;',
+        '  vA = uAmt * (0.18 + 0.32 * (0.5 + 0.5 * sin(uTime * (0.5 + aSeed.x) + aSeed.y * 20.0)));',
+        '  gl_PointSize = (1.4 + aSeed.z * 2.2) * uPr;',
+        '  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);',
+        '}'
+      ].join('\n'),
+      fragmentShader: 'varying float vA; void main(){ float r = length(gl_PointCoord - 0.5); gl_FragColor = vec4(1.0, 0.92, 0.74, vA * smoothstep(0.5, 0.0, r)); }',
+      transparent: true, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending
+    });
+    var dust = new THREE.Points(dGeo, dustMat);
+    dust.renderOrder = 1;
+    scene.add(dust);
+
+    // The ending: the same picture as a grid of points.
+    var dc = document.createElement('canvas');
+    dc.width = dimg.naturalWidth; dc.height = dimg.naturalHeight;
+    var dctx = dc.getContext('2d'); dctx.drawImage(dimg, 0, 0);
+    var dd = dctx.getImageData(0, 0, dc.width, dc.height).data;
+
+    var N = COLS * ROWS;
+    var pos = new Float32Array(N * 3), auv = new Float32Array(N * 2), rnd = new Float32Array(N * 3),
+        dep = new Float32Array(N), dog = new Float32Array(N);
+    var cx = 0, cy = 0, cn = 0;
+    for (var j = 0; j < ROWS; j++) {
+      for (var i = 0; i < COLS; i++) {
+        var n = j * COLS + i;
+        var su = (i + 0.5) / COLS, sv = 1 - (j + 0.5) / ROWS;
+        var tu = 0.5 + (su - 0.5) * ZOOM, tv = 0.5 + (sv - 0.5) * ZOOM;
+        var px = Math.min(dc.width - 1, Math.floor(tu * dc.width));
+        var py = Math.min(dc.height - 1, Math.floor((1 - tv) * dc.height));
+        var o = (py * dc.width + px) * 4;
+        pos[n * 3] = (su - 0.5) * ASPECT; pos[n * 3 + 1] = sv - 0.5; pos[n * 3 + 2] = 0;
+        auv[n * 2] = tu; auv[n * 2 + 1] = tv;
+        rnd[n * 3] = Math.random(); rnd[n * 3 + 1] = Math.random(); rnd[n * 3 + 2] = Math.random();
+        dep[n] = dd[o] / 255;
+        dog[n] = dd[o + 1] > 127 ? 1 : 0;
+        if (dog[n]) { cx += pos[n * 3]; cy += pos[n * 3 + 1]; cn++; }
+      }
+    }
+    var dogCenter = new THREE.Vector2(cn ? cx / cn : 0.3, cn ? cy / cn : -0.1);
+
+    var pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    pGeo.setAttribute('aUv', new THREE.BufferAttribute(auv, 2));
+    pGeo.setAttribute('aRand', new THREE.BufferAttribute(rnd, 3));
+    pGeo.setAttribute('aDepth', new THREE.BufferAttribute(dep, 1));
+    pGeo.setAttribute('aDog', new THREE.BufferAttribute(dog, 1));
+    var ptsMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uTex: { value: photo }, uProg: { value: 0 }, uDog: { value: 0 },
+        uCell: { value: 4 }, uCenter: { value: dogCenter }
+      },
+      vertexShader: [
+        'attribute vec2 aUv; attribute vec3 aRand; attribute float aDepth; attribute float aDog;',
+        'uniform float uProg; uniform float uDog; uniform float uCell; uniform vec2 uCenter;',
+        'varying vec2 vUv; varying float vA;',
+        'void main(){',
+        '  vec3 p = position;',
+        '  float delay = aDepth * 0.35 + aRand.x * 0.3;',
+        '  float k = clamp((uProg - delay) / 0.35, 0.0, 1.0);',
+        '  k = k * k * (3.0 - 2.0 * k);',
+        '  vec2 dir = normalize(vec2(aRand.y - 0.5, 0.55 + aRand.z));',
+        '  vec3 kp = p + vec3(dir * k * (0.12 + 0.28 * aRand.z), 0.0);',
+        '  float q = clamp((uDog - aRand.x * 0.3) / 0.7, 0.0, 1.0);',
+        '  q = q * q * q;',
+        '  vec3 dp = mix(p, vec3(uCenter, 0.0), q);',
+        '  p = mix(kp, dp, aDog);',
+        '  vA = mix(1.0 - k, 1.0, aDog);',
+        '  gl_PointSize = uCell * mix(1.0 - 0.4 * k, 1.0 - 0.55 * q, aDog);',
+        '  vUv = aUv;',
+        '  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);',
+        '}'
+      ].join('\n'),
+      fragmentShader: 'uniform sampler2D uTex; varying vec2 vUv; varying float vA; void main(){ if (vA < 0.01) discard; gl_FragColor = vec4(texture2D(uTex, vUv).rgb, vA); }',
+      transparent: true, depthTest: false, depthWrite: false
+    });
+    var pts = new THREE.Points(pGeo, ptsMat);
+    pts.visible = false;
+    scene.add(pts);
+
+    // The last dot, like an old TV screen going dark.
+    var gGeo = new THREE.BufferGeometry();
+    gGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([dogCenter.x, dogCenter.y, 0]), 3));
+    var glowMat = new THREE.ShaderMaterial({
+      uniforms: { uA: { value: 0 }, uSize: { value: 28 * pr } },
+      vertexShader: 'uniform float uSize; void main(){ gl_PointSize = uSize; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      fragmentShader: 'uniform float uA; void main(){ float r = length(gl_PointCoord - 0.5) * 2.0; float a = smoothstep(1.0, 0.0, r); float core = smoothstep(0.3, 0.0, r); gl_FragColor = vec4(mix(vec3(1.0, 0.82, 0.55), vec3(1.0), core), a * a * uA); }',
+      transparent: true, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending
+    });
+    var glow = new THREE.Points(gGeo, glowMat);
+    glow.visible = false; glow.renderOrder = 2;
+    scene.add(glow);
+
+    // Size and input.
+    function resize() {
+      var w = fig.clientWidth, h = Math.round(w / ASPECT);
+      renderer.setSize(w, h, false);
+      ptsMat.uniforms.uCell.value = (h * pr) / ROWS + 0.75;
+    }
+    resize();
+    if (window.ResizeObserver) new ResizeObserver(resize).observe(fig); else window.addEventListener('resize', resize);
+
+    var mx = 0, my = 0, tx = 0, ty = 0;
+    canvas.addEventListener('pointermove', function (e) {
+      var r = canvas.getBoundingClientRect();
+      tx = ((e.clientX - r.left) / r.width) * 2 - 1;
+      ty = ((e.clientY - r.top) / r.height) * 2 - 1;
+    });
+    canvas.addEventListener('pointerleave', function () { tx = 0; ty = 0; });
+
+    var visible = true;
+    if (window.IntersectionObserver) {
+      new IntersectionObserver(function (es) { visible = es[0].isIntersecting; }).observe(fig);
+    }
+
+    // Timeline.
+    var state = 'live', t0 = 0, clock0 = performance.now();
+    function clamp01(x) { return Math.max(0, Math.min(1, x)); }
+    function ease(x) { x = clamp01(x); return x * x * (3 - 2 * x); }
+
+    offBtn.addEventListener('click', function () {
+      if (state !== 'live') return;
+      state = 'ending'; t0 = performance.now();
+      offBtn.disabled = true;
+      setRun('is shutting down');
+    });
+    againBtn.addEventListener('click', function () {
+      run++;
+      state = 'live';
+      live.visible = true; pts.visible = false; glow.visible = false;
+      liveMat.uniforms.uPix.value = 0; liveMat.uniforms.uFade.value = 1;
+      ptsMat.uniforms.uProg.value = 0; ptsMat.uniforms.uDog.value = 0;
+      dustMat.uniforms.uAmt.value = reduce ? 0 : 1;
+      againBtn.hidden = true; offBtn.hidden = false; offBtn.disabled = false;
+      setRun('is running');
+      offBtn.focus();
+    });
+    function finish() {
+      state = 'off';
+      offBtn.hidden = true; againBtn.hidden = false;
+      againBtn.textContent = 'Start run ' + (run + 1).toLocaleString('en-US');
+      setRun('is off');
+    }
+
+    function frame(now) {
+      requestAnimationFrame(frame);
+      if (!visible) return;
+      var t = (now - clock0) / 1000;
+      mx += (tx - mx) * 0.04; my += (ty - my) * 0.04;
+      var drift = reduce ? 0 : 1;
+      var settle = 1;
+      dustMat.uniforms.uTime.value = t;
+
+      if (state === 'ending') {
+        var e = (now - t0) / 1000;
+        if (reduce) {
+          liveMat.uniforms.uFade.value = 1 - ease(e / 1.5);
+          if (e > 1.8) finish();
+        } else {
+          settle = 1 - ease(e / 0.6);
+          dustMat.uniforms.uAmt.value = settle;
+          liveMat.uniforms.uPix.value = ease((e - 0.6) / 0.7);
+          if (e >= 1.3) { live.visible = false; pts.visible = true; }
+          ptsMat.uniforms.uProg.value = clamp01((e - 1.3) / 3.5);
+          ptsMat.uniforms.uDog.value = clamp01((e - 5.6) / 1.2);
+          if (e >= 6.8) {
+            pts.visible = false; glow.visible = true;
+            var g = clamp01((e - 6.8) / 1.5);
+            glowMat.uniforms.uA.value = Math.pow(1 - g, 1.6);
+            glowMat.uniforms.uSize.value = (28 - 18 * g) * pr;
+          }
+          if (e > 8.6) { glow.visible = false; finish(); }
+        }
+      }
+
+      var a = drift * settle;
+      liveMat.uniforms.uOff.value.set(
+        a * (Math.sin(t * 0.21) * 0.016 + mx * 0.014),
+        a * (Math.sin(t * 0.17 + 1.3) * 0.010 - my * 0.010)
+      );
+      liveMat.uniforms.uZoom.value = ZOOM - a * 0.006 * (0.5 + 0.5 * Math.sin(t * 0.12));
+      renderer.render(scene, cam);
+    }
+    requestAnimationFrame(frame);
+  }
+})();
+</script>
+</body>
+</html>
