@@ -1273,6 +1273,9 @@
   const D_CHAIR = { lift: 0.3, neck: [0, 0.38, -0.02], sL: [-0.155, 0.35, -0.03], eL: [-0.18, 0.24, 0.14], hL: [-0.1, 0.32, 0.27],
     sR: [0.155, 0.35, -0.03], eR: [0.18, 0.24, 0.14], hR: [0.1, 0.32, 0.27],
     kL: [-0.09, 0.08, 0.3], fL: [-0.09, -0.235, 0.32], kR: [0.09, 0.08, 0.3], fR: [0.09, -0.235, 0.32], hx: 0.12, hy: 0, hz: 0, track: 1 };
+  // in his chair, startled: leans back, shoulders up, hands up off the table, head back
+  const D_SURPRISED = { neck: [0.02, 0.4, -0.08], sL: [-0.16, 0.39, -0.09], sR: [0.16, 0.39, -0.09],
+    eL: [-0.22, 0.3, 0.05], hL: [-0.17, 0.46, 0.16], eR: [0.22, 0.3, 0.05], hR: [0.17, 0.46, 0.16], hx: -0.15, track: 1 };
   const D_STAND = { lift: 0.53, neck: [0, 0.4, -0.01], sL: [-0.155, 0.36, -0.02], eL: [-0.18, 0.19, 0], hL: [-0.2, 0.03, 0.02],
     sR: [0.155, 0.36, -0.02], eR: [0.18, 0.19, 0], hR: [0.2, 0.03, 0.02],
     kL: [-0.09, -0.2, 0.03], fL: [-0.09, -0.46, 0.02], kR: [0.09, -0.2, 0.03], fR: [0.09, -0.46, 0.02], hx: 0, hy: 0, hz: 0, track: 1 };
@@ -1319,7 +1322,11 @@
     const dg = dale.group, dist = STAND_SPOT.distanceTo(D_POS), walk = dist / 0.7;
     const walkYaw = Math.atan2(D_POS.x - STAND_SPOT.x, D_POS.z - STAND_SPOT.z);
     play(dA, [
-      { pose: D_STAND, dur: 1.0, speed: 5, enter: () => log('Dale got up from the table'),
+      // a moment before he notices, then a startle, then he stares at it (about 2.7 s in all)
+      { pose: { track: 0 }, dur: 0.8, speed: 4 },
+      { pose: D_SURPRISED, dur: 0.9, speed: 12, enter: (A) => { A.activity = 'Surprised by the dog'; log('Dale saw the dog'); } },
+      { pose: { hx: 0.02 }, dur: 1.0, speed: 3, enter: (A) => { A.activity = 'Staring at the dog'; } },
+      { pose: D_STAND, dur: 1.0, speed: 5, enter: (A) => { A.activity = 'Getting up from the table'; log('Dale got up from the table'); },
         update: (tt) => { const s = ease(tt / 1.0); dg.position.lerpVectors(CHAIR_SPOT, STAND_SPOT, s); dg.rotation.y = CHAIR_YAW + angDiff(CHAIR_YAW, walkYaw) * s; } },
       { pose: D_STAND, dur: walk, speed: 14, enter: (A) => { A.activity = 'Going over to the dog'; },
         update: (tt, A) => {
@@ -1332,7 +1339,7 @@
       { pose: D_STAND, dur: 0.6, speed: 6, update: (tt) => { dg.position.y = 0; dg.rotation.y = walkYaw + angDiff(walkYaw, D_YAW) * ease(tt / 0.6); } },
       { pose: D_BASE, dur: 1.1, speed: 3.5, enter: (A) => { A.activity = 'Sitting down on the floor'; },
         exit: () => { daleSeatState('floor'); log('Dale sat on the floor by the dog'); updateButtons(); } }
-    ], 'Getting up from the table');
+    ], 'Sitting at the table');
   }
   const petTmp = new THREE.Vector3();
   function petSteps() {
