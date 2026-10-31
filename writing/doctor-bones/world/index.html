@@ -177,6 +177,7 @@
     <div class="group">
       <button class="btn" id="ask" type="button" disabled>Ask Dale the dog's name</button>
       <button class="btn" id="wire" type="button" aria-pressed="false">Wireframe view</button>
+      <button class="btn" id="radio-btn" type="button" aria-pressed="false">Radio sound</button>
       <button class="btn" id="off" type="button" disabled>Turn the run off</button>
       <button class="btn primary" id="again" type="button" hidden>Start run 4,114</button>
     </div>
@@ -717,7 +718,7 @@
   }
   finalize(trash);
 
-  const radio = entity('radio', 'Radio', { spawnAt: 1.5, offAt: 0.55, inspect: true, info: () => [['Playing', 'The same song'], ['Station', 'The only one']] });
+  const radio = entity('radio', 'Radio', { spawnAt: 1.5, offAt: 0.55, inspect: true, info: () => [['Playing', 'The same song'], ['Station', 'The only one'], ['Sound', music.on ? 'On' : 'Off']] });
   const RADIO_POS = new THREE.Vector3(2.6, 1.79, -1.98);
   {
     const g = radio.group, bake = plastic(0x8c2f2a);
@@ -1516,6 +1517,133 @@
   });
   againBtn.addEventListener('click', () => { state.run++; startRun(); offBtn.hidden = false; againBtn.hidden = true; offBtn.focus(); });
 
+  // ---------- the radio's song (sound is off until the viewer turns it on) ----------
+  // An original slow ballad in the style of a 1940s radio record, made with Web Audio:
+  // muffled like a small speaker, with a little crackle. It starts from the top whenever the
+  // radio comes on, fades out when the radio is gone, and drops out during a flutter.
+  const SONG = (() => {
+    const SPB = 60 / 72;
+    const CH = { F: [53, 57, 60, 64], Dm: [50, 53, 57, 60], Gm: [55, 58, 62, 65], C7: [52, 55, 58, 60], Am: [57, 60, 64, 67],
+      D7: [54, 57, 60, 62], F6: [53, 57, 60, 62], Bb: [50, 53, 57, 58], Bbm: [49, 53, 55, 58] };
+    const ROOT = { F: 41, Dm: 38, Gm: 43, C7: 36, Am: 45, D7: 38, F6: 41, Bb: 46, Bbm: 46 };
+    const BARS = [['F'], ['Dm'], ['Gm'], ['C7'], ['Am', 'D7'], ['Gm', 'C7'], ['F6'], ['Gm', 'C7'],
+      ['Bb'], ['Bbm'], ['Am'], ['D7'], ['Gm'], ['C7'], ['F6', 'Dm'], ['Gm', 'C7']];
+    // melody: [bar, beat, length in beats, MIDI note]
+    const MEL = [
+      [0, 0, 1.5, 69], [0, 1.5, 0.5, 67], [0, 2, 1, 69], [0, 3, 1, 72],
+      [1, 0, 2, 74], [1, 2, 1, 72], [1, 3, 1, 69],
+      [2, 0, 1.5, 70], [2, 1.5, 0.5, 69], [2, 2, 2, 67],
+      [3, 0, 1, 67], [3, 1, 1, 64], [3, 2, 1, 67], [3, 3, 1, 70],
+      [4, 0, 1, 69], [4, 1, 1, 72], [4, 2, 1.5, 74], [4, 3.5, 0.5, 72],
+      [5, 0, 1, 70], [5, 1, 1, 74], [5, 2, 1, 72], [5, 3, 1, 70],
+      [6, 0, 3, 69],
+      [7, 2, 1, 67], [7, 3, 0.5, 69], [7, 3.5, 0.5, 70],
+      [8, 0, 1.5, 74], [8, 1.5, 0.5, 72], [8, 2, 1, 74], [8, 3, 1, 77],
+      [9, 0, 1.5, 77], [9, 1.5, 0.5, 73], [9, 2, 2, 72],
+      [10, 0, 1, 72], [10, 1, 1, 76], [10, 2, 1, 72], [10, 3, 1, 69],
+      [11, 0, 1, 66], [11, 1, 1, 69], [11, 2, 1.5, 72], [11, 3.5, 0.5, 74],
+      [12, 0, 1.5, 74], [12, 1.5, 0.5, 70], [12, 2, 2, 67],
+      [13, 0, 1, 70], [13, 1, 1, 69], [13, 2, 1, 67], [13, 3, 1, 64],
+      [14, 0, 2, 65], [14, 2, 1, 69], [14, 3, 1, 74],
+      [15, 0, 2, 72]
+    ];
+    const sw = (b) => { const i = Math.floor(b + 1e-6), f = b - i; return i + (Math.abs(f - 0.5) < 1e-6 ? 2 / 3 : f); }; // swung eighths
+    const ev = [], add = (b, len, o) => ev.push(Object.assign({ t: sw(b) * SPB, d: (sw(b + len) - sw(b)) * SPB }, o));
+    BARS.forEach((chs, bar) => {
+      const per = 4 / chs.length;
+      chs.forEach((c, k) => {
+        const b0 = bar * 4 + k * per;
+        add(b0, per, { f: 'pad', notes: CH[c] });
+        add(b0, 2, { f: 'bass', m: ROOT[c] });
+        if (per === 4) add(b0 + 2, 2, { f: 'bass', m: ROOT[c] + 7 });
+      });
+      add(bar * 4 + 1, 1, { f: 'comp', notes: CH[chs[0]] });
+      add(bar * 4 + 3, 1, { f: 'comp', notes: CH[chs[chs.length - 1]] });
+      [0, 1, 2, 3].forEach((q) => add(bar * 4 + q, 0.5, { f: 'brush', v: q % 2 ? 0.06 : 0.025 }));
+    });
+    MEL.forEach(([bar, beat, len, m]) => add(bar * 4 + beat, len, { f: 'lead', m }));
+    ev.sort((a, b) => a.t - b.t);
+    return { ev, len: 64 * SPB };
+  })();
+  const music = { on: false, ctx: null, bus: null, out: null, noise: null, idx: 0, loop: 0, t0: 0, want: false, level: 0 };
+  const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  function startAudio() {
+    const AC = window.AudioContext || window.webkitAudioContext, c = new AC();
+    const shaper = c.createWaveShaper(), curve = new Float32Array(1024);
+    for (let i = 0; i < 1024; i++) curve[i] = Math.tanh((i / 511.5 - 1) * 1.6);
+    shaper.curve = curve;
+    const hp = c.createBiquadFilter(), mid = c.createBiquadFilter(), lp = c.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 260;
+    mid.type = 'peaking'; mid.frequency.value = 1300; mid.gain.value = 5; mid.Q.value = 0.8;
+    lp.type = 'lowpass'; lp.frequency.value = 3200;
+    const bus = c.createGain(), out = c.createGain(); bus.gain.value = 0.5; out.gain.value = 0;
+    bus.connect(shaper); shaper.connect(hp); hp.connect(mid); mid.connect(lp); lp.connect(out); out.connect(c.destination);
+    // record crackle and hiss, through the same small speaker
+    const cb = c.createBuffer(1, c.sampleRate * 4, c.sampleRate), cd = cb.getChannelData(0);
+    for (let i = 0; i < cd.length; i++) cd[i] = (Math.random() * 2 - 1) * 0.012 + (Math.random() < 14 / c.sampleRate ? (Math.random() * 2 - 1) * 0.9 : 0);
+    const crackle = c.createBufferSource(), chp = c.createBiquadFilter(), cg = c.createGain();
+    crackle.buffer = cb; crackle.loop = true; chp.type = 'highpass'; chp.frequency.value = 900; cg.gain.value = 0.35;
+    crackle.connect(chp); chp.connect(cg); cg.connect(hp); crackle.start();
+    const nb = c.createBuffer(1, Math.floor(c.sampleRate * 0.3), c.sampleRate), nd = nb.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    Object.assign(music, { ctx: c, bus, out, noise: nb });
+    setInterval(tickMusic, 100);
+  }
+  function env(g, t, a, peak, end) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, end); }
+  function osc(type, m, t, stop, dest, mul) {
+    const o = music.ctx.createOscillator(); o.type = type; o.frequency.value = hz(m) * (mul || 1);
+    o.connect(dest); o.start(t); o.stop(stop); return o;
+  }
+  function playEvent(e, t) {
+    const c = music.ctx, bus = music.bus;
+    if (e.f === 'lead') {
+      const g = c.createGain(), f = c.createBiquadFilter(), lfo = c.createOscillator(), vib = c.createGain(), end = t + e.d + 0.25;
+      f.type = 'lowpass'; f.frequency.value = 1500; f.Q.value = 1.1; f.connect(g); g.connect(bus);
+      lfo.frequency.value = 5.3; vib.gain.setValueAtTime(0, t); vib.gain.linearRampToValueAtTime(14, t + Math.min(0.5, e.d)); lfo.connect(vib);
+      [-5, 5].forEach((cents) => { const o = osc('sawtooth', e.m, t, end, f); o.detune.value = cents; vib.connect(o.detune); });
+      lfo.start(t); lfo.stop(end);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.1, t + 0.06);
+      g.gain.setValueAtTime(0.1, t + Math.max(0.07, e.d - 0.04)); g.gain.linearRampToValueAtTime(0, t + e.d + 0.2);
+    } else if (e.f === 'comp') {
+      e.notes.forEach((m) => { const g = c.createGain(); g.connect(bus); env(g, t, 0.006, 0.07, t + 0.9); osc('triangle', m, t, t + 1, g); osc('sine', m, t, t + 1, g, 2); });
+    } else if (e.f === 'pad') {
+      e.notes.slice(1).forEach((m) => {
+        const g = c.createGain(); g.connect(bus); osc('sine', m + 12, t, t + e.d + 0.6, g);
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.025, t + 0.4); g.gain.setValueAtTime(0.025, t + e.d); g.gain.linearRampToValueAtTime(0, t + e.d + 0.5);
+      });
+    } else if (e.f === 'bass') {
+      const g = c.createGain(); g.connect(bus); env(g, t, 0.01, 0.3, t + e.d); osc('triangle', e.m, t, t + e.d + 0.05, g);
+    } else if (e.f === 'brush') {
+      const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+      s.buffer = music.noise; f.type = 'bandpass'; f.frequency.value = 5000; f.Q.value = 0.7;
+      s.connect(f); f.connect(g); g.connect(bus); env(g, t, 0.03, e.v, t + 0.2); s.start(t); s.stop(t + 0.25);
+    }
+  }
+  function tickMusic() {
+    const c = music.ctx; if (!c || c.state !== 'running' || !music.want) return;
+    const until = c.currentTime + 0.35;
+    for (;;) {
+      const e = SONG.ev[music.idx], at = music.t0 + music.loop * SONG.len + e.t;
+      if (at >= until) break;
+      if (at > c.currentTime - 0.05) playEvent(e, Math.max(at, c.currentTime + 0.01));
+      if (++music.idx >= SONG.ev.length) { music.idx = 0; music.loop++; }
+    }
+  }
+  // the song only uses the processor while it can be heard
+  function syncAudio() {
+    const c = music.ctx; if (!c) return;
+    const run = music.on && onScreen && !document.hidden;
+    if (run && c.state === 'suspended') c.resume(); else if (!run && c.state === 'running') c.suspend();
+  }
+  document.addEventListener('visibilitychange', syncAudio);
+  const radioBtn = $('radio-btn');
+  if (!(window.AudioContext || window.webkitAudioContext)) radioBtn.disabled = true;
+  radioBtn.addEventListener('click', () => {
+    music.on = !music.on; radioBtn.setAttribute('aria-pressed', String(music.on));
+    if (music.on) { if (!music.ctx) startAudio(); syncAudio(); }
+    else if (music.ctx) { music.out.gain.setTargetAtTime(0, music.ctx.currentTime, 0.05); music.level = 0; music.want = false; setTimeout(syncAudio, 400); }
+  });
+
   // ---------- adding things to the world ----------
   const addSel = $('add'), addBtn = $('add-btn');
   const ADD_LABELS = {};
@@ -1608,7 +1736,7 @@
   resize();
   if (window.ResizeObserver) new ResizeObserver(resize).observe(stage); else window.addEventListener('resize', resize);
   let onScreen = !window.IntersectionObserver, started = false;
-  if (window.IntersectionObserver) new IntersectionObserver((es) => { onScreen = es[0].isIntersecting; }).observe(stage);
+  if (window.IntersectionObserver) new IntersectionObserver((es) => { onScreen = es[0].isIntersecting; syncAudio(); }).observe(stage);
 
   // ---------- frame loop ----------
   const tmp = new THREE.Vector3();
@@ -1666,6 +1794,18 @@
     }
     else if (glitch.next === Infinity) glitch.next = t + rand(10, 20);
     else if (t >= glitch.next) { glitch.steps = flutterSteps(); glitch.t0 = t; }
+
+    // the radio's song: plays while the radio is in the world and the sound is on, from the top each time
+    if (music.ctx) {
+      const want = music.on && radio.spawned && !radio.gone && state.phase !== 'off';
+      if (want && !music.want) { music.idx = 0; music.loop = 0; music.t0 = music.ctx.currentTime + 0.15; }
+      music.want = want;
+      const level = want ? (glitch.on ? 0.12 : 1) : 0;
+      if (level !== music.level) {
+        music.out.gain.setTargetAtTime(level, music.ctx.currentTime, level > music.level ? 0.08 : level > 0 ? 0.02 : 0.2);
+        music.level = level;
+      }
+    }
 
     // habits
     if (state.phase !== 'off') {

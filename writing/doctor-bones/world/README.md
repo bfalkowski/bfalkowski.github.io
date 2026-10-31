@@ -52,6 +52,11 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   under three flashes a second. It does not happen in wireframe view, while a dog is being
   replaced, or with reduced motion.
 - **Wireframe view** shows the whole world as wireframes.
+- **Radio sound** (off by default) plays the radio's song: an original slow ballad in the
+  style of a 1940s radio record, made in the page with Web Audio. It sounds muffled like a
+  small speaker, with record crackle. It starts from the top when the radio comes on, drops
+  out during a wireframe flutter, and fades out when the run is turned off. It pauses when
+  the scene is off screen or the tab is hidden.
 - **Turn the run off.** Things go one at a time, Marjorie still writing near the end.
   The dog goes last and collapses into one dot. With no dog, the note says "Dale never got
   a dog." Then you can start the next run, which starts with no dog again.
@@ -81,6 +86,7 @@ Useful places in the script:
 | Kitchen things | the "more of the kitchen" block after the painting; steam and radio notes in `animateDecor`; the phone's ringing in the frame loop (`state.nextRing`) |
 | Clock speed | `state.sim += dt * 4` (4 story seconds per real second) |
 | Wireframe flutter | `glitch`, `glitchOn`, `glitchOff` and `flutterSteps` (the blink pattern); how often is in the frame loop after the spawn code |
+| Radio song | `SONG` (tempo, chords in `CH` and `BARS`, melody in `MEL` as bar, beat, length, MIDI note), `playEvent` (the instruments), `startAudio` (the speaker filter and crackle), `music` and `syncAudio` |
 
 The figures are built from spheres, cylinders and boxes with the `ball`, `rod`, `limb`
 and `block` helpers. Arms, legs, necks and torsos that move are rebuilt every frame
@@ -89,6 +95,6 @@ from joint positions (`dynLimb` and `setLimb`), in meters, facing +z.
 ## Ideas not built yet
 
 - Start the next run with small differences, so each run is not quite the same.
-- A sound toggle with a ticking clock and a pencil on paper.
+- Room sounds with the radio: a ticking clock and a pencil on paper.
 - Bring back the glitch where only the cabinets under the sink turn to wireframe. It is
   turned off for now; commit d26d818 has it.
