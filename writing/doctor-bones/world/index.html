@@ -129,7 +129,7 @@
 
 <main>
   <h1>Run 4,113</h1>
-  <p class="lede">A toy version of the kitchen from <em>Doctor Bones</em>, seen the way the young man in the room with no windows sees it. Drag to look around, scroll or pinch to zoom, and click or tap anything to inspect it.</p>
+  <p class="lede">A toy version of the kitchen from <em>Doctor Bones</em>, seen the way the young man in the room with no windows sees it. Give Dale a dog from the Add menu, then ask him its name. Drag to look around, scroll or pinch to zoom, and click or tap anything to inspect it.</p>
 
   <div class="stage" id="stage">
     <canvas id="world" aria-label="A toy kitchen floating in a dark space. Marjorie does a crossword at the table. Dale sits on the floor looking at a brown dog."></canvas>
@@ -157,7 +157,24 @@
 
   <div class="toolbar">
     <div class="group">
-      <button class="btn primary" id="ask" type="button" disabled>Ask Dale the dog's name</button>
+      <label class="pick" for="add">Add
+        <select id="add" disabled>
+          <optgroup label="Dogs">
+            <option value="dog:default" selected>Dog (default)</option>
+            <option value="dog:spotted">Dog (spotted)</option>
+            <option value="dog:small">Dog (small)</option>
+            <option value="dog:black">Dog (black)</option>
+          </optgroup>
+          <optgroup label="Other things">
+            <option value="cat">Cat</option>
+            <option value="fish">Goldfish</option>
+          </optgroup>
+        </select>
+      </label>
+      <button class="btn primary" id="add-btn" type="button" disabled>Add to the world</button>
+    </div>
+    <div class="group">
+      <button class="btn" id="ask" type="button" disabled>Ask Dale the dog's name</button>
       <button class="btn" id="wire" type="button" aria-pressed="false">Wireframe view</button>
       <button class="btn" id="off" type="button" disabled>Turn the run off</button>
       <button class="btn primary" id="again" type="button" hidden>Start run 4,114</button>
@@ -659,7 +676,7 @@
   const dale = entity('dale', 'Dale Hubbard (copy)', {
     spawnAt: 3.3, offAt: 2.1, k: FIG, inspect: true,
     info: () => [['Doing', dA.activity], ['Run', state.run.toLocaleString('en-US')], ['Came home', '5:40 pm, as always'],
-      ["Knows the dog's name", state.dogName ? 'Yes' : 'Not yet'], ['Built from', 'Everything he ever posted']]
+      ["Knows the dog's name", !state.dogPresent ? 'He has no dog' : state.dogName ? 'Yes' : 'Not yet'], ['Built from', 'Everything he ever posted']]
   });
   const DJ = {};
   {
@@ -690,16 +707,26 @@
   }
   finalize(dale);
 
-  // ---------- the dog ----------
+  // ---------- the dog (added from the menu) ----------
   const DOG_POS = new THREE.Vector3(D_POS.x + 0.95 * FIG * Math.sin(D_YAW), 0, D_POS.z + 0.95 * FIG * Math.cos(D_YAW));
   const DOG_YAW = Math.atan2(D_POS.x - DOG_POS.x, D_POS.z - DOG_POS.z);
+  const DOG_KINDS = {
+    default: { label: 'Default', fur: 0xc27a35, dark: 0xa5622a, light: 0xd99a55, size: 1 },
+    spotted: { label: 'Spotted', fur: 0xf0ece2, dark: 0x3a3330, light: 0xffffff, size: 1, spots: 0x3a3330 },
+    small: { label: 'Small', fur: 0xcf9a5c, dark: 0xb07a40, light: 0xe6bd8a, size: 0.72 },
+    black: { label: 'Black', fur: 0x34302d, dark: 0x221f1d, light: 0x4d4743, size: 1 }
+  };
+  let dogKind = 'default';
   const dog = entity('dog', 'Dog', {
-    spawnAt: 4.6, offAt: 99, k: FIG, inspect: true,
-    info: () => [['Doing', gA.activity], ['Breed', 'Default'], ['Alive for', fmtDur(state.sim - state.dogSim)], ['Name', state.dogName || 'Unknown']]
+    spawnAt: Infinity, offAt: 99, k: FIG, inspect: true,
+    info: () => [['Doing', gA.activity], ['Breed', DOG_KINDS[dogKind].label], ['Alive for', fmtDur(state.sim - state.dogSim)], ['Name', state.dogName || 'Unknown']]
   });
   let dogHead, dogTail, dogEars = [];
-  {
-    const fur = plastic(0xc27a35), furDark = plastic(0xa5622a), furLight = plastic(0xd99a55), g = dog.group;
+  function buildDog(kind) {
+    const K = DOG_KINDS[kind], g = dog.group;
+    while (g.children.length) g.remove(g.children[0]);
+    dogEars = [];
+    const fur = plastic(K.fur), furDark = plastic(K.dark), furLight = plastic(K.light);
     ball(g, fur, [0, 0.12, -0.1], 0.13, [1.0, 0.85, 1.1]);
     const torso = ball(g, fur, [0, 0.26, 0.0], 0.12, [0.85, 1.3, 0.9]); torso.rotation.x = -0.35;
     ball(g, furLight, [0, 0.32, 0.075], 0.09, [0.9, 1.0, 0.8]);
@@ -712,6 +739,11 @@
     ball(g, fur, [-0.055, 0.022, 0.125], 0.034, [1, 0.6, 1.4]);
     ball(g, fur, [0.055, 0.022, 0.125], 0.034, [1, 0.6, 1.4]);
     rod(g, fur, [0, 0.35, 0.05], [0, 0.47, 0.1], 0.062);
+    if (K.spots) {
+      const sp = plastic(K.spots);
+      [[0.09, 0.28, 0.0, 0.035], [-0.085, 0.22, -0.02, 0.04], [0.12, 0.13, -0.1, 0.038], [-0.115, 0.1, -0.13, 0.034], [0, 0.16, -0.225, 0.036]]
+        .forEach(([x, y, z, r]) => ball(g, sp, [x, y, z], r));
+    }
     const collarRing = mesh(new THREE.TorusGeometry(0.064, 0.013, 10, 28), M.red, g);
     collarRing.position.set(0, 0.405, 0.075); collarRing.rotation.x = Math.PI / 2 - 0.55;
     const tag = mesh(G.cyl, M.chrome, g); tag.position.set(0, 0.36, 0.13); tag.scale.set(0.018, 0.004, 0.018); tag.rotation.x = Math.PI / 2 - 0.3;
@@ -720,8 +752,8 @@
     rod(dogHead, fur, [0, -0.02, 0.04], [0, -0.025, 0.14], 0.045);
     ball(dogHead, furLight, [0, -0.04, 0.12], 0.04, [1, 0.7, 1]);
     ball(dogHead, M.dark, [0, -0.012, 0.165], 0.02);
-    ball(dogHead, M.dark, [-0.04, 0.03, 0.072], 0.013);
-    ball(dogHead, M.dark, [0.04, 0.03, 0.072], 0.013);
+    ball(dogHead, kind === 'black' ? plastic(0xd9c9a0) : M.dark, [-0.04, 0.03, 0.072], 0.013);
+    ball(dogHead, kind === 'black' ? plastic(0xd9c9a0) : M.dark, [0.04, 0.03, 0.072], 0.013);
     [-1, 1].forEach((sgn) => {
       const ear = new THREE.Group(); ear.position.set(sgn * 0.07, 0.03, -0.01); dogHead.add(ear);
       const e = ball(ear, furDark, [sgn * 0.012, -0.05, 0], 0.05, [0.42, 1.15, 0.8]); e.rotation.z = sgn * 0.22;
@@ -729,12 +761,18 @@
     });
     dogTail = new THREE.Group(); dogTail.position.set(0, 0.06, -0.22); g.add(dogTail);
     limb(dogTail, fur, [[0, 0, 0], [0.06, -0.025, -0.12], [0.17, -0.035, -0.16]], 0.022);
-    g.position.copy(DOG_POS); g.rotation.y = DOG_YAW;
+    dog.k = FIG * K.size;
   }
+  buildDog('default');
+  dog.group.position.copy(DOG_POS); dog.group.rotation.y = DOG_YAW;
   finalize(dog);
+  function refreshMeshes(e) {
+    e.meshes = []; e.mode = 'solid';
+    e.group.traverse((o) => { if (o.isMesh) { o.userData.entity = e; o.userData.solid = o.material; e.meshes.push(o); } });
+  }
 
   // ---------- water bowl ----------
-  const bowl = entity('bowl', 'Water bowl', { spawnAt: 4.95, offAt: 2.8, k: 1.2, inspect: true, info: () => [['Added', 'With the dog'], ['Water', 'Yes']] });
+  const bowl = entity('bowl', 'Water bowl', { spawnAt: Infinity, offAt: 2.8, k: 1.2, inspect: true, info: () => [['Added', 'With the dog'], ['Water', 'Yes']] });
   {
     const g = bowl.group;
     rod(g, M.blue, [0, 0, 0], [0, 0.055, 0], 0.115, 0.125);
@@ -742,6 +780,65 @@
     g.position.set(2.05, 0, -1.3);
   }
   finalize(bowl);
+
+  // ---------- the cat (added from the menu): sits on the windowsill ----------
+  const CAT_POS = new THREE.Vector3(0.75, 1.152, -2.08);
+  const cat = entity('cat', 'Cat', {
+    spawnAt: Infinity, offAt: 0.7, k: FIG, inspect: true,
+    info: () => [['Doing', cA.activity], ['Added', 'By you'], ['Needed for the password', 'No'], ['Noticed by Marjorie', 'No']]
+  });
+  let catHead, catTail, catPaw;
+  {
+    const fur = plastic(0x8b8d91), light = plastic(0xe0ddd5), pink = plastic(0xd98c8c), g = cat.group;
+    ball(g, fur, [0, 0.1, -0.03], 0.09, [0.85, 1.15, 1.0]);
+    ball(g, light, [0, 0.13, 0.035], 0.062, [0.9, 1, 0.7]);
+    ball(g, fur, [-0.06, 0.05, -0.05], 0.055, [0.7, 0.8, 1.2]);
+    ball(g, fur, [0.06, 0.05, -0.05], 0.055, [0.7, 0.8, 1.2]);
+    rod(g, fur, [-0.03, 0.12, 0.05], [-0.03, 0.015, 0.06], 0.018);
+    ball(g, light, [-0.03, 0.012, 0.075], 0.022, [1, 0.6, 1.3]);
+    catPaw = new THREE.Group(); catPaw.position.set(0.03, 0.12, 0.05); g.add(catPaw);
+    rod(catPaw, fur, [0, 0, 0], [0, -0.105, 0.01], 0.018);
+    ball(catPaw, light, [0, -0.108, 0.025], 0.022, [1, 0.6, 1.3]);
+    catHead = new THREE.Group(); catHead.position.set(0, 0.25, 0.03); g.add(catHead);
+    ball(catHead, fur, [0, 0, 0], 0.068, [1.1, 0.95, 1]);
+    [-1, 1].forEach((sgn) => {
+      const ear = mesh(new THREE.ConeGeometry(0.026, 0.055, 12), fur, catHead);
+      ear.position.set(sgn * 0.042, 0.062, -0.005); ear.rotation.z = -sgn * 0.3;
+    });
+    ball(catHead, light, [0, -0.022, 0.052], 0.03, [1.25, 0.8, 0.8]);
+    ball(catHead, pink, [0, -0.006, 0.07], 0.009);
+    ball(catHead, M.dark, [-0.027, 0.014, 0.058], 0.009);
+    ball(catHead, M.dark, [0.027, 0.014, 0.058], 0.009);
+    catTail = new THREE.Group(); catTail.position.set(0, 0.03, -0.11); g.add(catTail);
+    limb(catTail, fur, [[0, 0, 0], [0.05, 0.02, -0.05], [0.11, 0.08, -0.04]], 0.015);
+    g.position.copy(CAT_POS);
+  }
+  finalize(cat);
+
+  // ---------- the goldfish (added from the menu): a bowl on the counter ----------
+  let fishPivot, fishBody, fishAngle = 0;
+  const fish = entity('fish', 'Goldfish', {
+    spawnAt: Infinity, offAt: 0.45, k: 1.25, inspect: true,
+    info: () => [['Added', 'By you'], ['Needed for the password', 'No'], ['Laps of the bowl', String(Math.floor(fishAngle / (Math.PI * 2)))], ['Name', 'Nobody asked']]
+  });
+  {
+    const g = fish.group;
+    const glass = mesh(new THREE.SphereGeometry(0.11, 28, 20), new THREE.MeshStandardMaterial({ color: C(0xe6f6ff), transparent: true, opacity: 0.22, roughness: 0.05, depthWrite: false }), g);
+    glass.position.y = 0.11; glass.castShadow = false;
+    const water = mesh(new THREE.SphereGeometry(0.1, 28, 20, 0, Math.PI * 2, Math.PI * 0.3, Math.PI * 0.7),
+      new THREE.MeshStandardMaterial({ color: C(0x9fd3f0), transparent: true, opacity: 0.35, roughness: 0.1, depthWrite: false, side: THREE.DoubleSide }), g);
+    water.position.y = 0.11; water.castShadow = false;
+    rod(g, std(0xb98c5a), [0, 0.012, 0], [0, 0.03, 0], 0.07);
+    fishPivot = new THREE.Group(); fishPivot.position.y = 0.11; g.add(fishPivot);
+    fishBody = new THREE.Group(); fishBody.position.set(0.045, 0, 0); fishPivot.add(fishBody);
+    const orange = plastic(0xf08a24);
+    ball(fishBody, orange, [0, 0, 0], 0.02, [0.7, 0.9, 1.6]);
+    const fin = mesh(new THREE.ConeGeometry(0.016, 0.03, 10), orange, fishBody); fin.rotation.x = -Math.PI / 2; fin.position.z = 0.04;
+    ball(fishBody, M.dark, [0.011, 0.006, -0.018], 0.004);
+    ball(fishBody, M.dark, [-0.011, 0.006, -0.018], 0.004);
+    g.position.set(1.97, 0.87, -1.93);
+  }
+  finalize(fish);
 
   // ---------- dust in the window light ----------
   const DUST = 140, dPos = new Float32Array(DUST * 3), dBase = [];
@@ -785,16 +882,17 @@
 
   // ---------- habits ----------
   const rand = (a, b) => a + Math.random() * (b - a);
+  const lbl = (x) => (typeof x === 'function' ? x() : x);
   function pickWeighted(list) {
-    let sum = 0; list.forEach((b) => { sum += b.w; });
+    let sum = 0; list.forEach((b) => { sum += lbl(b.w); });
     let r = Math.random() * sum;
-    for (const b of list) { r -= b.w; if (r <= 0) return b; }
+    for (const b of list) { const w = lbl(b.w); if (w <= 0) continue; r -= w; if (r <= 0) return b; }
     return list[0];
   }
   function makePose(base) { const p = {}; for (const k in base) p[k] = Array.isArray(base[k]) ? V3(base[k]) : base[k]; return p; }
   function actor(base, behaviors, defaults) {
     return { base, behaviors, defaults, cur: makePose(base), tgt: makePose(base), steps: [], step: null, stepT: 0,
-      busy: false, wait: rand(1.5, 4), flags: Object.assign({}, defaults.flags), activity: defaults.activity, speed: 4 };
+      busy: false, wait: rand(1.5, 4), flags: Object.assign({}, defaults.flags), activity: lbl(defaults.activity), speed: 4 };
   }
   function setTarget(A, over) {
     const src = Object.assign({}, A.base, over);
@@ -802,7 +900,7 @@
   }
   function stopActor(A) {
     A.steps = []; A.step = null; A.busy = false; setTarget(A, {});
-    A.flags = Object.assign({}, A.defaults.flags); A.activity = A.defaults.activity; A.speed = 4; A.wait = rand(2, 5);
+    A.flags = Object.assign({}, A.defaults.flags); A.activity = lbl(A.defaults.activity); A.speed = 4; A.wait = rand(2, 5);
   }
   function resetActor(A) {
     stopActor(A);
@@ -815,7 +913,7 @@
     A.flags = Object.assign({}, A.defaults.flags, st.flags || {}); A.speed = st.speed || 4;
     if (st.enter) st.enter(A);
   }
-  function play(A, steps, activity) { A.steps = steps.slice(); A.activity = activity || A.defaults.activity; nextStep(A); }
+  function play(A, steps, activity) { A.steps = steps.slice(); A.activity = lbl(activity) || lbl(A.defaults.activity); nextStep(A); }
   function tickActor(A, dt, allowRandom) {
     if (A.busy && A.step) {
       const st = A.step; A.stepT += dt;
@@ -866,13 +964,13 @@
   const D_LEAN_FWD = { neck: [-0.04, 0.37, 0.05], sL: [-0.19, 0.34, 0.06], sR: [0.12, 0.35, 0.0], hx: 0.3 };
   const scratchJ = (tt, A) => { A.tgt.hR.x = D_SCRATCH.hR[0] + Math.sin(tt * 16) * 0.02; };
   const dA = actor(D_BASE, [
-    { w: 3, label: 'Looking at the dog', steps: () => [{ dur: rand(3, 7) }] },
+    { w: 3, label: () => (state.dogPresent ? 'Looking at the dog' : 'Looking at the floor'), steps: () => [{ dur: rand(3, 7) }] },
     { w: 2, label: 'Trying to remember', steps: () => [{ pose: D_SCRATCH, dur: rand(1.6, 2.4), update: scratchJ }, { dur: 0.6 }] },
     { w: 1.6, label: 'Thinking', steps: () => [{ pose: D_CHIN, dur: rand(2.4, 3.6), speed: 3 }] },
     { w: 1.3, label: 'Leaning back', steps: () => [{ pose: D_LEANBACK, dur: rand(3, 5), speed: 2.5 }] },
     { w: 1, label: 'Looking at Marjorie', steps: () => [{ pose: D_LOOK_M, dur: 2.4, speed: 3, exit: () => log('Dale looked at Marjorie. She did not look up') }] },
     { w: 1.1, label: 'Sighing', steps: () => [{ pose: D_SIGH, dur: 1.0, speed: 3 }, { dur: 0.9, speed: 2.5 }] }
-  ], { activity: 'Looking at the dog', flags: {} });
+  ], { activity: () => (state.dogPresent ? 'Looking at the dog' : 'Looking at the floor'), flags: {} });
   const petTmp = new THREE.Vector3();
   function petSteps() {
     return [{ pose: D_LEAN_FWD, dur: 3.2, speed: 4.5, enter: () => log('Dale petted the dog'),
@@ -992,7 +1090,8 @@
     const yaw = Math.max(-1.1, Math.min(1.1, Math.atan2(dx, dz)));
     const pitch = Math.max(-0.3, Math.min(0.6, Math.atan2(-dy, Math.hypot(dx, dz)) + 0.05));
     dTrack.yaw += (yaw - dTrack.yaw) * 0.08; dTrack.pitch += (pitch - dTrack.pitch) * 0.08;
-    DJ.head.rotation.set(p.hx + (dTrack.pitch - p.hx) * p.track, p.hy + dTrack.yaw * p.track, p.hz);
+    const tw = state.dogPresent ? p.track : 0;
+    DJ.head.rotation.set(p.hx + (dTrack.pitch - p.hx) * tw, p.hy + dTrack.yaw * tw, p.hz);
   }
   let wagPhase = 0;
   function applyDog(t, dt) {
@@ -1000,6 +1099,37 @@
     dogHead.rotation.set(p.hx, p.hy, p.hz + Math.sin(t * 0.6) * 0.05);
     dogTail.rotation.y = Math.sin(wagPhase) * p.wag;
     dogEars.forEach((ear, i) => { ear.rotation.x = Math.sin(t * 0.9 + i) * 0.06 + (dogCtl.moving ? Math.sin(wagPhase * 0.7 + i) * 0.18 : 0); });
+  }
+
+  // The cat: sits in the sun, washes, naps, and watches whatever moves
+  const catTmp = new THREE.Vector3(), catTmp2 = new THREE.Vector3();
+  const catLook = (target) => (tt, A) => {
+    const w = target(); if (!w) return;
+    catTmp.copy(w); cat.group.worldToLocal(catTmp);
+    A.tgt.hy = Math.max(-1, Math.min(1, Math.atan2(catTmp.x, catTmp.z)));
+    A.tgt.hx = Math.max(-0.4, Math.min(0.6, Math.atan2(-(catTmp.y - 0.25), Math.hypot(catTmp.x, catTmp.z))));
+  };
+  const cA = actor({ hx: 0, hy: 0, hz: 0, tail: 0.5, paw: 0, nap: 0 }, [
+    { w: 3, label: 'Sitting in the sun', steps: () => [{ dur: rand(3, 6) }] },
+    { w: 2, label: 'Looking around', steps: () => [{ pose: { hy: rand(-0.9, 0.9), hx: rand(-0.2, 0.2) }, dur: rand(1.5, 3), speed: 3 }] },
+    { w: 1.4, label: 'Washing a paw', steps: () => [{ pose: { paw: 1, hx: 0.35, hy: 0.2 }, dur: 2.4, speed: 5, update: (tt, A) => { A.tgt.hz = Math.sin(tt * 9) * 0.12; } }] },
+    { w: 1.2, label: 'Napping', steps: () => [{ pose: { nap: 1, hx: 0.55, tail: 0.1 }, dur: rand(5, 9), speed: 1.5 }] },
+    { w: () => (state.dogPresent ? 1.5 : 0), label: 'Watching the dog', steps: () => [{ pose: { tail: 0.9 }, dur: rand(2.5, 4), update: catLook(() => (state.dogPresent ? dogHead.getWorldPosition(catTmp2) : null)) }] },
+    { w: () => (fish.spawned ? 1.8 : 0), label: 'Watching the goldfish', steps: () => [{ pose: { tail: 0.8 }, dur: rand(3, 5), update: catLook(() => fishBody.getWorldPosition(catTmp2)) }] }
+  ], { activity: 'Sitting in the sun', flags: {} });
+  let catPhase = 0;
+  function applyCat(t, dt) {
+    const p = cA.cur; catPhase += dt * (1.5 + p.tail * 2);
+    catHead.rotation.set(p.hx, p.hy, p.hz);
+    catTail.rotation.set(0, Math.sin(catPhase) * (0.2 + p.tail * 0.5), -p.nap * 0.6);
+    catPaw.rotation.x = -p.paw * 1.9;
+    if (cat.spawnT === null && state.phase !== 'ending') cat.group.scale.set(cat.k, cat.k * (1 - p.nap * 0.08), cat.k);
+  }
+  function swimFish(t, dt) {
+    fishAngle += dt * 1.2;
+    fishPivot.rotation.y = fishAngle;
+    fishBody.position.y = Math.sin(t * 2) * 0.012;
+    fishBody.rotation.y = Math.sin(t * 8) * 0.15;
   }
 
   function select(e) {
@@ -1049,8 +1179,8 @@
   // ---------- buttons ----------
   const askBtn = $('ask'), wireBtn = $('wire'), offBtn = $('off'), againBtn = $('again');
   askBtn.addEventListener('click', () => {
-    if (state.phase !== 'live' || state.asking) return;
-    state.asking = true; state.askT = now(); askBtn.disabled = true;
+    if (state.phase !== 'live' || state.asking || !state.dogPresent || state.swap) return;
+    state.asking = true; state.askT = now(); updateButtons();
     play(dA, [{ pose: D_SCRATCH, dur: 2.6, update: scratchJ },
       { dur: 4.9, enter: (A) => { A.activity = 'Looking at Doctor Bones'; } }], 'Trying to remember');
     play(gA, [{ pose: { hz: 0.4, wag: 0.12 }, dur: 2.6 },
@@ -1066,13 +1196,69 @@
   offBtn.addEventListener('click', () => {
     if (state.phase !== 'live') return;
     state.phase = 'ending'; state.t0 = now();
-    askBtn.disabled = true; offBtn.disabled = true; wireBtn.disabled = true; pick.disabled = true;
+    offBtn.disabled = true; wireBtn.disabled = true; pick.disabled = true;
     select(null); $('bubble').hidden = true; $('bark').hidden = true; state.asking = false;
-    stopActor(mA); stopActor(dA); stopActor(gA); dogCtl.moving = null; dogCtl.spin = null; barkT = 0;
-    state.dogLived = state.sim - state.dogSim;
+    if (state.swap) { const kind = state.swap.kind; state.swap = null; placeDog(kind); dog.spawnT = null; look(dog, 'solid'); dog.group.scale.setScalar(dog.k); }
+    stopActor(mA); stopActor(dA); stopActor(gA); stopActor(cA); dogCtl.moving = null; dogCtl.spin = null; barkT = 0;
+    state.hadDog = state.dogPresent; state.dogLived = state.sim - state.dogSim;
+    updateButtons();
     log('Run ' + state.run.toLocaleString('en-US') + ' turned off');
   });
   againBtn.addEventListener('click', () => { state.run++; startRun(); offBtn.hidden = false; againBtn.hidden = true; offBtn.focus(); });
+
+  // ---------- adding things to the world ----------
+  const addSel = $('add'), addBtn = $('add-btn');
+  const ADD_LABELS = {};
+  addSel.querySelectorAll('option').forEach((o) => { ADD_LABELS[o.value] = o.textContent; });
+  function spawnEntity(en) {
+    en.spawned = true; en.gone = false; en.group.visible = true; en.group.scale.setScalar(en.k);
+    en.group.position.copy(en.basePos);
+    if (reduce) { en.spawnT = null; look(en, state.wire ? 'wire' : 'solid'); }
+    else { en.spawnT = now(); look(en, 'wire'); }
+  }
+  function placeDog(kind) {
+    dogKind = kind; buildDog(kind); refreshMeshes(dog);
+    dogCtl.pos.copy(DOG_POS); dogCtl.yaw = DOG_YAW; dogCtl.moving = null; dogCtl.spin = null;
+    resetActor(gA); spawnEntity(dog);
+    state.dogPresent = true; state.dogSim = state.sim; state.dogName = null;
+    askBtn.textContent = "Ask Dale the dog's name";
+  }
+  function markAdded(value) {
+    const o = addSel.querySelector('option[value="' + value + '"]');
+    o.disabled = true; o.textContent = ADD_LABELS[value] + ' (added)';
+    addSel.value = 'dog:' + dogKind;
+  }
+  function resetAddMenu() {
+    addSel.querySelectorAll('option').forEach((o) => { o.disabled = false; o.textContent = ADD_LABELS[o.value]; });
+    addSel.value = 'dog:default';
+  }
+  function updateButtons() {
+    const live = state.phase === 'live';
+    askBtn.disabled = !(live && state.dogPresent && !state.asking && !state.swap);
+    askBtn.classList.toggle('primary', state.dogPresent);
+    addBtn.classList.toggle('primary', !state.dogPresent);
+    addBtn.disabled = !live || !!state.swap; addSel.disabled = !live;
+  }
+  addBtn.addEventListener('click', () => {
+    if (state.phase !== 'live' || state.swap) return;
+    const v = addSel.value;
+    if (v.startsWith('dog:')) {
+      const kind = v.slice(4);
+      if (state.dogPresent) {
+        state.swap = { t0: now(), kind }; state.asking = false; $('bubble').hidden = true; $('bark').hidden = true;
+        stopActor(dA); stopActor(gA); barkT = 0;
+        log('Dog replaced. New dog: ' + DOG_KINDS[kind].label.toLowerCase());
+      } else {
+        placeDog(kind); if (!bowl.spawned) spawnEntity(bowl);
+        log('Dog added (' + DOG_KINDS[kind].label.toLowerCase() + ')');
+      }
+    } else if (v === 'cat' && !cat.spawned) {
+      resetActor(cA); spawnEntity(cat); markAdded('cat'); log('Cat added');
+    } else if (v === 'fish' && !fish.spawned) {
+      fishAngle = 0; spawnEntity(fish); markAdded('fish'); log('Goldfish added');
+    }
+    updateButtons();
+  });
 
   const now = () => performance.now() / 1000;
   const clamp01 = (x) => Math.max(0, Math.min(1, x));
@@ -1089,12 +1275,15 @@
     $('offnote').hidden = true; $('bubble').hidden = true; $('log').innerHTML = '';
     $('hud-run').textContent = 'Run ' + state.run.toLocaleString('en-US');
     againBtn.textContent = 'Start run ' + (state.run + 1).toLocaleString('en-US');
-    askBtn.disabled = true; offBtn.disabled = true; wireBtn.disabled = false; pick.disabled = false;
+    offBtn.disabled = true; wireBtn.disabled = false; pick.disabled = false;
     askBtn.textContent = "Ask Dale the dog's name";
-    resetActor(mA); resetActor(dA); resetActor(gA);
+    state.dogPresent = false; state.swap = null; state.hadDog = false;
+    dogKind = 'default'; buildDog('default'); refreshMeshes(dog); resetAddMenu();
+    resetActor(mA); resetActor(dA); resetActor(gA); resetActor(cA);
     dogCtl.pos.copy(DOG_POS); dogCtl.yaw = DOG_YAW; dogCtl.moving = null; dogCtl.spin = null; barkT = 0; $('bark').hidden = true;
     MJ.pencil.position.copy(mA.cur.hR); MJ.pencil.quaternion.identity(); cup.group.rotation.set(0, 0, 0);
     log('Run ' + state.run.toLocaleString('en-US') + ' started');
+    updateButtons();
   }
 
   // ---------- size ----------
@@ -1126,16 +1315,19 @@
 
     if (state.phase === 'intro') {
       entities.forEach((en) => {
-        if (en.spawned) return;
+        if (en.spawned || en.spawnAt === Infinity) return;
         if (reduce || e >= en.spawnAt) {
           en.spawned = true; en.spawnT = reduce ? null : t; en.group.visible = true;
           if (!reduce) look(en, 'wire');
-          if (en.key === 'dog') { state.dogSim = state.sim; log('Dog added (default)'); }
         }
       });
       if (reduce || e > 5.6) {
-        state.phase = 'live'; askBtn.disabled = false; offBtn.disabled = false;
+        state.phase = 'live'; offBtn.disabled = false;
         dust.visible = !reduce;
+        log('Password accepted');
+        log('Security question: What was the name of your first dog?');
+        log('Dale has never had a dog');
+        updateButtons();
       }
       if (introCam && !userMoved) camera.position.lerpVectors(START, HOME, ease(e / 5.2));
     }
@@ -1157,9 +1349,19 @@
       const allow = state.phase === 'live' && !reduce;
       tickActor(mA, dt, allow);
       tickActor(dA, dt, allow && !state.asking);
-      tickActor(gA, dt, allow && !state.asking);
-      updateDog(dt);
-      applyMarjorie(t, dt); applyDale(t); applyDog(t, dt);
+      applyMarjorie(t, dt); applyDale(t);
+      if (state.dogPresent) {
+        tickActor(gA, dt, allow && !state.asking && !state.swap);
+        updateDog(dt); applyDog(t, dt);
+      }
+      if (cat.spawned && !cat.gone) { tickActor(cA, dt, allow); applyCat(t, dt); }
+      if (fish.spawned && !fish.gone) swimFish(t, dt);
+      if (state.swap) {
+        const q = (t - state.swap.t0) / 0.5;
+        look(dog, 'wire'); dog.wire.opacity = 0.75 * (1 - clamp01(q));
+        dog.group.scale.setScalar(dog.k * (1 - 0.3 * clamp01(q)));
+        if (q >= 1) { const kind = state.swap.kind; state.swap = null; dog.wire.opacity = state.wire ? 0.5 : 0.7; placeDog(kind); updateButtons(); }
+      }
       if (state.asking) {
         const a = t - state.askT, b = $('bubble');
         if (a < 2.6) { b.hidden = false; b.textContent = '.'.repeat(1 + Math.floor(a * 2.5) % 3); }
@@ -1170,7 +1372,7 @@
           }
           b.hidden = false; b.textContent = 'Doctor Bones.';
         } else {
-          b.hidden = true; state.asking = false; askBtn.disabled = state.phase !== 'live'; askBtn.textContent = 'Ask again';
+          b.hidden = true; state.asking = false; askBtn.textContent = 'Ask again'; updateButtons();
         }
       }
       if (barkT > 0) { barkT -= dt; $('bark').hidden = barkT <= 0; }
@@ -1200,23 +1402,24 @@
         en.group.position.y = en.basePos.y + 0.3 * ease(p);
         if (p >= 1) { en.group.visible = false; en.gone = true; }
       });
-      const DOG_START = 4.0, DOG_END = 4.9, GLOW_END = 6.4;
-      if (e >= DOG_START && !dog.gone) {
+      const DOG_START = 4.0, DOG_END = 4.9, GLOW_END = state.hadDog ? 6.4 : 4.4;
+      if (state.hadDog && e >= DOG_START && !dog.gone) {
         const q = clamp01((e - DOG_START) / (DOG_END - DOG_START)), s = 1 - q * q * q;
-        dog.group.scale.setScalar(Math.max(0.001, s) * FIG);
-        dog.group.position.y = 0.3 * FIG * (1 - s);
+        dog.group.scale.setScalar(Math.max(0.001, s) * dog.k);
+        dog.group.position.y = 0.3 * dog.k * (1 - s);
         if (q >= 1) { dog.group.visible = false; dog.gone = true; }
       }
-      if (e >= DOG_END && e < GLOW_END) {
+      if (state.hadDog && e >= DOG_END && e < GLOW_END) {
         const g = clamp01((e - DOG_END) / (GLOW_END - DOG_END));
-        glow.visible = true; glow.position.set(dogCtl.pos.x, 0.3 * FIG, dogCtl.pos.z);
+        glow.visible = true; glow.position.set(dogCtl.pos.x, 0.3 * dog.k, dogCtl.pos.z);
         glow.material.opacity = Math.pow(1 - g, 1.5); glow.scale.setScalar(0.35 * (1 - 0.6 * g));
       }
       if (e >= GLOW_END) {
         glow.visible = false; bounds.visible = false; dust.visible = false; dustMat.opacity = 0.55; bounds.material.opacity = 0.35;
         state.phase = 'off';
         const mins = Math.max(1, Math.round(state.dogLived / 60));
-        $('offnote').innerHTML = 'Run ' + state.run.toLocaleString('en-US') + ' is off.<br>The dog was alive for ' + mins + (mins === 1 ? ' minute.' : ' minutes.');
+        $('offnote').innerHTML = 'Run ' + state.run.toLocaleString('en-US') + ' is off.<br>' +
+          (state.hadDog ? 'The dog was alive for ' + mins + (mins === 1 ? ' minute.' : ' minutes.') : 'Dale never got a dog.');
         $('offnote').hidden = false;
         offBtn.hidden = true; againBtn.hidden = false; wireBtn.disabled = false;
       }

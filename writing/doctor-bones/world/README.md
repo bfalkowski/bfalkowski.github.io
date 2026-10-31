@@ -11,9 +11,17 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
 
 ## What it does
 
-- **The world builds itself.** Floor, walls, kitchen, table, Marjorie, then Dale.
-  The dog is added last, and the log says "Dog added (default)". Each piece shows as a
-  blue wireframe for a moment before it turns solid.
+- **The world builds itself.** Floor, walls, kitchen, table, Marjorie, then Dale. Each
+  piece shows as a blue wireframe for a moment before it turns solid. There is no dog.
+  The log says "Password accepted", then the bank's security question, "What was the
+  name of your first dog?", then "Dale has never had a dog".
+- **Add things from the menu.** Pick a dog and press "Add to the world": Default (already
+  selected, since it is the dog you get when you do not take the time to choose), Spotted,
+  Small or Black. The water bowl comes with the first dog. There is one dog per run, so
+  adding another replaces the current one. Under "Other things" there is a cat, who sits on
+  the windowsill, washes a paw, naps and watches the dog or the fish, and a goldfish in a
+  bowl on the counter that swims laps. Both say "Needed for the password: No". Each can be
+  added once per run.
 - **Observe it.** Drag to orbit, scroll or pinch to zoom. Hover shows a box around a
   thing and its name. Click, tap, or use the Inspect menu to open its details. Some of
   them: the window's outside is "Not rendered", the coffee's temperature "Never changes",
@@ -26,11 +34,12 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   His head follows the dog wherever it goes. The dog hops around like a toy moved by a
   hand: it drinks from the bowl, sniffs, chases its tail, wanders, barks "Woof.", and
   visits Dale, who pets it. The inspector shows what each one is doing.
-- **Ask Dale the dog's name.** He thinks, then says "Doctor Bones." The log records it,
+- **Ask Dale the dog's name** (once there is a dog). Whatever dog you gave him, he thinks, then says "Doctor Bones." The log records it,
   then "Security answer accepted". Marjorie keeps doing her crossword.
 - **Wireframe view** shows the whole world as wireframes.
 - **Turn the run off.** Things go one at a time, Marjorie still writing near the end.
-  The dog goes last and collapses into one dot. Then you can start the next run.
+  The dog goes last and collapses into one dot. With no dog, the note says "Dale never got
+  a dog." Then you can start the next run, which starts with no dog again.
 - **Reduced motion:** no camera fly-in or build animation.
 - **No WebGL:** it shows the still picture (`../kitchen.jpg`) instead.
 
@@ -51,6 +60,9 @@ Useful places in the script:
 | Inspector text | the `info` function on each `entity(...)` |
 | Habits | `mA` (Marjorie), `dA` (Dale), `gA` (the dog): each has a list of `{ w, label, steps }`. `w` is how often it is picked, `label` shows in the inspector, `steps` are poses held for `dur` seconds |
 | Poses | `M_BASE`, `D_BASE`, `G_BASE` and the named poses below them (joint positions in meters) |
+| Dog kinds | `DOG_KINDS` (colors, size, spots); `buildDog(kind)` builds one, `placeDog(kind)` puts it in the world |
+| Cat and goldfish | `cat` and `cA` (its habits), `fish` and `swimFish` |
+| Add menu | `addBtn` click handler; `updateButtons()` decides which buttons are on |
 | Clock speed | `state.sim += dt * 4` (4 story seconds per real second) |
 
 The figures are built from spheres, cylinders and boxes with the `ball`, `rod`, `limb`
@@ -59,6 +71,5 @@ from joint positions (`dynLimb` and `setLimb`), in meters, facing +z.
 
 ## Ideas not built yet
 
-- Let the viewer add the dog themselves, the way the young man does in the story.
 - Start the next run with small differences, so each run is not quite the same.
 - A sound toggle with a ticking clock and a pencil on paper.
