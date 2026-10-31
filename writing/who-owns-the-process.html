@@ -90,48 +90,34 @@
 
   <article class="container">
     <h1>Who Owns the Process? Spec Frameworks, Skills, and the Trust Ladder for Coding Agents</h1>
-    <p class="byline">Bryan Falkowski · October 23, 2026 · Updated October 24, 2026</p>
+    <p class="byline">Bryan Falkowski · October 23, 2026 · Updated October 31, 2026</p>
 
     <div class="tldr">
-      <p>A growing set of tools tries to answer the same question: how should a coding agent know what to build, and how much of the work should it be trusted to do?</p>
-      <p>Spec-driven frameworks such as GitHub Spec Kit give agents an explicit plan to work from. Skill collections such as Matt Pocock's let developers teach agents specific ways of working. Other approaches combine these ideas, adding orchestration to coordinate agents and their work.</p>
-      <p>The interesting question is not which tool has the best workflow. It is how we get from an agent that needs constant supervision to one that can take on meaningful work with less intervention.</p>
-      <p>Specifications establish intent. Skills capture process. Verification closes the loop. That loop is what allows you to trust agents with more work.</p>
+      <p>Spec frameworks tell a coding agent what to build. Skills teach it how to work. Orchestration runs more of it at once. None of them tells you whether the work is right.</p>
+      <p>Verification does that, and a well-constrained codebase shrinks how much there is to verify. Trust grows with that evidence, and evidence is what lets you hand an agent more work.</p>
     </div>
 
-    <h2>Where I first saw it</h2>
-    <p>In early June 2025, I spent two days at AWS headquarters in Crystal City, Virginia, working with Amazon Q IDE and an early prototype of AI-DLC, the AI-Driven Development Life Cycle.</p>
-    <p>The workflow was straightforward in principle. We iterated on acceptance criteria, used those to generate a specification, refined the spec, and then used it to drive implementation. The specification was not just documentation written after the fact. It was an artifact that the agent could help create and then use as the basis for building.</p>
-    <p>On the Amtrak home, I tried applying the idea to a real project. Somewhere on that ride I realized I was facing two separate problems. The first was figuring out how to coordinate the work. The second was knowing whether the work was any good.</p>
-    <p>The first problem gets a lot of attention. How many agents should run? Which tools should they have? How should tasks be divided? Which model should handle each role?</p>
-    <p>The second problem is harder to ignore once you have tried to automate more than a small coding task. How do you know the agent actually did what you asked? How do you distinguish a convincing explanation from a correct result? And how much evidence do you need before you let it do more on its own?</p>
-    <p>That last question is where I have become most interested in evaluation.</p>
+    <h2>A pile of Java that compiled</h2>
+    <p>In early June 2025, I spent two days at AWS headquarters in Crystal City, Virginia, working with Amazon Q IDE and an early prototype of AI-DLC, the AI-Driven Development Life Cycle. We iterated on acceptance criteria, generated a specification from them, refined it, and used it to drive implementation. The spec was no longer documentation written after the fact. The agent helped write it and then built from it.</p>
+    <p>I tried it on the Amtrak home, on real code: refactoring something that ran inference on Claude Instant into an agentic workflow with tool calls, which would have been cutting edge at the time. The code kept coming, so much of it, and it all compiled. Then it never returned a response.</p>
+    <p>So I did standard troubleshooting: I added logging statements and went through the Log4j files. It was my first time with an agent like this, in the early days of these tools, and running more than one at a time had not crossed my mind. I had one agent, a pile of Java code that compiled, and no way to tell whether the work was any good except to dig through it myself.</p>
+    <p>Coordination came later. How many agents should run, with which tools, on which model, and how should the work be divided? Those questions now get most of the attention. The one that pulled me into evaluation is the one from the train: how do you tell a convincing explanation from a correct result, and how much evidence do you need before you let an agent do more on its own?</p>
 
-    <h2>Specifications and skills solve different problems</h2>
-    <p>A specification makes intent explicit. It gives the agent a description of the desired behaviour, constraints, and acceptance criteria instead of leaving it to infer everything from a conversation.</p>
-    <p>A skill captures a repeatable way of working. It might guide an agent through test-driven development, help it investigate a bug, or force it to work through the unresolved questions in a plan before writing code.</p>
-    <p>These are complementary. A good specification does not tell you everything about how to implement a change. A good skill does not necessarily tell you what the change should accomplish.</p>
-    <p>The distinction becomes clearer when comparing GitHub Spec Kit with Matt Pocock's skills.</p>
+    <h2>Specs and skills solve different problems</h2>
+    <p>A specification says what to build: the behavior, the constraints, the acceptance criteria. A skill says how to work: run TDD, investigate a bug, answer the open questions in a plan before writing code. A good spec does not tell you how to implement a change, and a good skill does not tell you what the change should accomplish. GitHub Spec Kit and Matt Pocock's skills show the difference.</p>
 
     <h3>Spec Kit: the process owns the work</h3>
-    <p><a href="https://github.com/github/spec-kit">Spec Kit</a> provides a structured approach to spec-driven development. Its workflow can establish project-wide rules, define what a feature should do, produce a technical plan, break that plan into tasks, and implement them.</p>
-    <p>The important idea is that the documents are connected. The implementation is supposed to follow the specification and plan, rather than allowing the code to become the only record of what was intended.</p>
-    <p>That creates useful discipline. A team can review a proposed change before implementation, agree on the requirements, and hand work to another developer or agent without relying on the original conversation. Project-wide rules can be written down once and applied across features.</p>
-    <p>The cost is process. If a task is exploratory or the requirements are still changing, formalizing every step can feel like overhead. The documents also need to stay current. A specification that no longer describes the code can become another source of confusion.</p>
-    <p>Spec Kit has evolved toward more flexible entry points, so it is no longer accurate to treat every use as a rigid sequence of mandatory phases. Still, its strength is the ability to make the plan a durable artifact.</p>
+    <p><a href="https://github.com/github/spec-kit">Spec Kit</a>'s workflow can set project-wide rules, define a feature, produce a technical plan, break it into tasks, and implement them. The documents are connected, so the code is not the only record of what was intended. A team can review a change before it is built, agree on requirements, and hand the work to another developer or agent without the original conversation.</p>
+    <p>The cost is overhead. When a task is exploratory or the requirements keep moving, formalizing every step gets in the way, and a spec that no longer matches the code is one more source of confusion. Spec Kit has added more flexible entry points, so not every use runs through a rigid sequence of phases. Its strength is still the plan as a durable artifact.</p>
 
     <h3>Matt Pocock's skills: you own the process</h3>
-    <p><a href="https://github.com/mattpocock/skills">Pocock's skills</a> take a more modular approach. Instead of starting with a prescribed pipeline, you can choose the behaviour you need for the task in front of you.</p>
-    <p>A grilling skill helps resolve the unanswered questions in a plan. Domain modeling builds a shared glossary and records architectural decisions. A TDD skill guides implementation through red, green, and refactor. Other skills help with debugging, prototyping, and code review.</p>
-    <p>This works well when the right process depends on what you are trying to learn. If an idea is vague, start by exploring it. If the design is uncertain, prototype it. If the change is obvious, there may be no reason to run through a lengthy planning workflow.</p>
-    <p>The trade-off is that the developer must decide which process to use and make sure important decisions are recorded somewhere durable. Flexibility is useful, but it can also lead to inconsistency.</p>
-    <p>The difference is not that one approach has process and the other does not. Both do. The difference is how much of the process is prescribed and who decides what happens next.</p>
+    <p><a href="https://github.com/mattpocock/skills">Pocock's skills</a> start from the task instead of a pipeline. Grilling resolves the open questions in a plan. Domain modeling builds a shared glossary and records architectural decisions. TDD drives implementation through red, green, and refactor. Others cover debugging, prototyping, and code review. If an idea is vague, explore it. If the design is uncertain, prototype it. If the change is obvious, skip the planning.</p>
+    <p>The price is that you decide which process to run and make sure decisions get recorded somewhere durable. That flexibility can also lead to inconsistency.</p>
+    <p>Both approaches have process. They differ in how much of it is prescribed and who decides what happens next.</p>
 
     <h2>The missing piece is verification</h2>
-    <p>Neither a specification nor a skill guarantees a correct result.</p>
-    <p>A specification can be clear and still be implemented incorrectly. A skill can describe a sound process and still produce a faulty change. An agent can follow every step and arrive at the wrong answer.</p>
-    <p>That is why verification matters so much.</p>
-    <p>Lauren Tan, known as poteto, makes this point in <a href="https://www.youtube.com/watch?v=MN9dGgmLyso">her conversation with Matt Pocock</a> about coding agents and scaling software development. She describes the problem of relying on herself as the intermediary between an agent and its output:</p>
+    <p>None of this guarantees a correct result. A clear spec can be implemented wrong. A sound skill can produce a faulty change. An agent can follow every step and still land on the wrong answer.</p>
+    <p>Lauren Tan, known as poteto, named my problem in <a href="https://www.youtube.com/watch?v=MN9dGgmLyso">her conversation with Matt Pocock</a>:</p>
     <figure class="video-figure">
       <a class="video-card" href="https://www.youtube.com/watch?v=MN9dGgmLyso" aria-label="Watch on YouTube: LIVE: Poteto (creator of pstack) on shipping 1,000's of PR's a month at SpaceX">
         <img src="https://i.ytimg.com/vi/MN9dGgmLyso/maxresdefault.jpg" width="1280" height="720" alt="Video thumbnail for Matt Pocock's live interview with Lauren Tan (poteto)" loading="lazy">
@@ -140,60 +126,63 @@
       <figcaption><a href="https://www.youtube.com/watch?v=MN9dGgmLyso">LIVE: Poteto (creator of pstack) on shipping 1,000's of PR's a month at SpaceX</a>, Matt Pocock's live interview with Lauren Tan, on YouTube.</figcaption>
     </figure>
     <blockquote><p>"I was still relying on me as the proxy between my agent and the output."</p></blockquote>
-    <p>That is a useful description of the limit I had hit. The agent could generate code quickly, but I still had to inspect the result, decide whether it was right, and determine what should happen next. The coding work was automated, but the evaluation work was still mine.</p>
-    <p>Tan puts verification at the centre of improving that arrangement:</p>
+    <p>That was me with the Log4j files. Generating the code was automated, but the checking was still mine. Tan's answer is blunt:</p>
     <blockquote><p>"The single most important skill that should be in your toolkit is verification."</p></blockquote>
-    <p>The point is not simply to add more tests or ask another model whether the first model did a good job. It is to give the agent a reliable way to gather evidence about its own output.</p>
-    <p>Depending on the task, that evidence might come from running tests, checking types, comparing a result against acceptance criteria, inspecting a rendered interface, or evaluating an output against a defined rubric. Different tasks require different checks. A passing test suite is meaningful evidence, but it does not prove that every requirement has been met.</p>
-    <p>Verification also needs to happen early enough to influence the work. Tan makes the connection explicit:</p>
+    <p>A verification skill gives the agent a way to gather evidence about its own output: run the tests, check the types, compare the result with the acceptance criteria, inspect the rendered interface, score the output against a rubric. A passing test suite is evidence, but it does not prove every requirement was met, so different tasks need different checks.</p>
+    <p>Tan's first verification skill at Cursor taught the agent to run the application and take performance traces through the Chrome DevTools protocol. It includes a CLI, so agents stop writing different scripts each session. <a href="https://www.youtube.com/watch?v=NjoZoUm85x0">In Tan's telling</a>, verification is mainly about correctness: does the feature do what you want? Code quality takes other skills.</p>
+    <p>The reason verification comes first is the loop:</p>
     <blockquote><p>"If the agent can't actually see the result of its work there's no way it can actually iterate."</p></blockquote>
-    <p>An agent that cannot observe the consequences of its actions has to rely on assumptions. An agent that can inspect the result, compare it with the intended outcome, and use the feedback to make corrections has a path toward improving its work without requiring a human to mediate every step.</p>
-    <p>That changes the role of orchestration. Coordinating more agents may increase throughput, but it does not automatically increase confidence. If the system cannot tell good results from bad ones, it can simply produce more output that someone has to review.</p>
+    <p>An agent that cannot see the result has to assume. One that can compare the result with what was intended can correct itself without a human in the middle. Tan calls verification "the most important part of a loop that allows it to be a loop."</p>
+    <p>Without it, more orchestration just means more output for someone to review. Spawn a hundred agents without trust, Tan says, and "you're just going to get a ton of slop pull requests."</p>
 
     <h2>Lauren Tan's trust ladder</h2>
-    <p>Tan's trust-ladder framing offers a useful way to think about what comes next. As confidence in an agent's work increases, you can give it more responsibility and scale the work it performs. Trust is not an initial setting that you choose once. It develops as the system demonstrates that it can produce reliable results.</p>
-    <p>This matters because there is a difference between an agent that can perform a task and an agent that can perform it reliably enough to be given the task with less supervision.</p>
-    <p>A successful demonstration is not enough. Nor is a single good result. You need to understand how often the approach works, where it fails, and whether the checks you rely on actually catch those failures.</p>
-    <p>This is where evaluation becomes part of the development process rather than an afterthought.</p>
-    <p>My own work on <a href="judge-score.html">LLM-as-a-judge reliability</a> grew out of that concern. If a model evaluates another model's output, how stable is the score? Would the same response receive a different rating on another run? Does the evaluation agree with itself often enough to support a decision? Are the results useful for distinguishing better outputs from worse ones?</p>
-    <p>Those questions matter because an evaluation can look authoritative without being reliable. A score is not evidence of quality simply because it is numerical. Before using a judge to decide whether an agent has done good work, we need to understand the judge's own behaviour.</p>
-    <p>This is my application of Tan's trust-ladder idea to evaluation: <strong>trust should grow with the evidence we have, not simply with how impressive the latest model looks.</strong></p>
-    <p>The practical goal is not to eliminate human judgment. It is to make human attention more valuable. People should spend their time on ambiguous requirements, difficult trade-offs, novel situations, and failures that need investigation, rather than repeatedly checking work that can be verified automatically.</p>
+    <p>Pocock opens the interview with Tan's trust ladder: as you trust agents more, you can give them better work or run more of them. You do not choose your level of trust once. It rises as the system proves itself.</p>
+    <p>Tan does not name the rungs but describes both ends. Near the bottom, you do not trust your agents' work, so you micromanage them. Near the top, Tan's agents merge their own pull requests overnight, and Tan samples them after they land. Tan credits verification and the environment together for getting there, and warns that it is very hard to reach.</p>
+    <p>The environment means the codebase and the checks around it, and it does a different job from verification: it prevents mistakes instead of catching them. <a href="https://www.youtube.com/watch?v=NjoZoUm85x0">Tan's talk</a> gives an order to follow whenever you find yourself correcting an agent. Start with the codebase, "the best form of memory," because agents extend the patterns they see, and a refactor can rule a mistake out entirely. Next comes static analysis: lint rules, compiler diagnostics, and CI. That step matters more to me now, because most of my code is Python, where the compiler prevents far less than it did in Java. Then come rules, Bugbot, and skills, which are guidance, because an agent might skip a rule or the person piloting it might ignore it. Last is the style guide, which only human reviewers can enforce.</p>
+    <p>A verification skill sits outside that order. It does not tell the agent how to behave. It shows the agent what happened.</p>
+    <p>So trust has two sources, and they feed each other. Each failure you catch can become a constraint, which leaves less to catch next time. The way I would put it: trust grows with evidence, and the environment shrinks what the evidence has to cover. Get both right, Tan says, and your agents "can just be free."</p>
+
+    <h2>When the check is a score</h2>
+    <p>One good demo does not earn a step up the ladder. You need to know how often the approach works, where it fails, and whether your checks catch those failures.</p>
+    <p>That gets hard when the check is a score. Tan describes hill climbing, where "you have some kind of rubric or a way to judge or score something" and an agent keeps trying to improve against it. An agent climbing a bad score just gets better at the wrong thing.</p>
+    <p>That is the problem my work on LLM judges is about. In <a href="run-valid.html">one eval</a>, I called the same judge twice on each of 600 items from clean runs and compared its votes with a deterministic score, which I treated as the reference. The two votes disagreed with each other on 3.5% of items. The first vote disagreed with the reference on 24.5%. A repeat check would have seen a stable judge that was wrong about one time in four. Those numbers come from one judge, one prompt, and one dataset, so they are not general rates, but they show that self-consistency cannot stand in for a reference.</p>
+    <p>A judge needs a reference that does not come from the judge: a deterministic score where one exists, or a small set of human-labeled items scored on every run. <a href="judge-score.html">TPR and TNR</a> measure a judge against those labels. A score is not evidence of quality simply because it is numerical.</p>
+    <p>This is how I apply Tan's ladder to evaluation: <strong>trust should grow with the evidence we have, not simply with how impressive the latest model looks.</strong></p>
+    <p>None of this removes human judgment. It moves it toward ambiguous requirements, hard trade-offs, novel situations, and failures that need investigation, and away from checking work a machine can check.</p>
 
     <h2>Where the tools fit</h2>
-    <p>The broader field is moving toward combinations of these ideas.</p>
-    <p><a href="https://kiro.dev/docs/specs/">Kiro</a> and Spec Kit put specifications at the centre of the workflow. <a href="https://aws.amazon.com/blogs/devops/ai-driven-development-life-cycle/">AWS AI-DLC</a> explores a process in which AI proposes and executes stages while people validate decisions. <a href="https://github.com/Fission-AI/OpenSpec">OpenSpec</a>, <a href="https://github.com/bmad-code-org/BMAD-METHOD">BMAD</a>, and <a href="https://github.com/open-gsd/gsd-core">GSD</a> offer other ways to structure specification and implementation. <a href="https://github.com/obra/superpowers">Superpowers</a> is a useful counterexample to the assumption that a skill pack always means a completely optional workflow: although it is packaged as skills, it can enforce a defined process.</p>
-    <p>Pocock's skills provide reusable techniques that can be applied where they are useful. Tan's <a href="https://github.com/cursor/plugins/tree/main/pstack">pstack</a> approaches the problem from another direction, focusing on how agents carry out work, how roles are assigned, and how results can be reviewed or compared.</p>
-    <p>These tools are not all trying to solve exactly the same problem. Some help define the work. Some guide how the work is done. Some coordinate execution. And verification determines whether the output is good enough to trust.</p>
-    <p>The categories overlap, but the distinctions are still useful. A specification can define acceptance criteria. A skill can guide the agent through a repeatable process. Orchestration can coordinate multiple attempts or roles. Evaluation can provide evidence about the result.</p>
+    <p>Most of these tools now mix the layers. <a href="https://kiro.dev/docs/specs/">Kiro</a> and Spec Kit center the workflow on specifications. <a href="https://aws.amazon.com/blogs/devops/ai-driven-development-life-cycle/">AWS AI-DLC</a> has AI propose and execute stages while people validate decisions. <a href="https://github.com/Fission-AI/OpenSpec">OpenSpec</a>, <a href="https://github.com/bmad-code-org/BMAD-METHOD">BMAD</a>, and <a href="https://github.com/open-gsd/gsd-core">GSD</a> structure specification and implementation in their own ways. <a href="https://github.com/obra/superpowers">Superpowers</a> is packaged as skills but can prescribe a defined process, so a skill pack does not always mean an optional workflow. Pocock's library reaches into execution too: <code>implement-spec</code> runs implementer subagents in parallel across a spec's tickets. Tan's <a href="https://github.com/cursor/plugins/tree/main/pstack">pstack</a> focuses on how agents carry out work, how roles are assigned, and how results are reviewed or compared.</p>
     <p>No one layer replaces the others.</p>
     <figure>
       <div class="table-wrap"><table class="tool-map">
         <tr><th>Tool</th><th class="layer">Intent<small>define the work</small></th><th class="layer">Process<small>guide the work</small></th><th class="layer">Execution<small>coordinate agents</small></th><th class="layer">Evidence<small>verify the result</small></th></tr>
         <tr><td><a href="https://kiro.dev/docs/specs/">Kiro</a></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td><td></td><td></td></tr>
-        <tr><td><a href="https://github.com/github/spec-kit">Spec Kit</a></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td><td></td><td></td></tr>
+        <tr><td><a href="https://github.com/github/spec-kit">Spec Kit</a></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td><td></td></tr>
         <tr><td><a href="https://github.com/Fission-AI/OpenSpec">OpenSpec</a></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td><td></td><td></td></tr>
         <tr><td><a href="https://github.com/bmad-code-org/BMAD-METHOD">BMAD Method</a></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td><td></td></tr>
         <tr><td><a href="https://github.com/awslabs/aidlc-workflows">AWS AI-DLC</a></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td></tr>
         <tr><td><a href="https://github.com/open-gsd/gsd-core">GSD</a></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td></tr>
         <tr><td><a href="https://github.com/obra/superpowers">Superpowers</a></td><td></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td></tr>
-        <tr><td><a href="https://github.com/mattpocock/skills">Pocock's skills</a></td><td></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td></td><td class="dot"><span></span><span class="sr-only">Yes</span></td></tr>
+        <tr><td><a href="https://github.com/mattpocock/skills">Pocock's skills</a></td><td></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td class="dot"><span></span><span class="sr-only">Yes</span></td></tr>
         <tr><td><a href="https://github.com/cursor/plugins/tree/main/pstack">pstack</a></td><td></td><td></td><td class="dot"><span></span><span class="sr-only">Yes</span></td><td class="dot"><span></span><span class="sr-only">Yes</span></td></tr>
       </table></div>
-      <figcaption>Where each tool puts its main focus, based on its own documentation. A dot means the tool is built around that layer, not that it ignores the others. Evidence has the fewest dots: in most projects, the checks that matter still have to be built for that codebase.</figcaption>
+      <figcaption>Where each tool puts its main focus, based on its own documentation. A dot means the tool is built around that layer, not that it ignores the others. Evidence has the fewest dots. My read is that a skill can teach an agent how to verify, but the checks that matter still have to be built for each codebase.</figcaption>
     </figure>
+    <p>Tan's order also limits what any of these tools can do. Skills are guidance, so adding a skill pack does not give you the strongest constraints. My read is that no spec framework or skill pack can supply those. They have to be built into your own codebase and CI.</p>
 
     <h2>A practical way to combine them</h2>
-    <p>For an exploratory project, I would start with skills. The requirements are likely to change as I learn, and I want to keep the process lightweight. I can use a grilling session to sharpen the idea, prototype a design question, and introduce TDD once the behaviour is clear enough to preserve.</p>
-    <p>For a shared feature with explicit requirements and handoffs, I would lean toward a specification framework. A durable plan is valuable when multiple people or agents need to agree on what is being built and how success will be judged.</p>
-    <p>For a behaviour-preserving refactor, the central challenge is different. The goal is to change the internal structure without changing what the system does. A formal feature spec may help with scope, but the most important evidence comes from tests and other checks that demonstrate the existing behaviour has been preserved.</p>
-    <p>In all three cases, I would want verification to be part of the workflow from the beginning. It should not be a final step that produces a green checkmark after all the important decisions have already been made.</p>
-    <p>And when combining tools, I would keep one authoritative home for the plan. A specification, glossary, or architecture decision record can be refined by different skills, but the agent should not have to choose between conflicting versions of the truth.</p>
+    <p>For an exploratory project, I would start with skills, because the requirements will change as I learn. A grilling session sharpens the idea, a prototype answers a design question, and TDD comes in once the behavior is clear enough to preserve.</p>
+    <p>For a shared feature with explicit requirements and handoffs, I would use a specification framework. People and agents need to agree on what is being built and how success will be judged.</p>
+    <p>For a behavior-preserving refactor, I would care most about tests and other checks showing that existing behavior survived. A feature spec may help with scope, but it is not the evidence.</p>
+    <p>In all three, verification starts at the beginning, not as a green checkmark after the important decisions are made. And I would keep one authoritative home for the plan, so the agent never has to choose between conflicting versions of the truth.</p>
+
+    <h2>So who owns the process?</h2>
+    <p>A framework can own the steps. You own the choice of which steps to run and the environment they run in.</p>
+    <p>Tan and Pocock treat their skill libraries as complementary, but Tan also says "everyone should have their own set of knives." Go through your own past chats, find where you had to intervene, and turn those moments into lint rules or skills.</p>
 
     <h2>The goal is justified trust</h2>
-    <p>The debate over frameworks versus skills is useful, but it is not the end of the problem. We can debate how much process to prescribe, how many agents to coordinate, and which model should perform each task. Those decisions matter.</p>
-    <p>But the larger opportunity comes when the system can verify its own work and use the results to improve it.</p>
-    <p>Specifications establish intent. Skills capture process. Orchestration coordinates execution. Verification closes the loop.</p>
+    <p>The debate over frameworks and skills matters, but the bigger gain comes when the system can check its own work and use the result to improve it.</p>
+    <p>The obvious objection is that an agent checking its own work is marking its own homework. It is a fair one. My judge was stable and still wrong, and an agent's own checks carry the same risk, so the loop needs an outside reference: a deterministic check, or labeled examples the agent did not produce. Some domains do not have one. Asked about changes that cannot be undone, Tan says it comes down to how verifiable the domain is, and calls it "a great question that I don't really have the answer to."</p>
     <figure class="loop">
       <ol class="loop-steps" aria-label="The loop">
         <li><span class="name">Specification</span><span class="job">establishes intent</span></li>
@@ -201,15 +190,15 @@
         <li><span class="name">Orchestration</span><span class="job">coordinates execution</span></li>
         <li><span class="name">Verification</span><span class="job">closes the loop</span></li>
       </ol>
-      <p class="loop-back">&#8635; Evidence from verification flows back into the next attempt, and into how much the agent is trusted to do</p>
+      <p class="loop-back">&#8635; Evidence from verification flows back into the next attempt, into the environment, and into how much the agent is trusted to do</p>
     </figure>
-    <p>Lauren Tan's trust ladder provides a useful framing for what that makes possible: giving agents more responsibility as confidence in their work grows. My interest in evaluation is in making that confidence measurable rather than assumed.</p>
-    <p>The goal is not to trust an agent because it can write code, follow a workflow, or produce a persuasive explanation. It is to trust it because we have evidence that the work meets the requirements, that the checks are meaningful, and that failures are likely to be caught.</p>
-    <p>That is what turns faster code generation into a development process that can reliably take on more work.</p>
+    <p>Tan's ladder is about giving agents more responsibility as confidence grows. My interest is in making that confidence measurable.</p>
+    <p>Do not trust an agent because it can write code, follow a workflow, or produce a persuasive explanation. Trust it because you have evidence that the work meets the requirements, that the checks are meaningful, and that failures are likely to be caught.</p>
 
     <h2>References</h2>
     <ul>
       <li>Matt Pocock with Lauren Tan (poteto), <a href="https://www.youtube.com/watch?v=MN9dGgmLyso">LIVE: Poteto (creator of pstack) on shipping 1,000's of PR's a month at SpaceX</a>, YouTube, on coding agents, verification and the trust ladder</li>
+      <li>Lauren Tan, <a href="https://www.youtube.com/watch?v=NjoZoUm85x0">How I Shipped 2000 PRs Last Month: Trusting AI Agents</a>, YouTube, on verification skills, the order for correcting agents, and the Dune framework</li>
       <li><a href="https://github.com/github/spec-kit">GitHub Spec Kit</a></li>
       <li><a href="https://github.com/mattpocock/skills">Matt Pocock's skills</a></li>
       <li><a href="https://github.com/cursor/plugins/tree/main/pstack">pstack</a>, Lauren Tan's skill stack in Cursor's plugins repository</li>
