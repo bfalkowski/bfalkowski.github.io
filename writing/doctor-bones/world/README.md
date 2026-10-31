@@ -26,6 +26,13 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   thing and its name. Click, tap, or use the Inspect menu to open its details. Some of
   them: the window's outside is "Not rendered", the coffee's temperature "Never changes",
   and Marjorie "Has noticed you: No".
+- **A full 1950s kitchen.** A stove with a pot roast (Ready: Never) and a kettle that
+  steams but never boils, a back door whose window shows the outside is not rendered, a wall
+  phone that rings now and then (the log says "Nobody answered"), a calendar that says
+  TUESDAY instead of a month, a radio on the fridge with notes floating up (The same song),
+  Dale's empty chair at the table (Sat in: Never), Dale's hat on a hook (Worn: Never), a
+  shelf of jars and plates, a trash can, a bread box, a braided rug and a sink mat. A dog
+  bed arrives with the first dog.
 - **Everyone has habits.** Each character picks a small habit at random every few
   seconds, so the room never repeats exactly. Marjorie thinks with her pencil on her
   chin, sips her coffee (setting the pencil down first), checks the clock and fixes her
@@ -63,6 +70,7 @@ Useful places in the script:
 | Dog kinds | `DOG_KINDS` (colors, size, spots); `buildDog(kind)` builds one, `placeDog(kind)` puts it in the world |
 | Cat and goldfish | `cat` and `cA` (its habits), `fish` and `swimFish` |
 | Add menu | `addBtn` click handler; `updateButtons()` decides which buttons are on |
+| Kitchen things | the "more of the kitchen" block after the painting; steam and radio notes in `animateDecor`; the phone's ringing in the frame loop (`state.nextRing`) |
 | Clock speed | `state.sim += dt * 4` (4 story seconds per real second) |
 
 The figures are built from spheres, cylinders and boxes with the `ball`, `rod`, `limb`

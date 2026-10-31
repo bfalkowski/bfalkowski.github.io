@@ -143,6 +143,7 @@
     <div class="tip" id="tip" hidden></div>
     <div class="bubble" id="bubble" hidden></div>
     <div class="bubble small" id="bark" hidden>Woof.</div>
+    <div class="bubble small" id="ring" hidden>Ring ring.</div>
     <section class="inspector" id="inspector" hidden aria-live="polite">
       <button class="close" id="insp-close" type="button" aria-label="Close inspector">&times;</button>
       <h2 id="insp-name"></h2>
@@ -541,9 +542,192 @@
     block(g, M.wood, [0, 0, 0], [0.04, 0.62, 0.48]);
     const art = mesh(new THREE.PlaneGeometry(0.4, 0.54), std(0xffffff, { map: paintTex, roughness: 0.7 }), g);
     art.rotation.y = Math.PI / 2; art.position.x = 0.022; art.castShadow = false;
-    g.position.set(-2.98, 1.72, -1.05);
+    g.position.set(-2.98, 1.72, -0.15);
   }
   finalize(painting);
+
+  // ---------- more of the kitchen ----------
+  const calTex = canvasTex(128, 160, (x, w, h) => {
+    x.fillStyle = '#fbf8ef'; x.fillRect(0, 0, w, h);
+    x.fillStyle = '#b3362e'; x.fillRect(0, 0, w, 34);
+    x.fillStyle = '#ffffff'; x.font = 'bold 19px sans-serif'; x.textAlign = 'center'; x.fillText('TUESDAY', w / 2, 24);
+    x.fillStyle = '#4a4a4a'; x.font = '10px sans-serif';
+    for (let i = 0; i < 31; i++) { const c = i % 7, r = Math.floor(i / 7); x.fillText(String(i + 1), 12 + c * 17, 54 + r * 22); }
+    x.strokeStyle = '#b3362e'; x.lineWidth = 2; x.beginPath(); x.arc(46, 50, 8, 0, Math.PI * 2); x.stroke();
+  });
+  const rugTex = canvasTex(256, 256, (x) => {
+    const cols = ['#8c3b2e', '#c9a46a', '#5e6e4a', '#d8c8a0', '#a0522d', '#7a8a6a'];
+    for (let r = 128, k = 0; r > 0; r -= 9, k++) { x.fillStyle = cols[k % cols.length]; x.beginPath(); x.arc(128, 128, r, 0, Math.PI * 2); x.fill(); }
+  });
+  const matTex = canvasTex(64, 64, (x) => {
+    for (let i = 0; i < 8; i++) { x.fillStyle = i % 2 ? '#e8dcc0' : '#6f8f8a'; x.fillRect(0, i * 8, 64, 8); }
+  });
+  const grilleTex = canvasTex(64, 64, (x) => {
+    x.fillStyle = '#efe4c8'; x.fillRect(0, 0, 64, 64);
+    x.fillStyle = '#7a5a3c'; for (let i = 4; i < 64; i += 8) x.fillRect(0, i, 64, 3);
+  });
+  const noteTex = canvasTex(64, 64, (x) => {
+    x.fillStyle = '#5a3a28'; x.font = 'bold 46px serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('♪', 32, 34);
+  });
+
+  const rugs = entity('rugs', 'Rugs', { spawnAt: 0.45, offAt: 3.2 });
+  {
+    const g = rugs.group;
+    const rug = mesh(new THREE.CircleGeometry(1, 64), std(0xffffff, { map: rugTex, roughness: 0.95 }), g);
+    rug.rotation.x = -Math.PI / 2; rug.scale.set(1.25, 1.05, 1); rug.position.set(-1.45, 0.006, 0.55); rug.castShadow = false;
+    const mat = mesh(new THREE.PlaneGeometry(0.7, 0.42), std(0xffffff, { map: matTex, roughness: 0.95 }), g);
+    mat.rotation.x = -Math.PI / 2; mat.position.set(0.4, 0.006, -1.38); mat.castShadow = false;
+  }
+  finalize(rugs);
+
+  const door = entity('door', 'Back door', { spawnAt: 0.95, offAt: 1.0, inspect: true, info: () => [['Leads to', 'Not rendered'], ['Locked', 'Does not need to be']] });
+  {
+    const g = door.group, slab = std(0x7f9f86, { roughness: 0.5 }), panel = std(0x739279, { roughness: 0.5 });
+    block(g, slab, [0, 0.975, 0], [0.05, 1.95, 0.8]);
+    block(g, M.woodDark, [0.005, 1.985, 0], [0.06, 0.07, 0.94]);
+    block(g, M.woodDark, [0.005, 0.975, -0.435], [0.06, 1.95, 0.07]);
+    block(g, M.woodDark, [0.005, 0.975, 0.435], [0.06, 1.95, 0.07]);
+    const pane = mesh(new THREE.PlaneGeometry(0.46, 0.5), new THREE.MeshBasicMaterial({ map: outsideTex, toneMapped: false }), g);
+    pane.rotation.y = Math.PI / 2; pane.position.set(0.027, 1.45, 0); pane.castShadow = false;
+    block(g, M.woodDark, [0.03, 1.45, 0], [0.012, 0.5, 0.03]);
+    block(g, M.woodDark, [0.03, 1.45, 0], [0.012, 0.03, 0.46]);
+    block(g, panel, [0.03, 0.66, 0], [0.012, 0.3, 0.58]);
+    block(g, panel, [0.03, 0.28, 0], [0.012, 0.3, 0.58]);
+    block(g, M.chrome, [0.035, 0.95, 0.3], [0.02, 0.07, 0.045]);
+    ball(g, M.chrome, [0.07, 0.95, 0.3], 0.026);
+    g.position.set(-2.975, 0, -1.45);
+  }
+  finalize(door);
+
+  const stove = entity('stove', 'Stove', { spawnAt: 1.3, offAt: 0.8, inspect: true,
+    info: () => [['Cooking', 'Pot roast'], ['Ready', 'Never'], ['Kettle', 'About to boil']] });
+  const KETTLE_SPOUT = new THREE.Vector3(-1.7 + 0.33, 1.045, -1.95 + 0.14);
+  {
+    const g = stove.group, enamel = std(0xf0ead8, { roughness: 0.35 }), burner = plastic(0x555555), black = plastic(0x222222);
+    block(g, M.dark, [0, 0.03, 0.02], [0.72, 0.06, 0.56]);
+    block(g, enamel, [0, 0.47, 0], [0.76, 0.82, 0.6]);
+    block(g, black, [0, 0.89, 0], [0.76, 0.03, 0.6]);
+    block(g, enamel, [0, 1.07, -0.275], [0.76, 0.34, 0.05]);
+    block(g, M.chrome, [0, 1.245, -0.275], [0.78, 0.02, 0.06]);
+    [[-0.19, -0.12], [0.19, -0.12], [-0.19, 0.14], [0.19, 0.14]].forEach(([x, z]) => {
+      const ring = mesh(new THREE.TorusGeometry(0.075, 0.012, 8, 24), burner, g); ring.rotation.x = Math.PI / 2; ring.position.set(x, 0.908, z);
+    });
+    block(g, enamel, [0, 0.42, 0.305], [0.64, 0.56, 0.02]);
+    block(g, black, [0, 0.45, 0.317], [0.42, 0.22, 0.006]);
+    block(g, M.chrome, [0, 0.66, 0.33], [0.5, 0.025, 0.03]);
+    [-0.27, -0.09, 0.09, 0.27].forEach((x) => rod(g, black, [x, 0.8, 0.3], [x, 0.8, 0.335], 0.022));
+    const pot = plastic(0xb3362e), potLid = plastic(0x8c2a24);
+    rod(g, pot, [-0.19, 0.905, -0.12], [-0.19, 1.04, -0.12], 0.1);
+    rod(g, potLid, [-0.19, 1.04, -0.12], [-0.19, 1.052, -0.12], 0.106);
+    ball(g, black, [-0.19, 1.065, -0.12], 0.016);
+    block(g, black, [-0.31, 1.0, -0.12], [0.04, 0.02, 0.03]);
+    block(g, black, [-0.07, 1.0, -0.12], [0.04, 0.02, 0.03]);
+    const teal = plastic(0x4f8a8b);
+    rod(g, teal, [0.19, 0.905, 0.14], [0.19, 1.03, 0.14], 0.06, 0.085);
+    ball(g, teal, [0.19, 1.03, 0.14], 0.06, [1, 0.5, 1]);
+    ball(g, black, [0.19, 1.065, 0.14], 0.014);
+    const handle = mesh(new THREE.TorusGeometry(0.055, 0.01, 8, 20, Math.PI), black, g); handle.position.set(0.19, 1.05, 0.14);
+    rod(g, teal, [0.25, 0.96, 0.14], [0.33, 1.04, 0.14], 0.012);
+    g.position.set(-1.7, 0, -1.95);
+  }
+  finalize(stove);
+
+  const trash = entity('trash', 'Trash can', { spawnAt: 1.35, offAt: 0.85, inspect: true, info: () => [['Contents', 'Nothing'], ['Taken out', 'Never needs to be']] });
+  {
+    const g = trash.group;
+    rod(g, M.cream, [0, 0, 0], [0, 0.4, 0], 0.125, 0.115);
+    rod(g, M.chrome, [0, 0.4, 0], [0, 0.43, 0], 0.13);
+    block(g, M.chrome, [0, 0.03, 0.13], [0.08, 0.02, 0.06]);
+    g.position.set(-1.1, 0, -1.98);
+  }
+  finalize(trash);
+
+  const radio = entity('radio', 'Radio', { spawnAt: 1.5, offAt: 0.55, inspect: true, info: () => [['Playing', 'The same song'], ['Station', 'The only one']] });
+  const RADIO_POS = new THREE.Vector3(2.6, 1.79, -1.98);
+  {
+    const g = radio.group, bake = plastic(0x8c2f2a);
+    block(g, bake, [0, 0.1, 0], [0.36, 0.2, 0.16]);
+    const top = mesh(G.cyl, bake, g); top.scale.set(0.08, 0.36, 0.08); top.rotation.z = Math.PI / 2; top.position.set(0, 0.2, 0);
+    const grille = mesh(new THREE.PlaneGeometry(0.18, 0.12), std(0xffffff, { map: grilleTex, roughness: 0.6 }), g);
+    grille.position.set(-0.07, 0.11, 0.081); grille.castShadow = false;
+    const dial = mesh(new THREE.CircleGeometry(0.04, 24), M.cream, g); dial.position.set(0.1, 0.115, 0.082); dial.castShadow = false;
+    block(g, M.dark, [0.1, 0.13, 0.084], [0.004, 0.03, 0.002], [0, 0, 0.6]);
+    rod(g, M.cream, [0.06, 0.035, 0.08], [0.06, 0.035, 0.1], 0.016);
+    rod(g, M.cream, [0.14, 0.035, 0.08], [0.14, 0.035, 0.1], 0.016);
+    g.position.copy(RADIO_POS);
+  }
+  finalize(radio);
+
+  const phone = entity('phone', 'Telephone', { spawnAt: 1.55, offAt: 0.3, inspect: true,
+    info: () => [['Times it rang', String(state.rings || 0)], ['Calls answered', '0']] });
+  let phoneBody;
+  {
+    const g = phone.group, black = plastic(0x1f1d1c);
+    phoneBody = new THREE.Group(); g.add(phoneBody);
+    block(phoneBody, black, [0.05, 0, 0], [0.1, 0.27, 0.19]);
+    const dial = mesh(G.cyl, M.cream, phoneBody); dial.scale.set(0.055, 0.012, 0.055); dial.rotation.z = Math.PI / 2; dial.position.set(0.106, 0.03, 0);
+    ball(phoneBody, black, [0.114, 0.03, 0], 0.018);
+    rod(phoneBody, black, [0.125, -0.1, 0.12], [0.125, 0.1, 0.12], 0.022);
+    ball(phoneBody, black, [0.125, 0.12, 0.12], 0.036, [1, 0.7, 1]);
+    ball(phoneBody, black, [0.125, -0.12, 0.12], 0.036, [1, 0.7, 1]);
+    limb(phoneBody, black, [[0.1, -0.13, 0.05], [0.14, -0.26, 0.08], [0.125, -0.15, 0.115]], 0.006);
+    g.position.set(-3.0, 1.35, -0.72);
+  }
+  finalize(phone);
+
+  const calendar = entity('calendar', 'Calendar', { spawnAt: 1.6, offAt: 0.2, inspect: true, info: () => [['Month', 'Not set'], ['Page turned', 'Never']] });
+  {
+    const g = calendar.group;
+    const page = mesh(new THREE.PlaneGeometry(0.26, 0.33), std(0xffffff, { map: calTex, roughness: 0.8 }), g); page.castShadow = false;
+    ball(g, M.dark, [0, 0.17, 0.005], 0.008);
+    g.position.set(-2.55, 1.45, -2.243);
+  }
+  finalize(calendar);
+
+  const shelf = entity('shelf', 'Shelf', { spawnAt: 1.7, offAt: 0.4 });
+  {
+    const g = shelf.group;
+    block(g, M.wood, [0, 0, 0], [0.72, 0.03, 0.2]);
+    block(g, M.woodDark, [-0.3, -0.06, -0.07], [0.02, 0.1, 0.06]);
+    block(g, M.woodDark, [0.3, -0.06, -0.07], [0.02, 0.1, 0.06]);
+    [[-0.27, 0xd9a43c, 0.13], [-0.17, 0xb3362e, 0.1], [-0.07, 0x6f8f4a, 0.12]].forEach(([x, lid, h]) => {
+      rod(g, std(0xe9eef0, { roughness: 0.2 }), [x, 0.015, 0], [x, 0.015 + h, 0], 0.04);
+      rod(g, plastic(lid), [x, 0.015 + h, 0], [x, 0.035 + h, 0], 0.043);
+    });
+    [0.12, 0.22].forEach((x) => {
+      const plate = mesh(G.cyl, M.cream, g); plate.scale.set(0.085, 0.012, 0.085); plate.rotation.x = Math.PI / 2 - 0.15; plate.position.set(x, 0.1, -0.02);
+      const rim = mesh(new THREE.TorusGeometry(0.08, 0.006, 6, 28), plastic(0x3f6fa8), g); rim.rotation.x = -0.15; rim.position.set(x, 0.1, -0.012);
+    });
+    g.position.set(-1.7, 1.5, -2.13);
+  }
+  finalize(shelf);
+
+  const breadbox = entity('breadbox', 'Bread box', { spawnAt: 1.85, offAt: 0.4 });
+  {
+    const g = breadbox.group, red = plastic(0xb3362e);
+    block(g, red, [0, 0.07, 0], [0.32, 0.14, 0.2]);
+    const top = mesh(G.cyl, red, g); top.scale.set(0.1, 0.32, 0.1); top.rotation.z = Math.PI / 2; top.position.set(0, 0.14, 0);
+    block(g, M.chrome, [0, 0.13, 0.11], [0.12, 0.02, 0.02]);
+    g.position.set(-0.12, 0.87, -2.05);
+  }
+  finalize(breadbox);
+
+  const hat = entity('hat', "Dale's hat", { spawnAt: 1.9, offAt: 0.25, inspect: true, info: () => [['Whose', "Dale's"], ['Worn', 'Never']] });
+  {
+    const g = hat.group;
+    block(g, M.woodDark, [0, 0, 0], [0.03, 0.08, 0.62]);
+    [-0.2, 0, 0.2].forEach((z) => rod(g, M.woodDark, [0.01, 0, z], [0.1, 0.015, z], 0.012));
+    const fedora = new THREE.Group(); fedora.position.set(0.09, -0.04, 0); fedora.rotation.z = -Math.PI / 2 + 0.25; g.add(fedora);
+    const felt = plastic(0x5a4a3a);
+    rod(fedora, felt, [0, 0, 0], [0, 0.012, 0], 0.13);
+    rod(fedora, felt, [0, 0.012, 0], [0, 0.1, 0], 0.07, 0.085);
+    rod(fedora, plastic(0x2a2420), [0, 0.014, 0], [0, 0.035, 0], 0.087);
+    const apron = plastic(0xb84a3e);
+    block(g, apron, [0.02, -0.2, -0.2], [0.02, 0.38, 0.24]);
+    block(g, M.cream, [0.032, -0.2, -0.2], [0.004, 0.08, 0.16]);
+    g.position.set(-2.985, 1.62, 1.55);
+  }
+  finalize(hat);
 
   // ---------- Marjorie's frame (she faces the table) ----------
   const TABLE = new THREE.Vector3(-1.35, 0, 0.6);
@@ -580,6 +764,20 @@
     g.position.copy(M_POS); g.rotation.y = M_YAW;
   }
   finalize(chair);
+
+  const daleChair = entity('dalechair', "Dale's chair", { spawnAt: 2.3, offAt: 1.6, k: FIG, inspect: true,
+    info: () => [['Whose', "Dale's"], ['Sat in', 'Never. Dale sits on the floor']] });
+  {
+    const g = daleChair.group;
+    block(g, M.woodDark, [0, 0.275, -0.02], [0.42, 0.05, 0.4]);
+    [[-0.18, 0.15], [0.18, 0.15], [-0.18, -0.18], [0.18, -0.18]].forEach(([x, z]) => rod(g, M.woodDark, [x, 0, z], [x, 0.25, z], 0.02));
+    rod(g, M.woodDark, [-0.18, 0.3, -0.2], [-0.18, 0.86, -0.22], 0.022);
+    rod(g, M.woodDark, [0.18, 0.3, -0.2], [0.18, 0.86, -0.22], 0.022);
+    block(g, M.wood, [0, 0.8, -0.215], [0.42, 0.09, 0.035]);
+    block(g, M.wood, [0, 0.58, -0.205], [0.4, 0.04, 0.03]);
+    g.position.set(TABLE.x + 0.05, 0, TABLE.z - 0.8 * FIG); g.rotation.y = 0.08;
+  }
+  finalize(daleChair);
 
   // ---------- coffee cup ----------
   const cup = entity('cup', 'Coffee cup', { spawnAt: 2.4, offAt: 1.45, k: FIG, inspect: true, info: () => [['Holds', 'Coffee'], ['Temperature', 'Never changes']] });
@@ -780,6 +978,42 @@
     g.position.set(2.05, 0, -1.3);
   }
   finalize(bowl);
+
+  const dogbed = entity('dogbed', 'Dog bed', { spawnAt: Infinity, offAt: 2.7, k: 0.8, inspect: true, info: () => [['Added', 'With the dog'], ['Slept in', 'Never']] });
+  {
+    const g = dogbed.group;
+    const ring = mesh(new THREE.TorusGeometry(0.28, 0.085, 12, 32), plastic(0x5b6f8f), g); ring.rotation.x = Math.PI / 2; ring.scale.set(1, 1, 0.75); ring.position.y = 0.065;
+    rod(g, plastic(0x8fa3c0), [0, 0, 0], [0, 0.055, 0], 0.27);
+    g.position.set(2.35, 0, 0.35);
+  }
+  finalize(dogbed);
+
+  // steam from the kettle and notes from the radio (decoration, not inspectable)
+  const puffs = [], notes = [];
+  for (let k = 0; k < 7; k++) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot, color: 0xffffff, transparent: true, depthWrite: false, opacity: 0 }));
+    sp.visible = false; sp.userData.off = k / 7; scene.add(sp); puffs.push(sp);
+  }
+  for (let k = 0; k < 4; k++) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: noteTex, transparent: true, depthWrite: false, opacity: 0 }));
+    sp.visible = false; sp.userData.off = k / 4; sp.userData.side = k % 2 ? 1 : -1; scene.add(sp); notes.push(sp);
+  }
+  function animateDecor(t) {
+    const steamOn = stove.spawned && !stove.gone && state.phase !== 'off' && !reduce && stove.mode === 'solid';
+    puffs.forEach((sp) => {
+      sp.visible = steamOn; if (!steamOn) return;
+      const q = (t * 0.35 + sp.userData.off) % 1;
+      sp.position.set(KETTLE_SPOUT.x + q * 0.12 + Math.sin(t * 2 + sp.userData.off * 9) * 0.02, KETTLE_SPOUT.y + q * 0.45, KETTLE_SPOUT.z);
+      sp.scale.setScalar(0.05 + q * 0.12); sp.material.opacity = 0.35 * Math.sin(q * Math.PI);
+    });
+    const musicOn = radio.spawned && !radio.gone && state.phase !== 'off' && !reduce && radio.mode === 'solid';
+    notes.forEach((sp) => {
+      sp.visible = musicOn; if (!musicOn) return;
+      const q = (t * 0.28 + sp.userData.off) % 1;
+      sp.position.set(RADIO_POS.x + sp.userData.side * (0.08 + q * 0.12), RADIO_POS.y + 0.3 + q * 0.5, RADIO_POS.z + 0.1);
+      sp.scale.setScalar(0.09); sp.material.opacity = 0.8 * Math.sin(q * Math.PI);
+    });
+  }
 
   // ---------- the cat (added from the menu): sits on the windowsill ----------
   const CAT_POS = new THREE.Vector3(0.75, 1.152, -2.08);
@@ -1201,6 +1435,7 @@
     if (state.swap) { const kind = state.swap.kind; state.swap = null; placeDog(kind); dog.spawnT = null; look(dog, 'solid'); dog.group.scale.setScalar(dog.k); }
     stopActor(mA); stopActor(dA); stopActor(gA); stopActor(cA); dogCtl.moving = null; dogCtl.spin = null; barkT = 0;
     state.hadDog = state.dogPresent; state.dogLived = state.sim - state.dogSim;
+    state.ringT0 = 0; state.nextRing = Infinity; $('ring').hidden = true; phoneBody.rotation.x = 0;
     updateButtons();
     log('Run ' + state.run.toLocaleString('en-US') + ' turned off');
   });
@@ -1249,7 +1484,7 @@
         stopActor(dA); stopActor(gA); barkT = 0;
         log('Dog replaced. New dog: ' + DOG_KINDS[kind].label.toLowerCase());
       } else {
-        placeDog(kind); if (!bowl.spawned) spawnEntity(bowl);
+        placeDog(kind); if (!bowl.spawned) spawnEntity(bowl); if (!dogbed.spawned) spawnEntity(dogbed);
         log('Dog added (' + DOG_KINDS[kind].label.toLowerCase() + ')');
       }
     } else if (v === 'cat' && !cat.spawned) {
@@ -1278,6 +1513,7 @@
     offBtn.disabled = true; wireBtn.disabled = false; pick.disabled = false;
     askBtn.textContent = "Ask Dale the dog's name";
     state.dogPresent = false; state.swap = null; state.hadDog = false;
+    state.ringT0 = 0; state.nextRing = Infinity; state.rings = 0; $('ring').hidden = true; phoneBody.rotation.x = 0;
     dogKind = 'default'; buildDog('default'); refreshMeshes(dog); resetAddMenu();
     resetActor(mA); resetActor(dA); resetActor(gA); resetActor(cA);
     dogCtl.pos.copy(DOG_POS); dogCtl.yaw = DOG_YAW; dogCtl.moving = null; dogCtl.spin = null; barkT = 0; $('bark').hidden = true;
@@ -1327,6 +1563,7 @@
         log('Password accepted');
         log('Security question: What was the name of your first dog?');
         log('Dale has never had a dog');
+        state.nextRing = t + rand(25, 45);
         updateButtons();
       }
       if (introCam && !userMoved) camera.position.lerpVectors(START, HOME, ease(e / 5.2));
@@ -1376,7 +1613,15 @@
         }
       }
       if (barkT > 0) { barkT -= dt; $('bark').hidden = barkT <= 0; }
+      if (state.phase === 'live' && phone.spawned && !state.ringT0 && t > (state.nextRing ?? Infinity)) { state.ringT0 = t; state.rings = (state.rings || 0) + 1; }
+      if (state.ringT0) {
+        const r = t - state.ringT0;
+        $('ring').hidden = r > 2.6 || (r % 1.3) > 0.9;
+        phoneBody.rotation.x = reduce || (r % 1.3) > 0.9 ? 0 : Math.sin(r * 70) * 0.06;
+        if (r > 2.8) { state.ringT0 = 0; phoneBody.rotation.x = 0; $('ring').hidden = true; state.nextRing = t + rand(45, 90); log('The phone rang. Nobody answered'); }
+      }
     }
+    animateDecor(t);
     hourHand.rotation.z = -((5 + (40 + state.sim / 60) / 60) / 12) * Math.PI * 2;
     minHand.rotation.z = -((40 + state.sim / 60) / 60) * Math.PI * 2;
 
@@ -1431,11 +1676,16 @@
     if (state.selected && Math.floor(t * 4) !== state.lastTick) { state.lastTick = Math.floor(t * 4); renderInspector(); }
 
     // speech bubbles follow Dale's head and the dog's head
-    const bub = $('bubble'), bark = $('bark');
+    const bub = $('bubble'), bark = $('bark'), ringEl = $('ring');
     if (!bub.hidden) {
       DJ.head.getWorldPosition(tmp); tmp.y += 0.2; tmp.project(camera);
       bub.style.left = ((tmp.x + 1) / 2 * stage.clientWidth) + 'px';
       bub.style.top = ((1 - tmp.y) / 2 * stage.clientHeight) + 'px';
+    }
+    if (!ringEl.hidden) {
+      phone.group.getWorldPosition(tmp); tmp.y += 0.28; tmp.x += 0.1; tmp.project(camera);
+      ringEl.style.left = ((tmp.x + 1) / 2 * stage.clientWidth) + 'px';
+      ringEl.style.top = ((1 - tmp.y) / 2 * stage.clientHeight) + 'px';
     }
     if (!bark.hidden) {
       dogHead.getWorldPosition(tmp); tmp.y += 0.16; tmp.project(camera);
