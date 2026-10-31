@@ -842,7 +842,7 @@
   finalize(chair);
 
   const daleChair = entity('dalechair', "Dale's chair", { spawnAt: 2.3, offAt: 1.6, k: FIG, inspect: true,
-    info: () => [['Whose', "Dale's"], ['Sat in', state.daleSeat === 'chair' ? 'Now, until there is a dog' : 'Not since the dog came']] });
+    info: () => [['Whose', "Dale's"], ['Sat in', state.daleSeat === 'chair' ? 'Now, until there is a dog' : state.daleSeat === 'laptop' ? 'Now, at his laptop' : 'Now and then']] });
   {
     const g = daleChair.group;
     block(g, M.woodDark, [0, 0.275, -0.02], [0.42, 0.05, 0.4]);
@@ -984,6 +984,38 @@
     dale.group.position.copy(D_POS); dale.group.rotation.y = D_YAW;
   }
   finalize(dale);
+
+  // ---------- Dale's laptop: closed on the table until he comes back to it ----------
+  const laptop = entity('laptop', 'Laptop', { spawnAt: 2.45, offAt: 1.4, inspect: true,
+    info: () => [['Fits the kitchen', 'No'], ['Lid', state.lidOpen ? 'Open' : 'Closed'], ['On the screen', 'His own posts']] });
+  const screenTex = canvasTex(256, 168, (x, w, h) => {
+    x.fillStyle = '#eef1f5'; x.fillRect(0, 0, w, h);
+    x.fillStyle = '#5878a8'; x.fillRect(0, 0, w, 16);
+    [6, 58, 110].forEach((y0, k) => {
+      const y = y0 + 16;
+      x.fillStyle = '#ffffff'; x.fillRect(8, y, w - 16, k === 1 ? 46 : 40);
+      x.fillStyle = '#b9c4d4'; x.beginPath(); x.arc(20, y + 11, 7, 0, Math.PI * 2); x.fill();
+      x.fillStyle = '#7a8699'; x.fillRect(32, y + 6, 54, 5);
+      x.fillStyle = '#a9b2bf'; x.fillRect(32, y + 17, 180, 4); x.fillRect(32, y + 25, 132, 4);
+      if (k === 1) { x.fillStyle = '#c9d7c0'; x.fillRect(32, y + 33, 60, 10); }
+    });
+  });
+  let lid, laptopScreen;
+  {
+    const g = laptop.group, silver = std(0xc3c7cc, { metalness: 0.3, roughness: 0.35 });
+    block(g, silver, [0, 0.008, 0], [0.34, 0.016, 0.24]);
+    const keys = mesh(new THREE.PlaneGeometry(0.3, 0.11), plastic(0x2b2d31), g);
+    keys.rotation.x = -Math.PI / 2; keys.position.set(0, 0.0165, 0.035); keys.castShadow = false;
+    const pad = mesh(new THREE.PlaneGeometry(0.1, 0.06), std(0xa9adb3, { roughness: 0.3 }), g);
+    pad.rotation.x = -Math.PI / 2; pad.position.set(0, 0.0165, -0.075); pad.castShadow = false;
+    lid = new THREE.Group(); lid.position.set(0, 0.021, 0.12); lid.rotation.x = -Math.PI / 2; g.add(lid);
+    block(lid, silver, [0, 0.115, 0], [0.34, 0.23, 0.008]);
+    laptopScreen = mesh(new THREE.PlaneGeometry(0.31, 0.2), new THREE.MeshBasicMaterial({ map: screenTex, toneMapped: false }), lid);
+    laptopScreen.rotation.y = Math.PI; laptopScreen.position.set(0, 0.118, -0.0045); laptopScreen.castShadow = false; laptopScreen.visible = false;
+    g.position.set(CHAIR_SPOT.x + Math.sin(CHAIR_YAW) * 0.44, TABLE.y + 0.575 * FIG, CHAIR_SPOT.z + Math.cos(CHAIR_YAW) * 0.44);
+    g.rotation.y = CHAIR_YAW;
+  }
+  finalize(laptop);
 
   // ---------- the dog (added from the menu) ----------
   const DOG_POS = new THREE.Vector3(D_POS.x + 0.95 * FIG * Math.sin(D_YAW), 0, D_POS.z + 0.95 * FIG * Math.cos(D_YAW));
@@ -1269,9 +1301,9 @@
   const D_BASE = { lift: 0, neck: [0, 0.38, -0.05], sL: [-0.155, 0.35, -0.04], eL: [-0.16, 0.3, 0.13], hL: [0.05, 0.345, 0.22],
     sR: [0.155, 0.35, -0.04], eR: [0.16, 0.31, 0.12], hR: [-0.05, 0.37, 0.21],
     kL: [-0.09, 0.33, 0.2], fL: [-0.1, 0.07, 0.35], kR: [0.09, 0.33, 0.2], fR: [0.1, 0.07, 0.35], hx: 0.16, hy: 0, hz: 0, track: 1 };
-  // in his chair: seat top at lift 0.3, hands on the table, feet on the floor
-  const D_CHAIR = { lift: 0.3, neck: [0, 0.38, -0.02], sL: [-0.155, 0.35, -0.03], eL: [-0.18, 0.24, 0.14], hL: [-0.1, 0.32, 0.27],
-    sR: [0.155, 0.35, -0.03], eR: [0.18, 0.24, 0.14], hR: [0.1, 0.32, 0.27],
+  // in his chair: seat top at lift 0.3, hands resting on the closed laptop, feet on the floor
+  const D_CHAIR = { lift: 0.3, neck: [0, 0.38, -0.02], sL: [-0.155, 0.35, -0.03], eL: [-0.18, 0.24, 0.14], hL: [-0.1, 0.345, 0.27],
+    sR: [0.155, 0.35, -0.03], eR: [0.18, 0.24, 0.14], hR: [0.1, 0.345, 0.27],
     kL: [-0.09, 0.08, 0.3], fL: [-0.09, -0.235, 0.32], kR: [0.09, 0.08, 0.3], fR: [0.09, -0.235, 0.32], hx: 0.12, hy: 0, hz: 0, track: 1 };
   // in his chair, startled: leans back, shoulders up, hands up off the table, head back
   const D_SURPRISED = { neck: [0.02, 0.4, -0.08], sL: [-0.16, 0.39, -0.09], sR: [0.16, 0.39, -0.09],
@@ -1303,43 +1335,81 @@
     { w: 1, label: 'Looking at Marjorie', steps: () => [{ pose: { hy: -0.85, hx: 0.05 }, dur: 2.4, speed: 3, exit: () => log('Dale looked at Marjorie. She did not look up') }] },
     { w: 1.1, label: 'Sighing', steps: () => [{ pose: D_SIGH, dur: 1.0, speed: 3 }, { dur: 0.9, speed: 2.5 }] }
   ];
+  // at his laptop: the same chair, hands on the keyboard, eyes on the screen and not on the dog
+  const D_LAPTOP = Object.assign({}, D_CHAIR, { eL: [-0.19, 0.25, 0.17], hL: [-0.09, 0.335, 0.33], eR: [0.19, 0.25, 0.17], hR: [0.09, 0.335, 0.33], hx: 0.35, track: 0 });
+  const typeJ = (tt, A) => {
+    A.tgt.hL.y = D_LAPTOP.hL[1] + Math.max(0, Math.sin(tt * 17)) * 0.014;
+    A.tgt.hR.y = D_LAPTOP.hR[1] + Math.max(0, Math.sin(tt * 22 + 2)) * 0.014;
+  };
+  const laptopHabits = [
+    { w: 3, label: 'Typing', steps: () => [{ dur: rand(3, 6), update: typeJ, exit: () => { if (Math.random() < 0.4) log('Dale posted something'); } }] },
+    { w: 2, label: 'Reading his posts', steps: () => [{ pose: { hR: [0.04, 0.335, 0.27], hx: 0.4 }, dur: rand(2.5, 4.5), update: (tt, A) => { A.tgt.hR.z = 0.27 + Math.sin(tt * 2.2) * 0.015; } }] },
+    { w: 1.3, label: 'Resting his chin on his hand', steps: () => [{ pose: { eR: [0.14, 0.31, 0.22], hR: [0.03, 0.47, 0.14], hx: 0.35 }, dur: rand(2.4, 3.6), speed: 3 }] },
+    { w: 1.2, label: 'Looking at the dog', steps: () => [{ pose: { track: 1 }, dur: rand(1.6, 2.6), speed: 3 }] },
+    { w: 0.8, label: 'Sighing', steps: () => [{ pose: D_SIGH, dur: 1.0, speed: 3 }, { dur: 0.9, speed: 2.5 }] }
+  ];
+  const DALE_LOOKS = { chair: [D_CHAIR, chairHabits], laptop: [D_LAPTOP, laptopHabits], floor: [D_BASE, floorHabits] };
   const dA = actor(D_BASE, floorHabits, {
-    activity: () => (state.daleSeat === 'chair' ? 'Sitting at the table' : state.dogPresent ? 'Looking at the dog' : 'Looking at the floor'), flags: {} });
-  function daleSeatState(where) {
-    state.daleSeat = where; dA.base = where === 'chair' ? D_CHAIR : D_BASE; dA.behaviors = where === 'chair' ? chairHabits : floorHabits;
-  }
+    activity: () => (state.daleSeat === 'chair' ? 'Sitting at the table' : state.daleSeat === 'laptop' ? 'On his laptop'
+      : state.dogPresent ? 'Looking at the dog' : 'Looking at the floor'), flags: {} });
+  function daleSeatState(where) { state.daleSeat = where; [dA.base, dA.behaviors] = DALE_LOOKS[where]; }
   function seatDale(where) {
     daleSeatState(where);
-    const p = where === 'chair' ? CHAIR_SPOT : D_POS;
-    dale.group.position.set(p.x, 0, p.z); dale.group.rotation.y = where === 'chair' ? CHAIR_YAW : D_YAW;
+    const p = where === 'floor' ? D_POS : CHAIR_SPOT;
+    dale.group.position.set(p.x, 0, p.z); dale.group.rotation.y = where === 'floor' ? D_YAW : CHAIR_YAW;
     resetActor(dA);
   }
-  // The first dog arrives: Dale stands up beside his chair, walks over like a toy moved by a hand,
-  // turns to face the dog and sits down on the floor. With reduced motion he is simply there.
-  function daleToFloor() {
+  // Dale walks like a toy moved by a hand: a small hop with each step, legs and arms swinging
+  function walkStep(from, to, activity) {
+    const dg = dale.group, dist = from.distanceTo(to), walk = dist / 0.7;
+    return { pose: D_STAND, dur: walk, speed: 14, enter: (A) => { A.activity = activity; },
+      update: (tt, A) => {
+        const s = clamp01(tt / walk), sw = Math.sin(s * dist / 0.16 * Math.PI);
+        dg.position.lerpVectors(from, to, s); dg.position.y = Math.abs(sw) * 0.025;
+        A.tgt.kL.set(-0.09, -0.2, 0.03 + sw * 0.09); A.tgt.fL.set(-0.09, -0.46, 0.02 + sw * 0.15);
+        A.tgt.kR.set(0.09, -0.2, 0.03 - sw * 0.09); A.tgt.fR.set(0.09, -0.46, 0.02 - sw * 0.15);
+        A.tgt.hL.set(-0.2, 0.03, 0.02 - sw * 0.08); A.tgt.hR.set(0.2, 0.03, 0.02 + sw * 0.08);
+      } };
+  }
+  const turnStep = (from, to, dur) => ({ pose: D_STAND, dur, speed: 6,
+    update: (tt) => { dale.group.position.y = 0; dale.group.rotation.y = from + angDiff(from, to) * ease(tt / dur); } });
+  const TO_DOG_YAW = Math.atan2(D_POS.x - STAND_SPOT.x, D_POS.z - STAND_SPOT.z), TO_TABLE_YAW = TO_DOG_YAW + Math.PI;
+  // From the table to the dog. The first time, he is surprised by the dog; after the laptop, he closes it first.
+  // With reduced motion he is simply there, and he stays on the floor.
+  function daleToFloor(surprised) {
     if (reduce) { seatDale('floor'); log('Dale sat on the floor by the dog'); updateButtons(); return; }
     state.daleSeat = 'moving'; updateButtons();
-    const dg = dale.group, dist = STAND_SPOT.distanceTo(D_POS), walk = dist / 0.7;
-    const walkYaw = Math.atan2(D_POS.x - STAND_SPOT.x, D_POS.z - STAND_SPOT.z);
-    play(dA, [
+    const dg = dale.group;
+    const first = surprised ? [
       // a moment before he notices, then a startle, then he stares at it (about 2.7 s in all)
       { pose: { track: 0 }, dur: 0.8, speed: 4 },
       { pose: D_SURPRISED, dur: 0.9, speed: 12, enter: (A) => { A.activity = 'Surprised by the dog'; log('Dale saw the dog'); } },
-      { pose: { hx: 0.02 }, dur: 1.0, speed: 3, enter: (A) => { A.activity = 'Staring at the dog'; } },
+      { pose: { hx: 0.02 }, dur: 1.0, speed: 3, enter: (A) => { A.activity = 'Staring at the dog'; } }
+    ] : [
+      { pose: D_CHAIR, dur: 0.8, speed: 5, enter: (A) => { A.activity = 'Closing his laptop'; state.lidOpen = false; log('Dale closed his laptop'); } }
+    ];
+    play(dA, first.concat([
       { pose: D_STAND, dur: 1.0, speed: 5, enter: (A) => { A.activity = 'Getting up from the table'; log('Dale got up from the table'); },
-        update: (tt) => { const s = ease(tt / 1.0); dg.position.lerpVectors(CHAIR_SPOT, STAND_SPOT, s); dg.rotation.y = CHAIR_YAW + angDiff(CHAIR_YAW, walkYaw) * s; } },
-      { pose: D_STAND, dur: walk, speed: 14, enter: (A) => { A.activity = 'Going over to the dog'; },
-        update: (tt, A) => {
-          const s = clamp01(tt / walk), sw = Math.sin(s * dist / 0.16 * Math.PI);
-          dg.position.lerpVectors(STAND_SPOT, D_POS, s); dg.position.y = Math.abs(sw) * 0.025;
-          A.tgt.kL.set(-0.09, -0.2, 0.03 + sw * 0.09); A.tgt.fL.set(-0.09, -0.46, 0.02 + sw * 0.15);
-          A.tgt.kR.set(0.09, -0.2, 0.03 - sw * 0.09); A.tgt.fR.set(0.09, -0.46, 0.02 - sw * 0.15);
-          A.tgt.hL.set(-0.2, 0.03, 0.02 - sw * 0.08); A.tgt.hR.set(0.2, 0.03, 0.02 + sw * 0.08);
-        } },
-      { pose: D_STAND, dur: 0.6, speed: 6, update: (tt) => { dg.position.y = 0; dg.rotation.y = walkYaw + angDiff(walkYaw, D_YAW) * ease(tt / 0.6); } },
+        update: (tt) => { const s = ease(tt / 1.0); dg.position.lerpVectors(CHAIR_SPOT, STAND_SPOT, s); dg.rotation.y = CHAIR_YAW + angDiff(CHAIR_YAW, TO_DOG_YAW) * s; } },
+      walkStep(STAND_SPOT, D_POS, 'Going over to the dog'),
+      turnStep(TO_DOG_YAW, D_YAW, 0.6),
       { pose: D_BASE, dur: 1.1, speed: 3.5, enter: (A) => { A.activity = 'Sitting down on the floor'; },
-        exit: () => { daleSeatState('floor'); log('Dale sat on the floor by the dog'); updateButtons(); } }
-    ], 'Sitting at the table');
+        exit: () => { daleSeatState('floor'); state.daleNext = now() + rand(20, 40); log('Dale sat on the floor by the dog'); updateButtons(); } }
+    ]), 'Sitting at the table');
+  }
+  // From the dog back to the table, where he opens his laptop.
+  function daleToLaptop() {
+    state.daleSeat = 'moving'; updateButtons();
+    const dg = dale.group;
+    play(dA, [
+      { pose: D_STAND, dur: 1.1, speed: 3.5, enter: (A) => { A.activity = 'Getting up'; log('Dale got up from the floor'); } },
+      turnStep(D_YAW, TO_TABLE_YAW, 0.6),
+      walkStep(D_POS, STAND_SPOT, 'Going back to the table'),
+      { pose: D_CHAIR, dur: 1.1, speed: 4, enter: (A) => { A.activity = 'Sitting down at the table'; },
+        update: (tt) => { const s = ease(tt / 1.1); dg.position.lerpVectors(STAND_SPOT, CHAIR_SPOT, s); dg.position.y = 0; dg.rotation.y = TO_TABLE_YAW + angDiff(TO_TABLE_YAW, CHAIR_YAW) * s; } },
+      { pose: D_LAPTOP, dur: 0.8, speed: 5, enter: (A) => { A.activity = 'Opening his laptop'; state.lidOpen = true; log('Dale opened his laptop'); },
+        exit: () => { daleSeatState('laptop'); state.daleNext = now() + rand(15, 30); updateButtons(); } }
+    ], 'Getting up');
   }
   const petTmp = new THREE.Vector3();
   function petSteps() {
@@ -1379,7 +1449,7 @@
     { w: 1.5, label: 'Drinking water', steps: () => [goStep(bowlSpot),
       { flags: { face: BOWL_POS }, pose: { hx: 0.62, wag: 0.25 }, dur: 3.2, enter: () => log('Dog drank some water'),
         update: (tt, A) => { A.tgt.hx = 0.62 + Math.sin(tt * 10) * 0.08; } }, goStep(DOG_POS)] },
-    { w: 1.5, label: 'Visiting Dale', steps: () => [goStep(visitSpot),
+    { w: () => (state.daleSeat === 'floor' ? 1.5 : 0), label: 'Visiting Dale', steps: () => [goStep(visitSpot),
       { pose: { hx: -0.55, wag: 1, wagSpeed: 14 }, dur: 3.4, enter: () => play(dA, petSteps(), 'Petting the dog') }, goStep(DOG_POS)] },
     { w: 1.3, label: 'Wandering', steps: () => [goStep(randomSpot), { dur: rand(3, 6) }] },
     { w: 0.5, label: 'Barking', steps: () => [{ pose: { hx: -0.6, wag: 0.9, wagSpeed: 13 }, dur: 1.4, enter: () => { barkT = 1.3; } }] }
@@ -1401,7 +1471,7 @@
         }
       }
     } else {
-      const face = gA.flags.face || D_POS;
+      const face = gA.flags.face || dale.group.position; // the dog watches Dale wherever he is
       c.yaw += angDiff(c.yaw, Math.atan2(face.x - c.pos.x, face.z - c.pos.z)) * (1 - Math.exp(-dt * 3));
       if (c.spin) {
         c.spin.t += dt; const q = clamp01(c.spin.t / c.spin.dur);
@@ -1553,7 +1623,7 @@
     if (state.phase !== 'live' || state.asking || !state.dogPresent || state.swap) return;
     state.asking = true; state.askT = now(); updateButtons();
     play(dA, [{ pose: D_SCRATCH, dur: 2.6, update: scratchJ },
-      { dur: 4.9, enter: (A) => { A.activity = 'Looking at Doctor Bones'; } }], 'Trying to remember');
+      { pose: { track: 1 }, dur: 4.9, enter: (A) => { A.activity = 'Looking at Doctor Bones'; } }], 'Trying to remember');
     play(gA, [{ pose: { hz: 0.4, wag: 0.12 }, dur: 2.6 },
       { pose: { hx: -0.45, wag: 1, wagSpeed: 15 }, dur: 1.4, enter: () => { if (!dogCtl.moving) dogCtl.spin = { t: 0, dur: 1.3 }; } },
       { pose: { wag: 0.8, wagSpeed: 12 }, dur: 3.5 }], 'Hearing his name');
@@ -1734,7 +1804,7 @@
   }
   function updateButtons() {
     const live = state.phase === 'live';
-    askBtn.disabled = !(live && state.dogPresent && !state.asking && !state.swap && state.daleSeat === 'floor');
+    askBtn.disabled = !(live && state.dogPresent && !state.asking && !state.swap && (state.daleSeat === 'floor' || state.daleSeat === 'laptop'));
     askBtn.classList.toggle('primary', state.dogPresent);
     addBtn.classList.toggle('primary', !state.dogPresent);
     addBtn.disabled = !live || !!state.swap; addSel.disabled = !live;
@@ -1752,7 +1822,7 @@
       } else {
         placeDog(kind); if (!bowl.spawned) spawnEntity(bowl); if (!dogbed.spawned) spawnEntity(dogbed);
         log('Dog added (' + DOG_KINDS[kind].label.toLowerCase() + ')');
-        if (state.daleSeat === 'chair') daleToFloor();
+        if (state.daleSeat === 'chair') daleToFloor(true);
       }
     } else if (v === 'cat' && !cat.spawned) {
       resetActor(cA); spawnEntity(cat); markAdded('cat'); log('Cat added');
@@ -1781,6 +1851,7 @@
     askBtn.textContent = "Ask Dale the dog's name";
     state.dogPresent = false; state.swap = null; state.hadDog = false;
     state.ringT0 = 0; state.nextRing = Infinity; state.rings = 0; $('ring').hidden = true; phoneBody.rotation.x = 0;
+    state.daleNext = Infinity; state.lidOpen = false; lid.rotation.x = -Math.PI / 2; laptopScreen.visible = false;
     dogKind = 'default'; buildDog('default'); refreshMeshes(dog); resetAddMenu();
     resetActor(mA); seatDale('chair'); resetActor(gA); resetActor(cA);
     dogCtl.pos.copy(DOG_POS); dogCtl.yaw = DOG_YAW; dogCtl.moving = null; dogCtl.spin = null; barkT = 0; $('bark').hidden = true;
@@ -1859,6 +1930,18 @@
     else if (glitch.next === Infinity) glitch.next = t + rand(10, 20);
     else if (t >= glitch.next) { glitch.steps = flutterSteps(); glitch.t0 = t; }
 
+    // Dale goes back and forth: 20 to 40 s on the floor with the dog, then 15 to 30 s at his laptop
+    if (state.phase === 'live' && state.dogPresent && !state.asking && !state.swap && !dA.busy && t >= (state.daleNext ?? Infinity)) {
+      state.daleNext = Infinity;
+      if (state.daleSeat === 'floor') daleToLaptop(); else if (state.daleSeat === 'laptop') daleToFloor(false);
+    }
+    // the laptop lid opens and closes; the screen shows only while it is open
+    {
+      const want = state.lidOpen ? 0.28 : -Math.PI / 2;
+      lid.rotation.x += (want - lid.rotation.x) * (1 - Math.exp(-dt * 7));
+      laptopScreen.visible = lid.rotation.x > -1.2;
+    }
+
     // the radio's song: plays while the radio is in the world and the sound is on, from the top each time
     if (music.ctx) {
       const want = music.on && radio.spawned && !radio.gone && state.phase !== 'off';
@@ -1878,7 +1961,7 @@
       tickActor(dA, dt, allow && !state.asking);
       applyMarjorie(t, dt); applyDale(t);
       if (state.dogPresent) {
-        tickActor(gA, dt, allow && !state.asking && !state.swap && state.daleSeat === 'floor');
+        tickActor(gA, dt, allow && !state.asking && !state.swap && state.daleSeat !== 'moving');
         updateDog(dt); applyDog(t, dt);
       }
       if (cat.spawned && !cat.gone) { tickActor(cA, dt, allow); applyCat(t, dt); }
