@@ -14,6 +14,14 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   thing and its name. Click, tap, or use the Inspect menu to open its details. Some of
   them: the window's outside is "Not rendered", the coffee's temperature "Never changes",
   and Marjorie "Has noticed you: No".
+- **Everyone has habits.** Each character picks a small habit at random every few
+  seconds, so the room never repeats exactly. Marjorie thinks with her pencil on her
+  chin, sips her coffee (setting the pencil down first), checks the clock and fixes her
+  glasses, but never looks at the dog or at you. Dale scratches his head, rests his chin
+  on his hand, leans back, sighs, and turns to look at Marjorie ("She did not look up").
+  His head follows the dog wherever it goes. The dog hops around like a toy moved by a
+  hand: it drinks from the bowl, sniffs, chases its tail, wanders, barks "Woof.", and
+  visits Dale, who pets it. The inspector shows what each one is doing.
 - **Ask Dale the dog's name.** He thinks, then says "Doctor Bones." The log records it,
   then "Security answer accepted". Marjorie keeps doing her crossword.
 - **Wireframe view** shows the whole world as wireframes.
@@ -37,10 +45,13 @@ Useful places in the script:
 | Build order | `spawnAt` on each `entity(...)`, in seconds |
 | Turn-off order | `offAt` on each `entity(...)`; the dog and last dot use `DOG_START`, `DOG_END`, `GLOW_END` |
 | Inspector text | the `info` function on each `entity(...)` |
+| Habits | `mA` (Marjorie), `dA` (Dale), `gA` (the dog): each has a list of `{ w, label, steps }`. `w` is how often it is picked, `label` shows in the inspector, `steps` are poses held for `dur` seconds |
+| Poses | `M_BASE`, `D_BASE`, `G_BASE` and the named poses below them (joint positions in meters) |
 | Clock speed | `state.sim += dt * 4` (4 story seconds per real second) |
 
 The figures are built from spheres, cylinders and boxes with the `ball`, `rod`, `limb`
-and `block` helpers. Each figure is posed by its joint positions, in meters, facing +z.
+and `block` helpers. Arms, legs, necks and torsos that move are rebuilt every frame
+from joint positions (`dynLimb` and `setLimb`), in meters, facing +z.
 
 ## Ideas not built yet
 

@@ -84,6 +84,7 @@
     background: #fffdf6; color: #2b2420; font: 600 15px/1.2 var(--sans);
     padding: 7px 13px; border-radius: 14px; white-space: nowrap;
   }
+  .bubble.small { font-size: 13px; padding: 5px 10px; }
   .bubble::after {
     content: ""; position: absolute; left: 50%; bottom: -6px; margin-left: -6px;
     border: 6px solid transparent; border-bottom: 0; border-top-color: #fffdf6;
@@ -135,6 +136,7 @@
     <div class="log" id="log" aria-live="polite"></div>
     <div class="tip" id="tip" hidden></div>
     <div class="bubble" id="bubble" hidden></div>
+    <div class="bubble small" id="bark" hidden>Woof.</div>
     <section class="inspector" id="inspector" hidden aria-live="polite">
       <button class="close" id="insp-close" type="button" aria-label="Close inspector">&times;</button>
       <h2 id="insp-name"></h2>
@@ -567,16 +569,36 @@
   }
   finalize(crossword);
 
+  // ---------- posable figures ----------
+  const V3 = (a) => new THREE.Vector3(a[0], a[1], a[2]);
+  const _d = new THREE.Vector3();
+  function setSeg(m, a, b, r) {
+    _d.subVectors(b, a); const len = Math.max(1e-4, _d.length());
+    m.position.addVectors(a, b).multiplyScalar(0.5);
+    m.quaternion.setFromUnitVectors(UP, _d.multiplyScalar(1 / len));
+    if (r) m.scale.set(r, len, r); else m.scale.set(1, len, 1);
+  }
+  function dynLimb(parent, mat, n, r) {
+    const L = { segs: [], joints: [], r };
+    for (let i = 0; i < n - 1; i++) L.segs.push(mesh(G.cyl, mat, parent));
+    for (let i = 1; i < n - 1; i++) { const jt = mesh(G.sph, mat, parent); jt.scale.setScalar(r); L.joints.push(jt); }
+    return L;
+  }
+  function setLimb(L, pts) {
+    for (let i = 0; i < L.segs.length; i++) setSeg(L.segs[i], pts[i], pts[i + 1], L.r);
+    for (let i = 0; i < L.joints.length; i++) L.joints[i].position.copy(pts[i + 1]);
+  }
+
   // ---------- Marjorie ----------
   const marjorie = entity('marjorie', 'Marjorie (copy)', {
     spawnAt: 2.8, offAt: 2.5, k: FIG, inspect: true,
-    info: () => [['Doing', 'The crossword'], ['Crossword', crossPct() + '% done'], ['Has noticed the dog', 'No'], ['Has noticed you', 'No']]
+    info: () => [['Doing', mA.activity], ['Crossword', crossPct() + '% done'], ['Has noticed the dog', 'No'], ['Has noticed you', 'No']]
   });
-  let mHead, mHand;
+  const MJ = {};
   {
     const skin = plastic(0xf0c6a4), cardigan = plastic(0x9a4a2a), dress = plastic(0xe6d3a6), hair = plastic(0xd8ad62),
       shoe = plastic(0x5a2a22), glasses = plastic(0x3b2a20), lip = plastic(0xb5463c);
-    const body = new THREE.Group(); body.position.y = 0.355; marjorie.group.add(body);
+    const body = new THREE.Group(); body.position.y = 0.355; marjorie.group.add(body); MJ.body = body;
     limb(body, dress, [[-0.085, 0, 0], [-0.085, 0, 0.24]], 0.06);
     limb(body, dress, [[0.085, 0, 0], [0.085, 0, 0.24]], 0.06);
     block(body, dress, [0, 0.01, 0.12], [0.29, 0.12, 0.26]);
@@ -585,34 +607,30 @@
     rod(body, skin, [0.085, -0.2, 0.26], [0.085, -0.3, 0.27], 0.042);
     block(body, shoe, [-0.085, -0.32, 0.3], [0.08, 0.05, 0.14]);
     block(body, shoe, [0.085, -0.32, 0.3], [0.08, 0.05, 0.14]);
-    rod(body, cardigan, [0, 0, 0], [0, 0.3, 0.05], 0.12, 0.138);
+    MJ.torso = mesh(new THREE.CylinderGeometry(0.12, 0.138, 1, 24), cardigan, body);
     ball(body, cardigan, [0, 0, 0], 0.138, [1, 0.6, 1]);
     block(body, dress, [0, 0.26, 0.15], [0.09, 0.07, 0.02], [-0.2, 0, 0]);
-    ball(body, cardigan, [-0.15, 0.27, 0.05], 0.052);
-    ball(body, cardigan, [0.15, 0.27, 0.05], 0.052);
-    limb(body, cardigan, [[-0.15, 0.27, 0.05], [-0.14, 0.235, 0.25], [-0.095, 0.42, 0.17]], 0.04);
-    ball(body, skin, [-0.095, 0.44, 0.165], 0.045);
-    limb(body, cardigan, [[0.15, 0.27, 0.05], [0.19, 0.235, 0.2]], 0.04);
-    mHand = new THREE.Group(); body.add(mHand);
-    rod(mHand, cardigan, [0.19, 0.235, 0.2], [0.1, 0.24, 0.32], 0.038);
-    ball(mHand, skin, [0.09, 0.245, 0.335], 0.044);
-    rod(mHand, M.pencil, [0.07, 0.228, 0.37], [0.13, 0.33, 0.31], 0.008);
-    ball(mHand, M.eraser, [0.13, 0.33, 0.31], 0.01);
-    rod(body, skin, [0, 0.29, 0.05], [0, 0.35, 0.07], 0.042);
-    mHead = new THREE.Group(); mHead.position.set(0, 0.48, 0.08); mHead.rotation.set(0.34, 0, 0.12); body.add(mHead);
-    ball(mHead, skin, [0, 0, 0], 0.135, [1, 1.04, 1]);
-    const cap = mesh(new THREE.SphereGeometry(0.145, 28, 14, 0, Math.PI * 2, 0, Math.PI * 0.55), hair, mHead);
+    MJ.shL = ball(body, cardigan, [0, 0, 0], 0.052); MJ.shR = ball(body, cardigan, [0, 0, 0], 0.052);
+    MJ.armL = dynLimb(body, cardigan, 3, 0.04); MJ.armR = dynLimb(body, cardigan, 3, 0.04);
+    MJ.handL = ball(body, skin, [0, 0, 0], 0.045); MJ.handR = ball(body, skin, [0, 0, 0], 0.044);
+    MJ.neck = mesh(G.cyl, skin, body);
+    MJ.pencil = new THREE.Group(); body.add(MJ.pencil);
+    rod(MJ.pencil, M.pencil, [-0.02, -0.017, 0.035], [0.04, 0.085, -0.025], 0.008);
+    ball(MJ.pencil, M.eraser, [0.04, 0.085, -0.025], 0.01);
+    const h = MJ.head = new THREE.Group(); body.add(h);
+    ball(h, skin, [0, 0, 0], 0.135, [1, 1.04, 1]);
+    const cap = mesh(new THREE.SphereGeometry(0.145, 28, 14, 0, Math.PI * 2, 0, Math.PI * 0.55), hair, h);
     cap.position.set(0, 0.012, -0.012); cap.rotation.x = -0.25;
     [[-0.12, 0.02, -0.04], [0.12, 0.02, -0.04], [-0.1, -0.06, -0.08], [0.1, -0.06, -0.08], [0, -0.05, -0.12],
-     [-0.06, 0.1, 0.07], [0.06, 0.1, 0.07], [0, 0.12, 0.04]].forEach((p) => ball(mHead, hair, p, 0.055));
-    ball(mHead, M.dark, [-0.045, 0.01, 0.125], 0.013);
-    ball(mHead, M.dark, [0.045, 0.01, 0.125], 0.013);
+     [-0.06, 0.1, 0.07], [0.06, 0.1, 0.07], [0, 0.12, 0.04]].forEach((q) => ball(h, hair, q, 0.055));
+    ball(h, M.dark, [-0.045, 0.01, 0.125], 0.013);
+    ball(h, M.dark, [0.045, 0.01, 0.125], 0.013);
     [-0.047, 0.047].forEach((x) => {
-      const ring = mesh(new THREE.TorusGeometry(0.034, 0.0065, 8, 24), glasses, mHead);
+      const ring = mesh(new THREE.TorusGeometry(0.034, 0.0065, 8, 24), glasses, h);
       ring.position.set(x, 0.01, 0.142);
     });
-    rod(mHead, glasses, [-0.014, 0.012, 0.145], [0.014, 0.012, 0.145], 0.005);
-    ball(mHead, lip, [0, -0.06, 0.122], 0.02, [1.3, 0.45, 0.6]);
+    rod(h, glasses, [-0.014, 0.012, 0.145], [0.014, 0.012, 0.145], 0.005);
+    ball(h, lip, [0, -0.06, 0.122], 0.02, [1.3, 0.45, 0.6]);
     marjorie.group.position.copy(M_POS); marjorie.group.rotation.y = M_YAW;
   }
   finalize(marjorie);
@@ -621,40 +639,34 @@
   const D_POS = new THREE.Vector3(0.15, 0, 0.75), D_YAW = Math.PI / 2 - 0.12;
   const dale = entity('dale', 'Dale Hubbard (copy)', {
     spawnAt: 3.3, offAt: 2.1, k: FIG, inspect: true,
-    info: () => [['Run', state.run.toLocaleString('en-US')], ['Came home', '5:40 pm, as always'],
+    info: () => [['Doing', dA.activity], ['Run', state.run.toLocaleString('en-US')], ['Came home', '5:40 pm, as always'],
       ["Knows the dog's name", state.dogName ? 'Yes' : 'Not yet'], ['Built from', 'Everything he ever posted']]
   });
-  let dHead, dTorso;
+  const DJ = {};
   {
     const skin = plastic(0xe9b993), sweater = plastic(0x6b5440), pants = plastic(0x5b4a3a), shoe = plastic(0x3a2418),
       hair = plastic(0x4a4038), collar = plastic(0xd9c9a3);
     const g = dale.group;
-    limb(g, pants, [[-0.085, 0.07, 0], [-0.09, 0.33, 0.2], [-0.1, 0.07, 0.35]], 0.062);
-    limb(g, pants, [[0.085, 0.07, 0], [0.09, 0.33, 0.2], [0.1, 0.07, 0.35]], 0.062);
-    block(g, shoe, [-0.1, 0.035, 0.39], [0.09, 0.065, 0.17]);
-    block(g, shoe, [0.1, 0.035, 0.39], [0.09, 0.065, 0.17]);
+    DJ.legL = dynLimb(g, pants, 3, 0.062); DJ.legR = dynLimb(g, pants, 3, 0.062);
+    DJ.shoeL = block(g, shoe, [0, 0, 0], [0.09, 0.065, 0.17]); DJ.shoeR = block(g, shoe, [0, 0, 0], [0.09, 0.065, 0.17]);
     ball(g, pants, [0, 0.08, -0.01], 0.14, [1.05, 0.55, 1]);
-    dTorso = new THREE.Group(); g.add(dTorso);
-    rod(dTorso, sweater, [0, 0.07, 0], [0, 0.38, -0.05], 0.125, 0.14);
-    ball(dTorso, sweater, [-0.155, 0.35, -0.04], 0.054);
-    ball(dTorso, sweater, [0.155, 0.35, -0.04], 0.054);
-    limb(dTorso, sweater, [[-0.155, 0.35, -0.04], [-0.16, 0.3, 0.13], [0.05, 0.345, 0.22]], 0.045);
-    limb(dTorso, sweater, [[0.155, 0.35, -0.04], [0.16, 0.31, 0.12], [-0.05, 0.37, 0.21]], 0.045);
-    ball(dTorso, skin, [0.07, 0.345, 0.225], 0.044);
-    ball(dTorso, skin, [-0.07, 0.37, 0.215], 0.044);
-    block(dTorso, collar, [0, 0.39, -0.015], [0.1, 0.05, 0.03], [-0.25, 0, 0]);
-    rod(dTorso, skin, [0, 0.37, -0.05], [0, 0.43, -0.04], 0.045);
-    dHead = new THREE.Group(); dHead.position.set(0, 0.56, -0.025); dHead.rotation.set(0.16, 0, 0); dTorso.add(dHead);
-    ball(dHead, skin, [0, 0, 0], 0.138, [1, 1.05, 1]);
-    const cap = mesh(new THREE.SphereGeometry(0.146, 28, 14, 0, Math.PI * 2, 0, Math.PI * 0.5), hair, dHead);
+    DJ.torso = mesh(new THREE.CylinderGeometry(0.125, 0.14, 1, 24), sweater, g);
+    DJ.shL = ball(g, sweater, [0, 0, 0], 0.054); DJ.shR = ball(g, sweater, [0, 0, 0], 0.054);
+    DJ.armL = dynLimb(g, sweater, 3, 0.045); DJ.armR = dynLimb(g, sweater, 3, 0.045);
+    DJ.handL = ball(g, skin, [0, 0, 0], 0.044); DJ.handR = ball(g, skin, [0, 0, 0], 0.044);
+    DJ.collar = block(g, collar, [0, 0, 0], [0.1, 0.05, 0.03], [-0.25, 0, 0]);
+    DJ.neck = mesh(G.cyl, skin, g);
+    const h = DJ.head = new THREE.Group(); g.add(h);
+    ball(h, skin, [0, 0, 0], 0.138, [1, 1.05, 1]);
+    const cap = mesh(new THREE.SphereGeometry(0.146, 28, 14, 0, Math.PI * 2, 0, Math.PI * 0.5), hair, h);
     cap.position.set(0, 0.018, -0.018); cap.rotation.x = -0.32;
-    ball(dHead, hair, [-0.13, -0.01, -0.03], 0.045, [0.6, 1.1, 1]);
-    ball(dHead, hair, [0.13, -0.01, -0.03], 0.045, [0.6, 1.1, 1]);
-    ball(dHead, M.dark, [-0.048, 0.015, 0.128], 0.014);
-    ball(dHead, M.dark, [0.048, 0.015, 0.128], 0.014);
-    block(dHead, M.dark, [-0.048, 0.055, 0.125], [0.05, 0.01, 0.01], [0, 0, 0.18]);
-    block(dHead, M.dark, [0.048, 0.055, 0.125], [0.05, 0.01, 0.01], [0, 0, -0.18]);
-    block(dHead, plastic(0x9a5a48), [0, -0.06, 0.128], [0.045, 0.008, 0.01]);
+    ball(h, hair, [-0.13, -0.01, -0.03], 0.045, [0.6, 1.1, 1]);
+    ball(h, hair, [0.13, -0.01, -0.03], 0.045, [0.6, 1.1, 1]);
+    ball(h, M.dark, [-0.048, 0.015, 0.128], 0.014);
+    ball(h, M.dark, [0.048, 0.015, 0.128], 0.014);
+    block(h, M.dark, [-0.048, 0.055, 0.125], [0.05, 0.01, 0.01], [0, 0, 0.18]);
+    block(h, M.dark, [0.048, 0.055, 0.125], [0.05, 0.01, 0.01], [0, 0, -0.18]);
+    block(h, plastic(0x9a5a48), [0, -0.06, 0.128], [0.045, 0.008, 0.01]);
     g.position.copy(D_POS); g.rotation.y = D_YAW;
   }
   finalize(dale);
@@ -664,7 +676,7 @@
   const DOG_YAW = Math.atan2(D_POS.x - DOG_POS.x, D_POS.z - DOG_POS.z);
   const dog = entity('dog', 'Dog', {
     spawnAt: 4.6, offAt: 99, k: FIG, inspect: true,
-    info: () => [['Breed', 'Default'], ['Added', 'This run'], ['Alive for', fmtDur(state.sim - state.dogSim)], ['Name', state.dogName || 'Unknown']]
+    info: () => [['Doing', gA.activity], ['Breed', 'Default'], ['Alive for', fmtDur(state.sim - state.dogSim)], ['Name', state.dogName || 'Unknown']]
   });
   let dogHead, dogTail, dogEars = [];
   {
@@ -752,6 +764,225 @@
     el.appendChild(line); while (el.children.length > 4) el.removeChild(el.firstChild);
   }
 
+  // ---------- habits ----------
+  const rand = (a, b) => a + Math.random() * (b - a);
+  function pickWeighted(list) {
+    let sum = 0; list.forEach((b) => { sum += b.w; });
+    let r = Math.random() * sum;
+    for (const b of list) { r -= b.w; if (r <= 0) return b; }
+    return list[0];
+  }
+  function makePose(base) { const p = {}; for (const k in base) p[k] = Array.isArray(base[k]) ? V3(base[k]) : base[k]; return p; }
+  function actor(base, behaviors, defaults) {
+    return { base, behaviors, defaults, cur: makePose(base), tgt: makePose(base), steps: [], step: null, stepT: 0,
+      busy: false, wait: rand(1.5, 4), flags: Object.assign({}, defaults.flags), activity: defaults.activity, speed: 4 };
+  }
+  function setTarget(A, over) {
+    const src = Object.assign({}, A.base, over);
+    for (const k in src) { if (Array.isArray(src[k])) A.tgt[k].set(src[k][0], src[k][1], src[k][2]); else A.tgt[k] = src[k]; }
+  }
+  function stopActor(A) {
+    A.steps = []; A.step = null; A.busy = false; setTarget(A, {});
+    A.flags = Object.assign({}, A.defaults.flags); A.activity = A.defaults.activity; A.speed = 4; A.wait = rand(2, 5);
+  }
+  function resetActor(A) {
+    stopActor(A);
+    for (const k in A.base) { if (Array.isArray(A.base[k])) A.cur[k].copy(A.tgt[k]); else A.cur[k] = A.base[k]; }
+  }
+  function nextStep(A) {
+    const st = A.steps.shift();
+    if (!st) { stopActor(A); return; }
+    A.step = st; A.stepT = 0; A.busy = true; setTarget(A, st.pose || {});
+    A.flags = Object.assign({}, A.defaults.flags, st.flags || {}); A.speed = st.speed || 4;
+    if (st.enter) st.enter(A);
+  }
+  function play(A, steps, activity) { A.steps = steps.slice(); A.activity = activity || A.defaults.activity; nextStep(A); }
+  function tickActor(A, dt, allowRandom) {
+    if (A.busy && A.step) {
+      const st = A.step; A.stepT += dt;
+      if (st.update) st.update(A.stepT, A);
+      const done = st.until ? (st.until() || A.stepT >= (st.dur || 30)) : A.stepT >= st.dur;
+      if (done) { if (st.exit) st.exit(A); if (A.step === st) nextStep(A); }
+    } else if (allowRandom) {
+      A.wait -= dt;
+      if (A.wait <= 0) { const b = pickWeighted(A.behaviors); play(A, b.steps(), b.label); }
+    }
+    const a = 1 - Math.exp(-dt * A.speed);
+    for (const k in A.tgt) { if (A.tgt[k] && A.tgt[k].isVector3) A.cur[k].lerp(A.tgt[k], a); else A.cur[k] += (A.tgt[k] - A.cur[k]) * a; }
+  }
+
+  // Marjorie: never looks at the dog, never looks at you
+  const M_BASE = { neck: [0, 0.3, 0.05], sL: [-0.15, 0.27, 0.05], eL: [-0.14, 0.235, 0.25], hL: [-0.095, 0.44, 0.165],
+    sR: [0.15, 0.27, 0.05], eR: [0.19, 0.235, 0.2], hR: [0.09, 0.245, 0.335], hx: 0.34, hy: 0, hz: 0.12, pRx: 0, pRy: 0, pRz: 0 };
+  const M_THINK = { eR: [0.18, 0.25, 0.21], hR: [0.05, 0.4, 0.205], hx: 0.14, hz: 0.05, pRx: -0.7, pRz: 0.5 };
+  const M_GLANCE = { hx: -0.18, hy: 0.62, hz: 0.02, eL: [-0.15, 0.235, 0.24], hL: [-0.11, 0.37, 0.2] };
+  const M_GLASSES = { eL: [-0.17, 0.3, 0.22], hL: [-0.04, 0.47, 0.235], hx: 0.2, hz: 0.04 };
+  const CUP_GRAB = [0.21, 0.27, 0.34], MOUTH = [0.05, 0.43, 0.2], CUP_ELBOW = [0.26, 0.2, 0.18], SIP_ELBOW = [0.22, 0.27, 0.12];
+  const NO_WRITE = { write: false };
+  const mA = actor(M_BASE, [
+    { w: 3, label: 'The crossword', steps: () => [{ dur: rand(4, 9) }] },
+    { w: 2, label: 'Thinking about 14 across', steps: () => [{ pose: M_THINK, flags: NO_WRITE, dur: rand(2.2, 3.6), speed: 3 }] },
+    { w: 1.5, label: 'Drinking her coffee', steps: () => [
+      { pose: { hR: CUP_GRAB, eR: CUP_ELBOW }, flags: { write: false, pencilDown: true }, dur: 0.9, speed: 5 },
+      { pose: { hR: MOUTH, eR: SIP_ELBOW, hx: 0.12 }, flags: { write: false, pencilDown: true, cup: true }, dur: 0.9, speed: 4 },
+      { pose: { hR: MOUTH, eR: SIP_ELBOW, hx: 0.02 }, flags: { write: false, pencilDown: true, cup: true, tilt: true }, dur: 1.3, speed: 4,
+        enter: () => log('Coffee sipped. Temperature unchanged') },
+      { pose: { hR: CUP_GRAB, eR: CUP_ELBOW }, flags: { write: false, pencilDown: true, cup: true }, dur: 0.9, speed: 5 },
+      { pose: { hR: [0.07, 0.25, 0.36] }, flags: { write: false, pencilDown: true }, dur: 0.7, speed: 5 },
+      { flags: NO_WRITE, dur: 0.4, speed: 5 }] },
+    { w: 1.3, label: 'Checking the clock', steps: () => [{ pose: M_GLANCE, flags: NO_WRITE, dur: rand(1.3, 2), speed: 3.5 }] },
+    { w: 1.1, label: 'Fixing her glasses', steps: () => [{ pose: M_GLASSES, flags: NO_WRITE, dur: 1.3, speed: 4.5 }] }
+  ], { activity: 'The crossword', flags: { write: true } });
+
+  // Dale: keeps looking at the dog, trying to remember
+  const D_BASE = { neck: [0, 0.38, -0.05], sL: [-0.155, 0.35, -0.04], eL: [-0.16, 0.3, 0.13], hL: [0.05, 0.345, 0.22],
+    sR: [0.155, 0.35, -0.04], eR: [0.16, 0.31, 0.12], hR: [-0.05, 0.37, 0.21],
+    kL: [-0.09, 0.33, 0.2], fL: [-0.1, 0.07, 0.35], kR: [0.09, 0.33, 0.2], fR: [0.1, 0.07, 0.35], hx: 0.16, hy: 0, hz: 0, track: 1 };
+  const D_SCRATCH = { eR: [0.24, 0.5, 0.03], hR: [0.07, 0.68, -0.03], hx: 0.05, hz: -0.12, track: 0.6 };
+  const D_CHIN = { eR: [0.17, 0.3, 0.15], hR: [0.02, 0.47, 0.1], track: 0.8 };
+  const D_LEANBACK = { neck: [0, 0.36, -0.13], sL: [-0.155, 0.33, -0.12], sR: [0.155, 0.33, -0.12], eL: [-0.21, 0.2, -0.2], hL: [-0.22, 0.06, -0.26],
+    eR: [0.21, 0.2, -0.2], hR: [0.22, 0.06, -0.26], kR: [0.09, 0.2, 0.3], fR: [0.1, 0.06, 0.56] };
+  const D_LOOK_M = { neck: [-0.03, 0.38, -0.05], hy: -1.15, hx: 0.05, track: 0 };
+  const D_SIGH = { neck: [0, 0.41, -0.06], sL: [-0.155, 0.38, -0.05], sR: [0.155, 0.38, -0.05], hx: -0.05 };
+  const D_LEAN_FWD = { neck: [-0.04, 0.37, 0.05], sL: [-0.19, 0.34, 0.06], sR: [0.12, 0.35, 0.0], hx: 0.3 };
+  const scratchJ = (tt, A) => { A.tgt.hR.x = D_SCRATCH.hR[0] + Math.sin(tt * 16) * 0.02; };
+  const dA = actor(D_BASE, [
+    { w: 3, label: 'Looking at the dog', steps: () => [{ dur: rand(3, 7) }] },
+    { w: 2, label: 'Trying to remember', steps: () => [{ pose: D_SCRATCH, dur: rand(1.6, 2.4), update: scratchJ }, { dur: 0.6 }] },
+    { w: 1.6, label: 'Thinking', steps: () => [{ pose: D_CHIN, dur: rand(2.4, 3.6), speed: 3 }] },
+    { w: 1.3, label: 'Leaning back', steps: () => [{ pose: D_LEANBACK, dur: rand(3, 5), speed: 2.5 }] },
+    { w: 1, label: 'Looking at Marjorie', steps: () => [{ pose: D_LOOK_M, dur: 2.4, speed: 3, exit: () => log('Dale looked at Marjorie. She did not look up') }] },
+    { w: 1.1, label: 'Sighing', steps: () => [{ pose: D_SIGH, dur: 1.0, speed: 3 }, { dur: 0.9, speed: 2.5 }] }
+  ], { activity: 'Looking at the dog', flags: {} });
+  const petTmp = new THREE.Vector3();
+  function petSteps() {
+    return [{ pose: D_LEAN_FWD, dur: 3.2, speed: 4.5, enter: () => log('Dale petted the dog'),
+      update: (tt, A) => {
+        dogHead.getWorldPosition(petTmp); dale.group.worldToLocal(petTmp);
+        A.tgt.hL.set(petTmp.x, petTmp.y + 0.08 + Math.max(0, Math.sin(tt * 7)) * 0.035, petTmp.z);
+        A.tgt.eL.set((A.tgt.sL.x + petTmp.x) / 2 - 0.07, (A.tgt.sL.y + petTmp.y) / 2 - 0.05, (A.tgt.sL.z + petTmp.z) / 2);
+      } }, { dur: 0.8 }];
+  }
+
+  // The dog: hops around the kitchen like a toy being moved by a hand
+  const dogCtl = { pos: DOG_POS.clone(), yaw: DOG_YAW, moving: null, spin: null, travelled: 0 };
+  const BOWL_POS = new THREE.Vector3(2.05, 0, -1.3), DALE_SPOT = new THREE.Vector3(0.45, 0, 0.8);
+  function dogGo(to) { dogCtl.moving = { to: to.clone() }; dogCtl.spin = null; }
+  function bowlSpot() {
+    const d = new THREE.Vector3(dogCtl.pos.x - BOWL_POS.x, 0, dogCtl.pos.z - BOWL_POS.z);
+    if (d.lengthSq() < 1e-4) d.set(0, 0, 1);
+    return BOWL_POS.clone().addScaledVector(d.normalize(), 0.3);
+  }
+  function visitSpot() { return dale.group.localToWorld(new THREE.Vector3(-0.12, 0, 0.6)).setY(0); }
+  function randomSpot() {
+    for (let i = 0; i < 20; i++) {
+      const q = new THREE.Vector3(rand(0.85, 2.5), 0, rand(-0.85, 1.8));
+      if (q.distanceTo(DALE_SPOT) > 0.85 && q.distanceTo(BOWL_POS) > 0.4) return q;
+    }
+    return DOG_POS.clone();
+  }
+  const goStep = (to) => ({ pose: { wag: 0.9, wagSpeed: 12 }, enter: () => dogGo(typeof to === 'function' ? to() : to), until: () => !dogCtl.moving, dur: 25 });
+  let barkT = 0;
+  const G_BASE = { hx: -0.32, hy: 0, hz: 0, wag: 0.4, wagSpeed: 9 };
+  const gA = actor(G_BASE, [
+    { w: 3, label: 'Sitting', steps: () => [{ dur: rand(3, 6) }] },
+    { w: 1.4, label: 'Tilting his head', steps: () => [{ pose: { hz: 0.42 }, dur: 1.1 }, { pose: { hz: -0.3 }, dur: 0.9 }] },
+    { w: 1.4, label: 'Sniffing the floor', steps: () => [{ pose: { hx: 0.55, wag: 0.2 }, dur: 2.6, update: (tt, A) => { A.tgt.hy = Math.sin(tt * 2.4) * 0.5; } }] },
+    { w: 1, label: 'Chasing his tail', steps: () => [{ pose: { wag: 1, wagSpeed: 15 }, dur: 1.5, enter: () => { dogCtl.spin = { t: 0, dur: 1.4 }; } }] },
+    { w: 1.5, label: 'Drinking water', steps: () => [goStep(bowlSpot),
+      { flags: { face: BOWL_POS }, pose: { hx: 0.62, wag: 0.25 }, dur: 3.2, enter: () => log('Dog drank some water'),
+        update: (tt, A) => { A.tgt.hx = 0.62 + Math.sin(tt * 10) * 0.08; } }, goStep(DOG_POS)] },
+    { w: 1.5, label: 'Visiting Dale', steps: () => [goStep(visitSpot),
+      { pose: { hx: -0.55, wag: 1, wagSpeed: 14 }, dur: 3.4, enter: () => play(dA, petSteps(), 'Petting the dog') }, goStep(DOG_POS)] },
+    { w: 1.3, label: 'Wandering', steps: () => [goStep(randomSpot), { dur: rand(3, 6) }] },
+    { w: 0.5, label: 'Barking', steps: () => [{ pose: { hx: -0.6, wag: 0.9, wagSpeed: 13 }, dur: 1.4, enter: () => { barkT = 1.3; } }] }
+  ], { activity: 'Sitting', flags: {} });
+
+  function angDiff(a, b) { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; }
+  function updateDog(dt) {
+    const c = dogCtl; let hop = 0, wobble = 0, extra = 0;
+    if (c.moving) {
+      const dx = c.moving.to.x - c.pos.x, dz = c.moving.to.z - c.pos.z, d = Math.hypot(dx, dz);
+      if (d < 0.02) c.moving = null;
+      else {
+        const diff = angDiff(c.yaw, Math.atan2(dx, dz));
+        c.yaw += diff * (1 - Math.exp(-dt * 8));
+        if (Math.abs(diff) < 0.7) {
+          const stp = Math.min(d, dt * 0.85);
+          c.pos.x += dx / d * stp; c.pos.z += dz / d * stp; c.travelled += stp;
+          const ph = c.travelled / 0.15 * Math.PI; hop = Math.abs(Math.sin(ph)) * 0.05; wobble = Math.sin(ph) * 0.1;
+        }
+      }
+    } else {
+      const face = gA.flags.face || D_POS;
+      c.yaw += angDiff(c.yaw, Math.atan2(face.x - c.pos.x, face.z - c.pos.z)) * (1 - Math.exp(-dt * 3));
+      if (c.spin) {
+        c.spin.t += dt; const q = clamp01(c.spin.t / c.spin.dur);
+        extra = ease(q) * Math.PI * 2; hop = Math.abs(Math.sin(q * Math.PI * 4)) * 0.04;
+        if (q >= 1) c.spin = null;
+      }
+    }
+    dog.group.position.set(c.pos.x, hop, c.pos.z);
+    dog.group.rotation.set(0, c.yaw + extra, wobble);
+  }
+
+  // Posing each frame
+  const ORIGIN = new THREE.Vector3(), NECK_UP_M = new THREE.Vector3(0, 0.055, 0.02), M_HEAD_OFF = new THREE.Vector3(0, 0.18, 0.03);
+  const PENCIL_REST = new THREE.Vector3(0.05, 0.236, 0.37), PENCIL_REST_Q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0.2, -1.05));
+  const CUP_OFF = new THREE.Vector3(0.04, -0.05, 0);
+  const mHandPos = new THREE.Vector3(), mTmp = new THREE.Vector3(), pencilQ = new THREE.Quaternion(), pencilE = new THREE.Euler();
+  function applyMarjorie(t, dt) {
+    const p = mA.cur, f = mA.flags;
+    mHandPos.copy(p.hR);
+    if (f.write) mHandPos.add(mTmp.set(Math.sin(t * 7.5) * 0.008, Math.abs(Math.sin(t * 5.3)) * 0.004, Math.sin(t * 3.1) * 0.01));
+    setSeg(MJ.torso, ORIGIN, p.neck);
+    MJ.shL.position.copy(p.sL); MJ.shR.position.copy(p.sR);
+    setLimb(MJ.armL, [p.sL, p.eL, p.hL]); setLimb(MJ.armR, [p.sR, p.eR, mHandPos]);
+    MJ.handL.position.copy(p.hL); MJ.handR.position.copy(mHandPos);
+    setSeg(MJ.neck, p.neck, mTmp.copy(p.neck).add(NECK_UP_M), 0.042);
+    MJ.head.position.copy(p.neck).add(M_HEAD_OFF);
+    MJ.head.rotation.set(p.hx + (f.write ? Math.sin(t * 0.7) * 0.03 : 0), p.hy, p.hz);
+    const a = 1 - Math.exp(-dt * 10);
+    if (f.pencilDown) { MJ.pencil.position.lerp(PENCIL_REST, a); MJ.pencil.quaternion.slerp(PENCIL_REST_Q, a); }
+    else {
+      if (MJ.pencil.position.distanceTo(mHandPos) < 0.03) MJ.pencil.position.copy(mHandPos); else MJ.pencil.position.lerp(mHandPos, a);
+      pencilE.set(p.pRx, p.pRy, p.pRz); pencilQ.setFromEuler(pencilE); MJ.pencil.quaternion.slerp(pencilQ, a);
+    }
+    if (f.cup) { mTmp.copy(mHandPos).add(CUP_OFF); MJ.body.localToWorld(mTmp); cup.group.position.lerp(mTmp, 1 - Math.exp(-dt * 16)); }
+    else if (state.phase !== 'ending') cup.group.position.lerp(cup.basePos, 1 - Math.exp(-dt * 10));
+    cup.group.rotation.z += ((f.tilt ? 0.6 : 0) - cup.group.rotation.z) * a;
+  }
+  const D_PELVIS = new THREE.Vector3(0, 0.07, 0), D_HIP_L = new THREE.Vector3(-0.085, 0.07, 0), D_HIP_R = new THREE.Vector3(0.085, 0.07, 0);
+  const SHOE_OFF = new THREE.Vector3(0, -0.035, 0.04), NECK_UP_D = new THREE.Vector3(0, 0.05, 0.01);
+  const D_HEAD_OFF = new THREE.Vector3(0, 0.18, 0.025), COLLAR_OFF = new THREE.Vector3(0, 0.01, 0.035);
+  const dNeck = new THREE.Vector3(), dTmp = new THREE.Vector3(), dTrack = { yaw: 0, pitch: 0.16 };
+  function applyDale(t) {
+    const p = dA.cur;
+    setLimb(DJ.legL, [D_HIP_L, p.kL, p.fL]); setLimb(DJ.legR, [D_HIP_R, p.kR, p.fR]);
+    DJ.shoeL.position.copy(p.fL).add(SHOE_OFF); DJ.shoeR.position.copy(p.fR).add(SHOE_OFF);
+    dNeck.copy(p.neck); dNeck.y += Math.sin(t * 1.6) * 0.004;
+    setSeg(DJ.torso, D_PELVIS, dNeck);
+    DJ.shL.position.copy(p.sL); DJ.shR.position.copy(p.sR);
+    setLimb(DJ.armL, [p.sL, p.eL, p.hL]); setLimb(DJ.armR, [p.sR, p.eR, p.hR]);
+    DJ.handL.position.copy(p.hL); DJ.handR.position.copy(p.hR);
+    DJ.collar.position.copy(dNeck).add(COLLAR_OFF);
+    setSeg(DJ.neck, dNeck, dTmp.copy(dNeck).add(NECK_UP_D), 0.045);
+    DJ.head.position.copy(dNeck).add(D_HEAD_OFF);
+    dogHead.getWorldPosition(dTmp); dale.group.worldToLocal(dTmp);
+    const hp = DJ.head.position, dx = dTmp.x - hp.x, dz = dTmp.z - hp.z, dy = dTmp.y - hp.y;
+    const yaw = Math.max(-1.1, Math.min(1.1, Math.atan2(dx, dz)));
+    const pitch = Math.max(-0.3, Math.min(0.6, Math.atan2(-dy, Math.hypot(dx, dz)) + 0.05));
+    dTrack.yaw += (yaw - dTrack.yaw) * 0.08; dTrack.pitch += (pitch - dTrack.pitch) * 0.08;
+    DJ.head.rotation.set(p.hx + (dTrack.pitch - p.hx) * p.track, p.hy + dTrack.yaw * p.track, p.hz);
+  }
+  let wagPhase = 0;
+  function applyDog(t, dt) {
+    const p = gA.cur; wagPhase += dt * p.wagSpeed;
+    dogHead.rotation.set(p.hx, p.hy, p.hz + Math.sin(t * 0.6) * 0.05);
+    dogTail.rotation.y = Math.sin(wagPhase) * p.wag;
+    dogEars.forEach((ear, i) => { ear.rotation.x = Math.sin(t * 0.9 + i) * 0.06 + (dogCtl.moving ? Math.sin(wagPhase * 0.7 + i) * 0.18 : 0); });
+  }
+
   function select(e) {
     state.selected = e;
     if (!e) { $('inspector').hidden = true; pick.value = ''; return; }
@@ -801,6 +1032,11 @@
   askBtn.addEventListener('click', () => {
     if (state.phase !== 'live' || state.asking) return;
     state.asking = true; state.askT = now(); askBtn.disabled = true;
+    play(dA, [{ pose: D_SCRATCH, dur: 2.6, update: scratchJ },
+      { dur: 4.9, enter: (A) => { A.activity = 'Looking at Doctor Bones'; } }], 'Trying to remember');
+    play(gA, [{ pose: { hz: 0.4, wag: 0.12 }, dur: 2.6 },
+      { pose: { hx: -0.45, wag: 1, wagSpeed: 15 }, dur: 1.4, enter: () => { if (!dogCtl.moving) dogCtl.spin = { t: 0, dur: 1.3 }; } },
+      { pose: { wag: 0.8, wagSpeed: 12 }, dur: 3.5 }], 'Hearing his name');
   });
   wireBtn.addEventListener('click', () => {
     state.wire = !state.wire; wireBtn.setAttribute('aria-pressed', String(state.wire));
@@ -812,7 +1048,8 @@
     if (state.phase !== 'live') return;
     state.phase = 'ending'; state.t0 = now();
     askBtn.disabled = true; offBtn.disabled = true; wireBtn.disabled = true; pick.disabled = true;
-    select(null); $('bubble').hidden = true; state.asking = false;
+    select(null); $('bubble').hidden = true; $('bark').hidden = true; state.asking = false;
+    stopActor(mA); stopActor(dA); stopActor(gA); dogCtl.moving = null; dogCtl.spin = null; barkT = 0;
     state.dogLived = state.sim - state.dogSim;
     log('Run ' + state.run.toLocaleString('en-US') + ' turned off');
   });
@@ -835,6 +1072,9 @@
     againBtn.textContent = 'Start run ' + (state.run + 1).toLocaleString('en-US');
     askBtn.disabled = true; offBtn.disabled = true; wireBtn.disabled = false; pick.disabled = false;
     askBtn.textContent = "Ask Dale the dog's name";
+    resetActor(mA); resetActor(dA); resetActor(gA);
+    dogCtl.pos.copy(DOG_POS); dogCtl.yaw = DOG_YAW; dogCtl.moving = null; dogCtl.spin = null; barkT = 0; $('bark').hidden = true;
+    MJ.pencil.position.copy(mA.cur.hR); MJ.pencil.quaternion.identity(); cup.group.rotation.set(0, 0, 0);
     log('Run ' + state.run.toLocaleString('en-US') + ' started');
   }
 
@@ -893,32 +1133,28 @@
       }
     });
 
-    // idle life
+    // habits
     if (state.phase !== 'off') {
-      mHand.position.set(Math.sin(t * 7.5) * 0.008, 0, Math.sin(t * 3.1) * 0.01);
-      mHead.rotation.x = 0.34 + Math.sin(t * 0.7) * 0.03;
-      dTorso.scale.y = 1 + Math.sin(t * 1.6) * 0.008;
-      let tilt = 0, wag = 0.4;
+      const allow = state.phase === 'live' && !reduce;
+      tickActor(mA, dt, allow);
+      tickActor(dA, dt, allow && !state.asking);
+      tickActor(gA, dt, allow && !state.asking);
+      updateDog(dt);
+      applyMarjorie(t, dt); applyDale(t); applyDog(t, dt);
       if (state.asking) {
         const a = t - state.askT, b = $('bubble');
-        if (a < 2.6) {
-          b.hidden = false; b.textContent = '.'.repeat(1 + Math.floor(a * 2.5) % 3);
-          dHead.rotation.y = Math.sin(a * 1.2) * 0.25; tilt = 0.35; wag = 0.15;
-        } else if (a < 7.5) {
+        if (a < 2.6) { b.hidden = false; b.textContent = '.'.repeat(1 + Math.floor(a * 2.5) % 3); }
+        else if (a < 7.5) {
           if (!state.dogName) {
             state.dogName = 'Doctor Bones'; log('Dale said: "Doctor Bones"');
             setTimeout(() => { if (state.phase === 'live') log('Security answer accepted'); }, 1600);
           }
-          b.hidden = false; b.textContent = 'Doctor Bones.'; dHead.rotation.y *= 0.9; tilt = 0.2; wag = 0.7;
+          b.hidden = false; b.textContent = 'Doctor Bones.';
         } else {
           b.hidden = true; state.asking = false; askBtn.disabled = state.phase !== 'live'; askBtn.textContent = 'Ask again';
         }
-      } else {
-        dHead.rotation.y = Math.sin(t * 0.45) * 0.06;
       }
-      dogTail.rotation.y = Math.sin(t * 9) * wag;
-      dogHead.rotation.z += ((tilt || Math.sin(t * 0.6) * 0.08) - dogHead.rotation.z) * 0.08;
-      dogEars.forEach((ear, i) => { ear.rotation.x = Math.sin(t * 0.9 + i) * 0.06; });
+      if (barkT > 0) { barkT -= dt; $('bark').hidden = barkT <= 0; }
     }
     hourHand.rotation.z = -((5 + (40 + state.sim / 60) / 60) / 12) * Math.PI * 2;
     minHand.rotation.z = -((40 + state.sim / 60) / 60) * Math.PI * 2;
@@ -954,7 +1190,7 @@
       }
       if (e >= DOG_END && e < GLOW_END) {
         const g = clamp01((e - DOG_END) / (GLOW_END - DOG_END));
-        glow.visible = true; glow.position.set(DOG_POS.x, 0.3 * FIG, DOG_POS.z);
+        glow.visible = true; glow.position.set(dogCtl.pos.x, 0.3 * FIG, dogCtl.pos.z);
         glow.material.opacity = Math.pow(1 - g, 1.5); glow.scale.setScalar(0.35 * (1 - 0.6 * g));
       }
       if (e >= GLOW_END) {
@@ -972,12 +1208,17 @@
     if (h && h.group.visible) { highlight.box.setFromObject(h.group); highlight.visible = true; } else highlight.visible = false;
     if (state.selected && Math.floor(t * 4) !== state.lastTick) { state.lastTick = Math.floor(t * 4); renderInspector(); }
 
-    // speech bubble follows Dale's head
-    if (!$('bubble').hidden) {
-      dHead.getWorldPosition(tmp); tmp.y += 0.2; tmp.project(camera);
-      const b = $('bubble');
-      b.style.left = ((tmp.x + 1) / 2 * stage.clientWidth) + 'px';
-      b.style.top = ((1 - tmp.y) / 2 * stage.clientHeight) + 'px';
+    // speech bubbles follow Dale's head and the dog's head
+    const bub = $('bubble'), bark = $('bark');
+    if (!bub.hidden) {
+      DJ.head.getWorldPosition(tmp); tmp.y += 0.2; tmp.project(camera);
+      bub.style.left = ((tmp.x + 1) / 2 * stage.clientWidth) + 'px';
+      bub.style.top = ((1 - tmp.y) / 2 * stage.clientHeight) + 'px';
+    }
+    if (!bark.hidden) {
+      dogHead.getWorldPosition(tmp); tmp.y += 0.16; tmp.project(camera);
+      bark.style.left = ((tmp.x + 1) / 2 * stage.clientWidth) + 'px';
+      bark.style.top = ((1 - tmp.y) / 2 * stage.clientHeight) + 'px';
     }
 
     controls.update();
