@@ -32,7 +32,9 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   TUESDAY instead of a month, a radio on the fridge with notes floating up (The same song),
   Dale's empty chair at the table (Sat in: Never), Dale's hat on a hook (Worn: Never), a
   shelf of jars and plates, a trash can, a bread box, a braided rug and a sink mat. A dog
-  bed arrives with the first dog.
+  bed arrives with the first dog. The walls have oak Arts and Crafts woodwork: wainscoting
+  with battens and a cap ledge, and Craftsman casing on the window (with an oak sill and
+  apron) and the back door (with plinth blocks). The inspector calls it "Built by: Nobody".
 - **Everyone has habits.** Each character picks a small habit at random every few
   seconds, so the room never repeats exactly. Marjorie thinks with her pencil on her
   chin, sips her coffee (setting the pencil down first), checks the clock and fixes her

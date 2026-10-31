@@ -398,7 +398,7 @@
   // ---------- materials ----------
   const M = {
     wallBack: std(0xe4d4b5), wallLeft: std(0xd8c6a4), wallCap: std(0xc9b994), slab: std(0x2a2420),
-    trim: std(0x7a5a3c), cabinet: std(0xa6c39b, { roughness: 0.5 }), door: std(0xb3cea8, { roughness: 0.45 }),
+    trim: std(0x7a5a3c), oak: std(0xa06a3c, { roughness: 0.5 }), oakDark: std(0x7f5230, { roughness: 0.55 }), cabinet: std(0xa6c39b, { roughness: 0.5 }), door: std(0xb3cea8, { roughness: 0.45 }),
     chrome: std(0xd4d8da, { metalness: 0.35, roughness: 0.28 }), steel: std(0xc6c9c6, { metalness: 0.25, roughness: 0.35 }),
     sink: std(0x8e9497, { metalness: 0.3, roughness: 0.4 }), fridge: std(0xece3c9, { roughness: 0.35 }),
     wood: std(0x9b6b43, { roughness: 0.5 }), woodDark: std(0x7d5233, { roughness: 0.55 }),
@@ -430,6 +430,41 @@
   }
   finalize(walls);
 
+  // ---------- oak wainscoting (Arts and Crafts) ----------
+  const trim = entity('trim', 'Wainscoting', { spawnAt: 0.85, offAt: 1.15, inspect: true,
+    info: () => [['Wood', 'Oak'], ['Style', 'Arts and Crafts'], ['Built by', 'Nobody']] });
+  {
+    const g = trim.group, panel = std(0xb98a5a, { roughness: 0.55 }), H = 1.0, BASE = 0.15, RAIL = 0.1;
+    const stileH = H - RAIL - BASE, stileY = BASE + stileH / 2;
+    // left wall: along z at x = -3.0, skipping the back door
+    [[-2.25, -1.97], [-0.93, 2.25]].forEach(([z0, z1]) => {
+      const len = z1 - z0, zc = (z0 + z1) / 2;
+      block(g, panel, [-2.99, H / 2, zc], [0.02, H, len]);
+      block(g, M.oakDark, [-2.975, BASE / 2, zc], [0.04, BASE, len]);
+      block(g, M.oak, [-2.978, H - RAIL / 2, zc], [0.035, RAIL, len]);
+      block(g, M.oakDark, [-2.963, H + 0.012, zc], [0.075, 0.025, len + 0.02]);
+      const n = Math.max(1, Math.round(len / 0.48));
+      for (let i = 0; i <= n; i++) {
+        const z = Math.min(z1 - 0.035, Math.max(z0 + 0.035, z0 + len * i / n));
+        block(g, M.oak, [-2.977, stileY, z], [0.03, stileH, 0.07]);
+      }
+    });
+    // back wall: along x at z = -2.25, from the corner to the cabinets
+    {
+      const x0 = -3.0, x1 = -0.9, len = x1 - x0, xc = (x0 + x1) / 2;
+      block(g, panel, [xc, H / 2, -2.24], [len, H, 0.02]);
+      block(g, M.oakDark, [xc, BASE / 2, -2.225], [len, BASE, 0.04]);
+      block(g, M.oak, [xc, H - RAIL / 2, -2.228], [len, RAIL, 0.035]);
+      block(g, M.oakDark, [xc, H + 0.012, -2.213], [len + 0.02, 0.025, 0.075]);
+      const n = Math.round(len / 0.48);
+      for (let i = 0; i <= n; i++) {
+        const x = Math.min(x1 - 0.035, Math.max(x0 + 0.035, x0 + len * i / n));
+        block(g, M.oak, [x, stileY, -2.227], [0.07, stileH, 0.03]);
+      }
+    }
+  }
+  finalize(trim);
+
   // ---------- window ----------
   const win = entity('window', 'Window', { spawnAt: 1.0, offAt: 0.0, inspect: true, info: () => [['Outside', 'Not rendered']] });
   {
@@ -442,11 +477,17 @@
     block(g, M.frame, [1.04, 1.65, -2.27], [0.06, 1.0, 0.1]);
     block(g, M.frame, [0.4, 1.65, -2.29], [0.035, 0.94, 0.05]);
     block(g, M.frame, [0.4, 1.65, -2.29], [1.24, 0.035, 0.05]);
-    block(g, M.frame, [0.4, 1.135, -2.17], [1.5, 0.035, 0.18]);
+    block(g, M.oak, [0.4, 1.135, -2.17], [1.62, 0.035, 0.18]);
+    block(g, M.oakDark, [0.4, 1.072, -2.236], [1.42, 0.09, 0.028]);
+    block(g, M.oak, [-0.3, 1.651, -2.236], [0.1, 0.998, 0.03]);
+    block(g, M.oak, [1.1, 1.651, -2.236], [0.1, 0.998, 0.03]);
+    block(g, M.oakDark, [0.4, 2.16, -2.232], [1.5, 0.02, 0.04]);
+    block(g, M.oak, [0.4, 2.23, -2.236], [1.54, 0.12, 0.03]);
+    block(g, M.oakDark, [0.4, 2.307, -2.228], [1.62, 0.035, 0.06]);
     const cur = std(0xffffff, { map: curtainTex, roughness: 0.8 });
-    block(g, cur, [-0.43, 1.62, -2.19], [0.3, 1.18, 0.05]);
-    block(g, cur, [1.23, 1.62, -2.19], [0.3, 1.18, 0.05]);
-    rod(g, M.trim, [-0.65, 2.24, -2.19], [1.45, 2.24, -2.19], 0.015);
+    block(g, cur, [-0.45, 1.72, -2.19], [0.3, 1.28, 0.05]);
+    block(g, cur, [1.25, 1.72, -2.19], [0.3, 1.28, 0.05]);
+    rod(g, M.trim, [-0.67, 2.39, -2.19], [1.47, 2.39, -2.19], 0.015);
   }
   finalize(win);
 
@@ -584,9 +625,13 @@
   {
     const g = door.group, slab = std(0x7f9f86, { roughness: 0.5 }), panel = std(0x739279, { roughness: 0.5 });
     block(g, slab, [0, 0.975, 0], [0.05, 1.95, 0.8]);
-    block(g, M.woodDark, [0.005, 1.985, 0], [0.06, 0.07, 0.94]);
-    block(g, M.woodDark, [0.005, 0.975, -0.435], [0.06, 1.95, 0.07]);
-    block(g, M.woodDark, [0.005, 0.975, 0.435], [0.06, 1.95, 0.07]);
+    [-0.455, 0.455].forEach((z) => {
+      block(g, M.oakDark, [0.01, 0.09, z], [0.07, 0.18, 0.13]);
+      block(g, M.oak, [0.005, 1.08, z], [0.06, 1.8, 0.11]);
+    });
+    block(g, M.oakDark, [0.012, 1.975, 0], [0.07, 0.02, 0.98]);
+    block(g, M.oak, [0.005, 2.05, 0], [0.06, 0.14, 1.04]);
+    block(g, M.oakDark, [0.02, 2.135, 0], [0.08, 0.035, 1.12]);
     const pane = mesh(new THREE.PlaneGeometry(0.46, 0.5), new THREE.MeshBasicMaterial({ map: outsideTex, toneMapped: false }), g);
     pane.rotation.y = Math.PI / 2; pane.position.set(0.027, 1.45, 0); pane.castShadow = false;
     block(g, M.woodDark, [0.03, 1.45, 0], [0.012, 0.5, 0.03]);
