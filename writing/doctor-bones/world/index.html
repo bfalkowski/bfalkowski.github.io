@@ -519,13 +519,23 @@
   }
   finalize(cabinets);
 
-  // Now and then the cabinets under the sink show as a wireframe for a moment, as if the world
-  // forgot to finish them. One switch on and one switch off, never a flicker. Timing is in the frame loop.
-  const sinkGlitch = { on: false, next: Infinity, end: 0 };
-  function setSinkGlitch(on) {
-    sinkGlitch.on = on;
-    const wire = on || cabinets.mode === 'wire';
-    underSink.forEach((m) => { m.material = wire ? cabinets.wire : m.userData.solid; m.castShadow = !wire; });
+  // Glitches: now and then the cabinets under the sink, or less often the whole world, show as a
+  // wireframe for a moment, as if the world forgot to finish them. One switch on and one switch off,
+  // never a flicker. The entity's own mode does not change, so the rest of the code does not notice.
+  // Timing is in the frame loop.
+  const glitch = { on: null, meshes: [], end: 0, nextSink: Infinity, nextAll: Infinity };
+  function glitchOn(kind) {
+    const list = [];
+    if (kind === 'sink') underSink.forEach((m) => list.push([m, cabinets]));
+    else entities.forEach((e) => {
+      if (e.group.visible && !e.gone && e.mode === 'solid' && e.spawnT === null) e.meshes.forEach((m) => list.push([m, e]));
+    });
+    list.forEach(([m, e]) => { m.material = e.wire; m.castShadow = false; });
+    glitch.on = kind; glitch.meshes = list;
+  }
+  function glitchOff() {
+    glitch.meshes.forEach(([m, e]) => { const w = e.mode === 'wire'; m.material = w ? e.wire : m.userData.solid; m.castShadow = !w; });
+    glitch.on = null; glitch.meshes = [];
   }
 
   // ---------- refrigerator ----------
@@ -1637,12 +1647,23 @@
       }
     });
 
-    // the glitch under the sink: first one 8 to 20 s into the run, then every 15 to 40 s, each held 0.5 to 1.4 s
-    const canGlitch = state.phase === 'live' && !reduce && !state.wire && cabinets.mode === 'solid' && cabinets.spawnT === null && !cabinets.gone;
-    if (!canGlitch) { if (sinkGlitch.on) setSinkGlitch(false); sinkGlitch.next = Infinity; }
-    else if (sinkGlitch.on) { if (t >= sinkGlitch.end) { setSinkGlitch(false); sinkGlitch.next = t + rand(15, 40); } }
-    else if (sinkGlitch.next === Infinity) sinkGlitch.next = t + rand(8, 20);
-    else if (t >= sinkGlitch.next) { setSinkGlitch(true); sinkGlitch.end = t + rand(0.5, 1.4); }
+    // glitches. Under the sink: first 8 to 20 s into the run, then every 15 to 40 s, held 0.5 to 1.4 s.
+    // The whole world: first 30 to 60 s into the run, then every 50 to 110 s, held 0.6 to 1.2 s.
+    // The two never overlap, and there are at least 8 s between any two glitches.
+    const canGlitch = state.phase === 'live' && !reduce && !state.wire && !state.swap;
+    if (!canGlitch) { if (glitch.on) glitchOff(); glitch.nextSink = glitch.nextAll = Infinity; }
+    else if (glitch.on) { if (t >= glitch.end) glitchOff(); }
+    else {
+      if (glitch.nextSink === Infinity) glitch.nextSink = t + rand(8, 20);
+      if (glitch.nextAll === Infinity) glitch.nextAll = t + rand(30, 60);
+      if (t >= glitch.nextAll) {
+        glitchOn('all'); glitch.end = t + rand(0.6, 1.2);
+        glitch.nextAll = t + rand(50, 110); glitch.nextSink = Math.max(glitch.nextSink, t + 8);
+      } else if (t >= glitch.nextSink && cabinets.mode === 'solid' && cabinets.spawnT === null && !cabinets.gone) {
+        glitchOn('sink'); glitch.end = t + rand(0.5, 1.4);
+        glitch.nextSink = t + rand(15, 40); glitch.nextAll = Math.max(glitch.nextAll, t + 8);
+      }
+    }
 
     // habits
     if (state.phase !== 'off') {
