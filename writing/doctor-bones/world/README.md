@@ -30,7 +30,7 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   steams but never boils, a back door whose window shows the outside is not rendered, a wall
   phone that rings now and then (the log says "Nobody answered"), a calendar that says
   TUESDAY instead of a month, a radio on the fridge with notes floating up (The same song),
-  Dale's empty chair at the table (Sat in: Never), Dale's hat on a hook (Worn: Never), a
+  Dale's chair at the table (Sat in: until there is a dog), Dale's hat on a hook (Worn: Never), a
   shelf of jars and plates, a trash can, a bread box, a braided rug and a sink mat. A dog
   bed arrives with the first dog. The walls have oak Arts and Crafts woodwork: wainscoting
   with battens and a cap ledge, and Craftsman casing on the window (with an oak sill and
@@ -38,9 +38,14 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
 - **Everyone has habits.** Each character picks a small habit at random every few
   seconds, so the room never repeats exactly. Marjorie thinks with her pencil on her
   chin, sips her coffee (setting the pencil down first), checks the clock and fixes her
-  glasses, but never looks at the dog or at you. Dale scratches his head, rests his chin
-  on his hand, leans back, sighs, and turns to look at Marjorie ("She did not look up").
-  His head follows the dog wherever it goes. The dog hops around like a toy moved by a
+  glasses, but never looks at the dog or at you. Dale starts each run in his chair at the
+  table, where he rests his chin on his hand, drums his fingers, looks at the floor, sighs,
+  and looks at Marjorie. When the first dog arrives, he gets up ("Dale got up from the
+  table"), walks over like a toy moved by a hand, and sits on the floor by the dog ("Dale
+  sat on the floor by the dog"). With reduced motion he is simply there. You can ask him
+  the dog's name only once he is on the floor. On the floor he scratches his head, rests
+  his chin on his hand, leans back, sighs, and turns to look at Marjorie ("She did not
+  look up"). His head follows the dog wherever it goes. The dog hops around like a toy moved by a
   hand: it drinks from the bowl, sniffs, chases its tail, wanders, barks "Woof.", and
   visits Dale, who pets it. The inspector shows what each one is doing.
 - **Ask Dale the dog's name** (once there is a dog). Whatever dog you gave him, he thinks, then says "Doctor Bones." The log records it,
@@ -73,7 +78,8 @@ Useful places in the script:
 | What | Where |
 | --- | --- |
 | Figure size | `FIG` (1.35) scales the people, dog, table, chair, cup and crossword |
-| Where people sit | `TABLE`, `M_POS`/`M_YAW` (Marjorie), `D_POS`/`D_YAW` (Dale), `DOG_POS` |
+| Where people sit | `TABLE`, `M_POS`/`M_YAW` (Marjorie), `D_POS`/`D_YAW` (Dale on the floor), `CHAIR_SPOT`/`CHAIR_YAW` (Dale at the table), `DOG_POS` |
+| Dale's chair and walk | `state.daleSeat` ('chair', 'moving' or 'floor'), poses `D_CHAIR` and `D_STAND` (`lift` raises his body on `DJ.rig`), `chairHabits` and `floorHabits`, `seatDale`, and `daleToFloor` (stand up, walk, turn, sit) |
 | Camera | `HOME` (default view), `START` (fly-in), `TARGET` |
 | Build order | `spawnAt` on each `entity(...)`, in seconds |
 | Turn-off order | `offAt` on each `entity(...)`; the dog and last dot use `DOG_START`, `DOG_END`, `GLOW_END` |

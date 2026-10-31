@@ -132,7 +132,7 @@
   <p class="lede">A toy version of the kitchen from <em>Doctor Bones</em>, seen the way the young man in the room with no windows sees it. Give Dale a dog from the Add menu, then ask him its name. Drag to look around, scroll or pinch to zoom, and click or tap anything to inspect it.</p>
 
   <div class="stage" id="stage">
-    <canvas id="world" aria-label="A toy kitchen floating in a dark space. Marjorie does a crossword at the table. Dale sits on the floor looking at a brown dog."></canvas>
+    <canvas id="world" aria-label="A toy kitchen floating in a dark space. Marjorie does a crossword at the table. Dale sits at the table with her until he has a dog, then sits on the floor by it."></canvas>
     <div class="hud hud-tl">
       <div class="big" id="hud-run">Run 4,113</div>
       <div>Dayton, Ohio (copy)</div>
@@ -842,7 +842,7 @@
   finalize(chair);
 
   const daleChair = entity('dalechair', "Dale's chair", { spawnAt: 2.3, offAt: 1.6, k: FIG, inspect: true,
-    info: () => [['Whose', "Dale's"], ['Sat in', 'Never. Dale sits on the floor']] });
+    info: () => [['Whose', "Dale's"], ['Sat in', state.daleSeat === 'chair' ? 'Now, until there is a dog' : 'Not since the dog came']] });
   {
     const g = daleChair.group;
     block(g, M.woodDark, [0, 0.275, -0.02], [0.42, 0.05, 0.4]);
@@ -947,6 +947,9 @@
 
   // ---------- Dale ----------
   const D_POS = new THREE.Vector3(0.15, 0, 0.75), D_YAW = Math.PI / 2 - 0.12;
+  // until there is a dog, Dale sits in his own chair at the table; to leave, he stands up beside it
+  const CHAIR_SPOT = new THREE.Vector3(TABLE.x + 0.05, 0, TABLE.z - 0.8 * FIG), CHAIR_YAW = 0.08;
+  const STAND_SPOT = CHAIR_SPOT.clone().add(new THREE.Vector3(0.38, 0, 0.02));
   const dale = entity('dale', 'Dale Hubbard (copy)', {
     spawnAt: 3.3, offAt: 2.1, k: FIG, inspect: true,
     info: () => [['Doing', dA.activity], ['Run', state.run.toLocaleString('en-US')], ['Came home', '5:40 pm, as always'],
@@ -956,7 +959,8 @@
   {
     const skin = plastic(0xe9b993), sweater = plastic(0x6b5440), pants = plastic(0x5b4a3a), shoe = plastic(0x3a2418),
       hair = plastic(0x4a4038), collar = plastic(0xd9c9a3);
-    const g = dale.group;
+    // the body hangs on a rig inside the group, so it can rise to the chair seat or to standing (pose key `lift`)
+    const g = DJ.rig = new THREE.Group(); dale.group.add(g);
     DJ.legL = dynLimb(g, pants, 3, 0.062); DJ.legR = dynLimb(g, pants, 3, 0.062);
     DJ.shoeL = block(g, shoe, [0, 0, 0], [0.09, 0.065, 0.17]); DJ.shoeR = block(g, shoe, [0, 0, 0], [0.09, 0.065, 0.17]);
     ball(g, pants, [0, 0.08, -0.01], 0.14, [1.05, 0.55, 1]);
@@ -977,7 +981,7 @@
     block(h, M.dark, [-0.048, 0.055, 0.125], [0.05, 0.01, 0.01], [0, 0, 0.18]);
     block(h, M.dark, [0.048, 0.055, 0.125], [0.05, 0.01, 0.01], [0, 0, -0.18]);
     block(h, plastic(0x9a5a48), [0, -0.06, 0.128], [0.045, 0.008, 0.01]);
-    g.position.copy(D_POS); g.rotation.y = D_YAW;
+    dale.group.position.copy(D_POS); dale.group.rotation.y = D_YAW;
   }
   finalize(dale);
 
@@ -1173,7 +1177,7 @@
   inspectables.forEach((e) => { const o = document.createElement('option'); o.value = e.key; o.textContent = e.name; pick.appendChild(o); });
 
   // ---------- state ----------
-  const state = { run: 4113, sim: 0, dogSim: 0, dogName: null, phase: 'intro', t0: 0, asking: false, selected: null, hover: null, wire: false };
+  const state = { run: 4113, sim: 0, dogSim: 0, dogName: null, phase: 'intro', t0: 0, asking: false, selected: null, hover: null, wire: false, daleSeat: 'chair' };
   const crossPct = () => Math.min(97, 58 + Math.floor(state.sim / 75));
   function fmtTime(s) {
     const tm = 40 + Math.floor(s / 60), h = 5 + Math.floor(tm / 60), m = tm % 60;
@@ -1262,9 +1266,16 @@
   ], { activity: 'The crossword', flags: { write: true } });
 
   // Dale: keeps looking at the dog, trying to remember
-  const D_BASE = { neck: [0, 0.38, -0.05], sL: [-0.155, 0.35, -0.04], eL: [-0.16, 0.3, 0.13], hL: [0.05, 0.345, 0.22],
+  const D_BASE = { lift: 0, neck: [0, 0.38, -0.05], sL: [-0.155, 0.35, -0.04], eL: [-0.16, 0.3, 0.13], hL: [0.05, 0.345, 0.22],
     sR: [0.155, 0.35, -0.04], eR: [0.16, 0.31, 0.12], hR: [-0.05, 0.37, 0.21],
     kL: [-0.09, 0.33, 0.2], fL: [-0.1, 0.07, 0.35], kR: [0.09, 0.33, 0.2], fR: [0.1, 0.07, 0.35], hx: 0.16, hy: 0, hz: 0, track: 1 };
+  // in his chair: seat top at lift 0.3, hands on the table, feet on the floor
+  const D_CHAIR = { lift: 0.3, neck: [0, 0.38, -0.02], sL: [-0.155, 0.35, -0.03], eL: [-0.18, 0.24, 0.14], hL: [-0.1, 0.32, 0.27],
+    sR: [0.155, 0.35, -0.03], eR: [0.18, 0.24, 0.14], hR: [0.1, 0.32, 0.27],
+    kL: [-0.09, 0.08, 0.3], fL: [-0.09, -0.235, 0.32], kR: [0.09, 0.08, 0.3], fR: [0.09, -0.235, 0.32], hx: 0.12, hy: 0, hz: 0, track: 1 };
+  const D_STAND = { lift: 0.53, neck: [0, 0.4, -0.01], sL: [-0.155, 0.36, -0.02], eL: [-0.18, 0.19, 0], hL: [-0.2, 0.03, 0.02],
+    sR: [0.155, 0.36, -0.02], eR: [0.18, 0.19, 0], hR: [0.2, 0.03, 0.02],
+    kL: [-0.09, -0.2, 0.03], fL: [-0.09, -0.46, 0.02], kR: [0.09, -0.2, 0.03], fR: [0.09, -0.46, 0.02], hx: 0, hy: 0, hz: 0, track: 1 };
   const D_SCRATCH = { eR: [0.24, 0.5, 0.03], hR: [0.07, 0.68, -0.03], hx: 0.05, hz: -0.12, track: 0.6 };
   const D_CHIN = { eR: [0.17, 0.3, 0.15], hR: [0.02, 0.47, 0.1], track: 0.8 };
   const D_LEANBACK = { neck: [0, 0.36, -0.13], sL: [-0.155, 0.33, -0.12], sR: [0.155, 0.33, -0.12], eL: [-0.21, 0.2, -0.2], hL: [-0.22, 0.06, -0.26],
@@ -1273,19 +1284,61 @@
   const D_SIGH = { neck: [0, 0.41, -0.06], sL: [-0.155, 0.38, -0.05], sR: [0.155, 0.38, -0.05], hx: -0.05 };
   const D_LEAN_FWD = { neck: [-0.04, 0.37, 0.05], sL: [-0.19, 0.34, 0.06], sR: [0.12, 0.35, 0.0], hx: 0.3 };
   const scratchJ = (tt, A) => { A.tgt.hR.x = D_SCRATCH.hR[0] + Math.sin(tt * 16) * 0.02; };
-  const dA = actor(D_BASE, [
+  const floorHabits = [
     { w: 3, label: () => (state.dogPresent ? 'Looking at the dog' : 'Looking at the floor'), steps: () => [{ dur: rand(3, 7) }] },
     { w: 2, label: 'Trying to remember', steps: () => [{ pose: D_SCRATCH, dur: rand(1.6, 2.4), update: scratchJ }, { dur: 0.6 }] },
     { w: 1.6, label: 'Thinking', steps: () => [{ pose: D_CHIN, dur: rand(2.4, 3.6), speed: 3 }] },
     { w: 1.3, label: 'Leaning back', steps: () => [{ pose: D_LEANBACK, dur: rand(3, 5), speed: 2.5 }] },
     { w: 1, label: 'Looking at Marjorie', steps: () => [{ pose: D_LOOK_M, dur: 2.4, speed: 3, exit: () => log('Dale looked at Marjorie. She did not look up') }] },
     { w: 1.1, label: 'Sighing', steps: () => [{ pose: D_SIGH, dur: 1.0, speed: 3 }, { dur: 0.9, speed: 2.5 }] }
-  ], { activity: () => (state.dogPresent ? 'Looking at the dog' : 'Looking at the floor'), flags: {} });
+  ];
+  const chairHabits = [
+    { w: 3, label: 'Sitting at the table', steps: () => [{ dur: rand(3, 7) }] },
+    { w: 1.6, label: 'Resting his chin on his hand', steps: () => [{ pose: { eR: [0.14, 0.31, 0.22], hR: [0.03, 0.47, 0.14], hx: 0.05 }, dur: rand(2.4, 3.6), speed: 3 }] },
+    { w: 1.3, label: 'Drumming his fingers', steps: () => [{ dur: rand(1.8, 2.8), update: (tt, A) => { A.tgt.hR.y = D_CHAIR.hR[1] + Math.abs(Math.sin(tt * 13)) * 0.025; } }] },
+    { w: 1.2, label: 'Looking at the floor', steps: () => [{ pose: { hx: 0.5, hy: 0.35 }, dur: rand(2, 3.5), speed: 2.5 }] },
+    { w: 1, label: 'Looking at Marjorie', steps: () => [{ pose: { hy: -0.85, hx: 0.05 }, dur: 2.4, speed: 3, exit: () => log('Dale looked at Marjorie. She did not look up') }] },
+    { w: 1.1, label: 'Sighing', steps: () => [{ pose: D_SIGH, dur: 1.0, speed: 3 }, { dur: 0.9, speed: 2.5 }] }
+  ];
+  const dA = actor(D_BASE, floorHabits, {
+    activity: () => (state.daleSeat === 'chair' ? 'Sitting at the table' : state.dogPresent ? 'Looking at the dog' : 'Looking at the floor'), flags: {} });
+  function daleSeatState(where) {
+    state.daleSeat = where; dA.base = where === 'chair' ? D_CHAIR : D_BASE; dA.behaviors = where === 'chair' ? chairHabits : floorHabits;
+  }
+  function seatDale(where) {
+    daleSeatState(where);
+    const p = where === 'chair' ? CHAIR_SPOT : D_POS;
+    dale.group.position.set(p.x, 0, p.z); dale.group.rotation.y = where === 'chair' ? CHAIR_YAW : D_YAW;
+    resetActor(dA);
+  }
+  // The first dog arrives: Dale stands up beside his chair, walks over like a toy moved by a hand,
+  // turns to face the dog and sits down on the floor. With reduced motion he is simply there.
+  function daleToFloor() {
+    if (reduce) { seatDale('floor'); log('Dale sat on the floor by the dog'); updateButtons(); return; }
+    state.daleSeat = 'moving'; updateButtons();
+    const dg = dale.group, dist = STAND_SPOT.distanceTo(D_POS), walk = dist / 0.7;
+    const walkYaw = Math.atan2(D_POS.x - STAND_SPOT.x, D_POS.z - STAND_SPOT.z);
+    play(dA, [
+      { pose: D_STAND, dur: 1.0, speed: 5, enter: () => log('Dale got up from the table'),
+        update: (tt) => { const s = ease(tt / 1.0); dg.position.lerpVectors(CHAIR_SPOT, STAND_SPOT, s); dg.rotation.y = CHAIR_YAW + angDiff(CHAIR_YAW, walkYaw) * s; } },
+      { pose: D_STAND, dur: walk, speed: 14, enter: (A) => { A.activity = 'Going over to the dog'; },
+        update: (tt, A) => {
+          const s = clamp01(tt / walk), sw = Math.sin(s * dist / 0.16 * Math.PI);
+          dg.position.lerpVectors(STAND_SPOT, D_POS, s); dg.position.y = Math.abs(sw) * 0.025;
+          A.tgt.kL.set(-0.09, -0.2, 0.03 + sw * 0.09); A.tgt.fL.set(-0.09, -0.46, 0.02 + sw * 0.15);
+          A.tgt.kR.set(0.09, -0.2, 0.03 - sw * 0.09); A.tgt.fR.set(0.09, -0.46, 0.02 - sw * 0.15);
+          A.tgt.hL.set(-0.2, 0.03, 0.02 - sw * 0.08); A.tgt.hR.set(0.2, 0.03, 0.02 + sw * 0.08);
+        } },
+      { pose: D_STAND, dur: 0.6, speed: 6, update: (tt) => { dg.position.y = 0; dg.rotation.y = walkYaw + angDiff(walkYaw, D_YAW) * ease(tt / 0.6); } },
+      { pose: D_BASE, dur: 1.1, speed: 3.5, enter: (A) => { A.activity = 'Sitting down on the floor'; },
+        exit: () => { daleSeatState('floor'); log('Dale sat on the floor by the dog'); updateButtons(); } }
+    ], 'Getting up from the table');
+  }
   const petTmp = new THREE.Vector3();
   function petSteps() {
     return [{ pose: D_LEAN_FWD, dur: 3.2, speed: 4.5, enter: () => log('Dale petted the dog'),
       update: (tt, A) => {
-        dogHead.getWorldPosition(petTmp); dale.group.worldToLocal(petTmp);
+        dogHead.getWorldPosition(petTmp); DJ.rig.worldToLocal(petTmp);
         A.tgt.hL.set(petTmp.x, petTmp.y + 0.08 + Math.max(0, Math.sin(tt * 7)) * 0.035, petTmp.z);
         A.tgt.eL.set((A.tgt.sL.x + petTmp.x) / 2 - 0.07, (A.tgt.sL.y + petTmp.y) / 2 - 0.05, (A.tgt.sL.z + petTmp.z) / 2);
       } }, { dur: 0.8 }];
@@ -1385,6 +1438,7 @@
   const dNeck = new THREE.Vector3(), dTmp = new THREE.Vector3(), dTrack = { yaw: 0, pitch: 0.16 };
   function applyDale(t) {
     const p = dA.cur;
+    DJ.rig.position.y = p.lift;
     setLimb(DJ.legL, [D_HIP_L, p.kL, p.fL]); setLimb(DJ.legR, [D_HIP_R, p.kR, p.fR]);
     DJ.shoeL.position.copy(p.fL).add(SHOE_OFF); DJ.shoeR.position.copy(p.fR).add(SHOE_OFF);
     dNeck.copy(p.neck); dNeck.y += Math.sin(t * 1.6) * 0.004;
@@ -1395,7 +1449,7 @@
     DJ.collar.position.copy(dNeck).add(COLLAR_OFF);
     setSeg(DJ.neck, dNeck, dTmp.copy(dNeck).add(NECK_UP_D), 0.045);
     DJ.head.position.copy(dNeck).add(D_HEAD_OFF);
-    dogHead.getWorldPosition(dTmp); dale.group.worldToLocal(dTmp);
+    dogHead.getWorldPosition(dTmp); DJ.rig.worldToLocal(dTmp);
     const hp = DJ.head.position, dx = dTmp.x - hp.x, dz = dTmp.z - hp.z, dy = dTmp.y - hp.y;
     const yaw = Math.max(-1.1, Math.min(1.1, Math.atan2(dx, dz)));
     const pitch = Math.max(-0.3, Math.min(0.6, Math.atan2(-dy, Math.hypot(dx, dz)) + 0.05));
@@ -1509,6 +1563,7 @@
     offBtn.disabled = true; wireBtn.disabled = true; pick.disabled = true;
     select(null); $('bubble').hidden = true; $('bark').hidden = true; state.asking = false;
     if (state.swap) { const kind = state.swap.kind; state.swap = null; placeDog(kind); dog.spawnT = null; look(dog, 'solid'); dog.group.scale.setScalar(dog.k); }
+    if (state.daleSeat === 'moving') { daleSeatState('floor'); dale.group.position.y = 0; }
     stopActor(mA); stopActor(dA); stopActor(gA); stopActor(cA); dogCtl.moving = null; dogCtl.spin = null; barkT = 0;
     state.hadDog = state.dogPresent; state.dogLived = state.sim - state.dogSim;
     state.ringT0 = 0; state.nextRing = Infinity; $('ring').hidden = true; phoneBody.rotation.x = 0;
@@ -1672,7 +1727,7 @@
   }
   function updateButtons() {
     const live = state.phase === 'live';
-    askBtn.disabled = !(live && state.dogPresent && !state.asking && !state.swap);
+    askBtn.disabled = !(live && state.dogPresent && !state.asking && !state.swap && state.daleSeat === 'floor');
     askBtn.classList.toggle('primary', state.dogPresent);
     addBtn.classList.toggle('primary', !state.dogPresent);
     addBtn.disabled = !live || !!state.swap; addSel.disabled = !live;
@@ -1684,11 +1739,13 @@
       const kind = v.slice(4);
       if (state.dogPresent) {
         state.swap = { t0: now(), kind }; state.asking = false; $('bubble').hidden = true; $('bark').hidden = true;
-        stopActor(dA); stopActor(gA); barkT = 0;
+        if (state.daleSeat === 'floor') stopActor(dA);
+        stopActor(gA); barkT = 0;
         log('Dog replaced. New dog: ' + DOG_KINDS[kind].label.toLowerCase());
       } else {
         placeDog(kind); if (!bowl.spawned) spawnEntity(bowl); if (!dogbed.spawned) spawnEntity(dogbed);
         log('Dog added (' + DOG_KINDS[kind].label.toLowerCase() + ')');
+        if (state.daleSeat === 'chair') daleToFloor();
       }
     } else if (v === 'cat' && !cat.spawned) {
       resetActor(cA); spawnEntity(cat); markAdded('cat'); log('Cat added');
@@ -1718,7 +1775,7 @@
     state.dogPresent = false; state.swap = null; state.hadDog = false;
     state.ringT0 = 0; state.nextRing = Infinity; state.rings = 0; $('ring').hidden = true; phoneBody.rotation.x = 0;
     dogKind = 'default'; buildDog('default'); refreshMeshes(dog); resetAddMenu();
-    resetActor(mA); resetActor(dA); resetActor(gA); resetActor(cA);
+    resetActor(mA); seatDale('chair'); resetActor(gA); resetActor(cA);
     dogCtl.pos.copy(DOG_POS); dogCtl.yaw = DOG_YAW; dogCtl.moving = null; dogCtl.spin = null; barkT = 0; $('bark').hidden = true;
     MJ.pencil.position.copy(mA.cur.hR); MJ.pencil.quaternion.identity(); cup.group.rotation.set(0, 0, 0);
     log('Run ' + state.run.toLocaleString('en-US') + ' started');
@@ -1814,7 +1871,7 @@
       tickActor(dA, dt, allow && !state.asking);
       applyMarjorie(t, dt); applyDale(t);
       if (state.dogPresent) {
-        tickActor(gA, dt, allow && !state.asking && !state.swap);
+        tickActor(gA, dt, allow && !state.asking && !state.swap && state.daleSeat === 'floor');
         updateDog(dt); applyDog(t, dt);
       }
       if (cat.spawned && !cat.gone) { tickActor(cA, dt, allow); applyCat(t, dt); }
