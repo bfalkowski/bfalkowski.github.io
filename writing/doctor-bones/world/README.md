@@ -1,7 +1,11 @@
 # Run 4,113
 
 A toy 3D version of the kitchen from the short story [Doctor Bones](../../doctor-bones.html),
-shown as the generated world the young man is watching. Not linked from the site yet.
+shown as the generated world the young man is watching. It appears on the story page
+under the story, loaded in a frame with `?embed`. In that mode the page's own heading is
+hidden, it stays in light colors, the scroll wheel scrolls the page until the scene is
+clicked, and on phones one finger scrolls while two fingers turn and zoom. The run starts
+when the scene first scrolls into view.
 
 Live at https://bfalkowski.github.io/writing/doctor-bones/world/
 

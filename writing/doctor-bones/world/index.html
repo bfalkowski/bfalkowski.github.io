@@ -6,6 +6,9 @@
 <meta name="robots" content="noindex">
 <meta name="author" content="Bryan Falkowski">
 <title>Run 4,113 | Bryan Falkowski</title>
+<script>
+  if (/[?&]embed\b/.test(location.search)) { document.documentElement.classList.add('embed'); document.documentElement.setAttribute('data-theme', 'light'); }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -117,6 +120,9 @@
     .log { max-width: calc(100% - 28px); }
     .log div:not(:last-child) { display: none; }
   }
+  .embed body { background: transparent; padding-left: 0; padding-right: 0; }
+  .embed main { max-width: none; padding-block: 0; }
+  .embed h1, .embed .lede { display: none; }
 </style>
 </head>
 <body>
@@ -206,6 +212,19 @@
   controls.minAzimuthAngle = -0.5; controls.maxAzimuthAngle = 1.5;
   let introCam = !reduce, userMoved = false;
   controls.addEventListener('start', () => { userMoved = true; introCam = false; });
+  // Inside the story page: the wheel scrolls the page until the scene is clicked,
+  // and on phones one finger scrolls the page while two fingers turn and zoom.
+  const embed = document.documentElement.classList.contains('embed');
+  if (embed) {
+    controls.enableZoom = false;
+    controls.touches.TWO = THREE.TOUCH.DOLLY_ROTATE;
+    canvas.style.touchAction = 'pan-y';
+    canvas.addEventListener('pointerdown', () => { controls.enableZoom = true; });
+    stage.addEventListener('pointerleave', () => { controls.enableZoom = false; });
+    const oneFinger = (ev) => { if (ev.touches.length < 2) ev.stopPropagation(); };
+    stage.addEventListener('touchstart', oneFinger, { capture: true, passive: true });
+    stage.addEventListener('touchmove', oneFinger, { capture: true, passive: true });
+  }
 
   // ---------- helpers ----------
   const C = (hex) => new THREE.Color(hex).convertSRGBToLinear();
@@ -1088,18 +1107,18 @@
   }
   resize();
   if (window.ResizeObserver) new ResizeObserver(resize).observe(stage); else window.addEventListener('resize', resize);
-  let onScreen = true;
+  let onScreen = !window.IntersectionObserver, started = false;
   if (window.IntersectionObserver) new IntersectionObserver((es) => { onScreen = es[0].isIntersecting; }).observe(stage);
 
   // ---------- frame loop ----------
   const tmp = new THREE.Vector3();
   let last = now();
-  startRun();
 
   function frame() {
     requestAnimationFrame(frame);
     const t = now(), dt = Math.min(0.05, t - last); last = t;
     if (!onScreen || document.hidden) return;
+    if (!started) { started = true; startRun(); }
     const e = t - state.t0;
 
     if (state.phase === 'intro' || state.phase === 'live') state.sim += dt * 4;

@@ -35,6 +35,10 @@
     .break { text-align: center; color: var(--muted); letter-spacing: 0.5em; margin: 28px 0; }
     .story-fig { float: right; width: 48%; margin: 6px 0 14px 24px; }
     .story-fig img { display: block; width: 100%; height: auto; border-radius: 6px; }
+    .world { clear: both; margin-top: 44px; }
+    .world h2 { font-size: 24px; font-weight: 700; line-height: 1.25; margin: 0 0 6px; }
+    .world p { margin: 0 0 16px; color: var(--muted); font-size: 16px; }
+    .world iframe { display: block; width: 100%; height: 600px; border: 0; }
     .refs { clear: both; border-top: 1px solid var(--line); margin-top: 40px; padding-top: 20px; color: var(--muted); font-size: 15px; }
     .refs h2 { font-size: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 8px; }
     .refs p { margin: 0 0 6px; }
@@ -95,6 +99,12 @@
       <p>So that made two dogs named Doctor Bones, and neither of them got to live very long. Only one of them was ever real. I am not sure it matters which.</p>
     </div>
 
+    <section class="world">
+      <h2>Run 4,113</h2>
+      <p>A toy version of the kitchen, the way the young man sees it. Drag to look around and click anything to inspect it. To zoom, click the scene first and then scroll. On a phone, use two fingers.</p>
+      <iframe id="world-frame" src="doctor-bones/world/?embed" title="Run 4,113, a toy 3D version of the kitchen" loading="lazy"></iframe>
+    </section>
+
     <div class="refs">
       <h2>References</h2>
       <p><a href="https://www.nytimes.com/2026/10/29/technology/binance-hack-crypto.html">Binance Suspends Withdrawals After Crypto Hackers Steal $6.3 Billion</a>, The New York Times, October 29, 2026</p>
@@ -104,5 +114,22 @@
 
   <footer>&copy; 2026 Bryan Falkowski</footer>
 
+  <script>
+    // Size the 3D scene's frame to its content, which changes with screen width.
+    (function () {
+      var f = document.getElementById('world-frame');
+      function fit() {
+        try {
+          var m = f.contentDocument && f.contentDocument.querySelector('main');
+          if (m) f.style.height = Math.ceil(m.getBoundingClientRect().height) + 'px';
+        } catch (e) {}
+      }
+      f.addEventListener('load', function () {
+        fit();
+        try { if (window.ResizeObserver) new ResizeObserver(fit).observe(f.contentDocument.querySelector('main')); } catch (e) {}
+      });
+      window.addEventListener('resize', fit);
+    })();
+  </script>
 </body>
 </html>
