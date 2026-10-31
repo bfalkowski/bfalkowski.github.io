@@ -519,35 +519,6 @@
   }
   finalize(cabinets);
 
-  // The flutter: now and then the whole world blinks to wireframe two or three times, as if it
-  // forgot for a moment to finish itself. The entity's own mode does not change, so the rest of the
-  // code does not notice. Timing is in flutterSteps and the frame loop.
-  const glitch = { on: false, meshes: [], steps: null, t0: 0, next: Infinity };
-  function glitchOn() {
-    const list = [];
-    entities.forEach((e) => {
-      if (e.group.visible && !e.gone && e.mode === 'solid' && e.spawnT === null) e.meshes.forEach((m) => list.push([m, e]));
-    });
-    list.forEach(([m, e]) => { m.material = e.wire; m.castShadow = false; });
-    glitch.on = true; glitch.meshes = list;
-  }
-  function glitchOff() {
-    glitch.meshes.forEach(([m, e]) => { const w = e.mode === 'wire'; m.material = w ? e.wire : m.userData.solid; m.castShadow = !w; });
-    glitch.on = false; glitch.meshes = [];
-  }
-  // One or two short blinks, then a longer one, with uneven gaps: [start, end] in seconds.
-  // Three blinks at most, all inside about one second, which keeps it at or under three
-  // flashes a second (the usual limit for flashing content).
-  function flutterSteps() {
-    const n = Math.random() < 0.7 ? 2 : 3, steps = [];
-    let s = 0;
-    for (let i = 0; i < n; i++) {
-      const on = i === n - 1 ? rand(0.25, 0.55) : rand(0.07, 0.15);
-      steps.push([s, s + on]); s += on + rand(0.14, 0.26);
-    }
-    return steps;
-  }
-
   // ---------- refrigerator ----------
   const fridge = entity('fridge', 'Refrigerator', { spawnAt: 1.45, offAt: 0.6, inspect: true, info: () => [['Built from', 'An old family photo']] });
   {
@@ -1652,7 +1623,7 @@
   // ---------- the radio's song (sound is off until the viewer turns it on) ----------
   // An original slow ballad in the style of a 1940s radio record, made with Web Audio:
   // muffled like a small speaker, with a little crackle. It starts from the top whenever the
-  // radio comes on, fades out when the radio is gone, and drops out during a flutter.
+  // radio comes on and fades out when the radio is gone.
   const SONG = (() => {
     const SPB = 60 / 72;
     const CH = { F: [53, 57, 60, 64], Dm: [50, 53, 57, 60], Gm: [55, 58, 62, 65], C7: [52, 55, 58, 60], Am: [57, 60, 64, 67],
@@ -1919,17 +1890,6 @@
       }
     });
 
-    // the flutter: first 10 to 20 s into the run, then every 20 to 45 s
-    const canGlitch = state.phase === 'live' && !reduce && !state.wire && !state.swap;
-    if (!canGlitch) { if (glitch.on) glitchOff(); glitch.steps = null; glitch.next = Infinity; }
-    else if (glitch.steps) {
-      const a = t - glitch.t0, want = glitch.steps.some(([s, en]) => a >= s && a < en);
-      if (want && !glitch.on) glitchOn(); else if (!want && glitch.on) glitchOff();
-      if (a >= glitch.steps[glitch.steps.length - 1][1]) { if (glitch.on) glitchOff(); glitch.steps = null; glitch.next = t + rand(20, 45); }
-    }
-    else if (glitch.next === Infinity) glitch.next = t + rand(10, 20);
-    else if (t >= glitch.next) { glitch.steps = flutterSteps(); glitch.t0 = t; }
-
     // Dale goes back and forth: 20 to 40 s on the floor with the dog, then 15 to 30 s at his laptop
     if (state.phase === 'live' && state.dogPresent && !state.asking && !state.swap && !dA.busy && t >= (state.daleNext ?? Infinity)) {
       state.daleNext = Infinity;
@@ -1947,9 +1907,9 @@
       const want = music.on && radio.spawned && !radio.gone && state.phase !== 'off';
       if (want && !music.want) { music.idx = 0; music.loop = 0; music.t0 = music.ctx.currentTime + 0.15; }
       music.want = want;
-      const level = want ? (glitch.on ? 0.12 : 1) : 0;
+      const level = want ? 1 : 0;
       if (level !== music.level) {
-        music.out.gain.setTargetAtTime(level, music.ctx.currentTime, level > music.level ? 0.08 : level > 0 ? 0.02 : 0.2);
+        music.out.gain.setTargetAtTime(level, music.ctx.currentTime, level > music.level ? 0.08 : 0.2);
         music.level = level;
       }
     }

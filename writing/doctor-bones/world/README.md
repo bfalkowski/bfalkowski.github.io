@@ -57,17 +57,11 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   visits Dale, who pets it. The inspector shows what each one is doing.
 - **Ask Dale the dog's name** (once there is a dog). Whatever dog you gave him, he thinks, then says "Doctor Bones." The log records it,
   then "Security answer accepted". Marjorie keeps doing her crossword.
-- **A wireframe flutter.** Now and then the whole world blinks to a blue wireframe two or
-  three times, then turns solid again: one or two short blinks, then a longer one, with
-  uneven gaps. The first comes 10 to 20 seconds into the run, then one every 20 to 45
-  seconds. Each flutter is three blinks at most, inside about one second, so it stays at or
-  under three flashes a second. It does not happen in wireframe view, while a dog is being
-  replaced, or with reduced motion.
 - **Wireframe view** shows the whole world as wireframes.
 - **Radio sound** (off by default) plays the radio's song: an original slow ballad in the
   style of a 1940s radio record, made in the page with Web Audio. It sounds muffled like a
-  small speaker, with record crackle. It starts from the top when the radio comes on, drops
-  out during a wireframe flutter, and fades out when the run is turned off. It pauses when
+  small speaker, with record crackle. It starts from the top when the radio comes on and
+  fades out when the run is turned off. It pauses when
   the scene is off screen or the tab is hidden.
 - **Turn the run off.** Things go one at a time, Marjorie still writing near the end.
   The dog goes last and collapses into one dot. With no dog, the note says "Dale never got
@@ -99,7 +93,6 @@ Useful places in the script:
 | Add menu | `addBtn` click handler; `updateButtons()` decides which buttons are on |
 | Kitchen things | the "more of the kitchen" block after the painting; steam and radio notes in `animateDecor`; the phone's ringing in the frame loop (`state.nextRing`) |
 | Clock speed | `state.sim += dt * 4` (4 story seconds per real second) |
-| Wireframe flutter | `glitch`, `glitchOn`, `glitchOff` and `flutterSteps` (the blink pattern); how often is in the frame loop after the spawn code |
 | Radio song | `SONG` (tempo, chords in `CH` and `BARS`, melody in `MEL` as bar, beat, length, MIDI note), `playEvent` (the instruments), `startAudio` (the speaker filter and crackle), `music` and `syncAudio` |
 
 The figures are built from spheres, cylinders and boxes with the `ball`, `rod`, `limb`
@@ -110,5 +103,6 @@ from joint positions (`dynLimb` and `setLimb`), in meters, facing +z.
 
 - Start the next run with small differences, so each run is not quite the same.
 - Room sounds with the radio: a ticking clock and a pencil on paper.
-- Bring back the glitch where only the cabinets under the sink turn to wireframe. It is
-  turned off for now; commit d26d818 has it.
+- Bring back a wireframe glitch. Two versions were built and then taken out: the
+  cabinets under the sink turning to wireframe now and then (commit d26d818), and the whole
+  world blinking to wireframe in a short flutter (last in commit c6b2da3).
