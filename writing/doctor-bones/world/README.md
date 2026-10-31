@@ -45,12 +45,12 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   visits Dale, who pets it. The inspector shows what each one is doing.
 - **Ask Dale the dog's name** (once there is a dog). Whatever dog you gave him, he thinks, then says "Doctor Bones." The log records it,
   then "Security answer accepted". Marjorie keeps doing her crossword.
-- **Glitches.** Now and then the cabinets under the sink show as a blue wireframe for
-  about a second, then turn solid again: first 8 to 20 seconds into the run, then every
-  15 to 40 seconds. Less often the whole world does the same: first 30 to 60 seconds into
-  the run, then every 50 to 110 seconds. The two never overlap, with at least 8 seconds
-  between any two. Each is one change on and one change off, so it never flickers. They
-  do not happen in wireframe view, while a dog is being replaced, or with reduced motion.
+- **A wireframe flutter.** Now and then the whole world blinks to a blue wireframe two or
+  three times, then turns solid again: one or two short blinks, then a longer one, with
+  uneven gaps. The first comes 10 to 20 seconds into the run, then one every 20 to 45
+  seconds. Each flutter is three blinks at most, inside about one second, so it stays at or
+  under three flashes a second. It does not happen in wireframe view, while a dog is being
+  replaced, or with reduced motion.
 - **Wireframe view** shows the whole world as wireframes.
 - **Turn the run off.** Things go one at a time, Marjorie still writing near the end.
   The dog goes last and collapses into one dot. With no dog, the note says "Dale never got
@@ -80,7 +80,7 @@ Useful places in the script:
 | Add menu | `addBtn` click handler; `updateButtons()` decides which buttons are on |
 | Kitchen things | the "more of the kitchen" block after the painting; steam and radio notes in `animateDecor`; the phone's ringing in the frame loop (`state.nextRing`) |
 | Clock speed | `state.sim += dt * 4` (4 story seconds per real second) |
-| Glitches | `underSink` (the meshes of the sink glitch), `glitch`, `glitchOn('sink' or 'all')` and `glitchOff`; the timing is in the frame loop after the spawn code |
+| Wireframe flutter | `glitch`, `glitchOn`, `glitchOff` and `flutterSteps` (the blink pattern); how often is in the frame loop after the spawn code |
 
 The figures are built from spheres, cylinders and boxes with the `ball`, `rod`, `limb`
 and `block` helpers. Arms, legs, necks and torsos that move are rebuilt every frame
@@ -90,3 +90,5 @@ from joint positions (`dynLimb` and `setLimb`), in meters, facing +z.
 
 - Start the next run with small differences, so each run is not quite the same.
 - A sound toggle with a ticking clock and a pencil on paper.
+- Bring back the glitch where only the cabinets under the sink turn to wireframe. It is
+  turned off for now; commit d26d818 has it.
