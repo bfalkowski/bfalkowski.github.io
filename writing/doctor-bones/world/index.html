@@ -78,6 +78,7 @@
   .inspector dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; }
   .inspector dt { color: var(--hud-dim); }
   .inspector dd { margin: 0; color: var(--hud); font-variant-numeric: tabular-nums; }
+  .inspector dd a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
   .inspector .close {
     position: absolute; top: 5px; right: 5px; border: 0; background: none; color: var(--hud-dim);
     font: 17px/1 var(--mono); padding: 4px 7px; cursor: pointer; border-radius: 3px;
@@ -1503,7 +1504,7 @@
     spawnAt: 3.3, offAt: 2.1, k: FIG, inspect: true,
     info: () => [['Doing', dA.activity], ['Run', state.run.toLocaleString('en-US')], ['Came home', '5:40 pm, as always'],
       ["Knows the dog's name", !state.dogPresent ? 'He has no dog' : state.dogName ? 'Yes' : 'Not yet'], ['Password this run', state.pw || 'Not typed yet'],
-      ['Built from', 'Everything he ever posted']]
+      ['Built from', '<a href="../archive/" target="_top">Everything he ever posted</a>']]
   });
   const DJ = {};
   {
@@ -2312,7 +2313,7 @@
     ['Flyers1967', 'The Dayton Flyers, and the year I was born.'],
     ['GemCity540', 'Dayton is the Gem City. And I get home at 5:40.'],
     ['14Across', 'Marge always saves 14 across for last.'],
-    ['Marjorie0614', 'Marge, and our anniversary. June 14th. I think.'],
+    ['Marjorie0530', 'Marge, and our anniversary. May 30th. I think.'],
     ['KingsIsland85', 'Our first date. Marge rode The Beast twice.'],
     ['WhoDey88', 'The Bengals went to the Super Bowl that year.'],
     ['Triangles1920', 'Dayton had a pro football team once. The Triangles.'],

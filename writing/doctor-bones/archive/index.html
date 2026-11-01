@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="author" content="Bryan Falkowski">
+<title>Collection manifest | Doctor Bones archive</title>
+<style>
+  /* The young man's collection manifest for Dale, in the look of the Run 4,113 screen: dark, monospaced, a quiet amber for links. */
+  :root {
+    --bg: #111315; --panel: #181b1e; --line: #2a2e33; --fg: #e8e2d6; --dim: #9a958b; --amber: #f0c674; --red: #ff7a6e;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.55 var(--mono);
+    padding: max(18px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px));
+  }
+  a { color: var(--amber); text-decoration: underline; text-underline-offset: 2px; }
+  main { max-width: 980px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 26px; }
+  .fiction { color: var(--dim); font-size: 12px; letter-spacing: 0.03em; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+  h1 { font-size: 20px; font-weight: 600; letter-spacing: 0.12em; margin: 0; text-transform: uppercase; }
+  h2 { font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
+  .subject { display: grid; grid-template-columns: max-content 1fr; gap: 4px 18px; margin: 10px 0 0; }
+  .subject dt { color: var(--dim); }
+  .subject dd { margin: 0; }
+  .scroll { overflow-x: auto; border: 1px solid var(--line); background: var(--panel); }
+  table { border-collapse: collapse; width: 100%; min-width: 760px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  th { color: var(--dim); font-weight: 500; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+  tr:last-child td { border-bottom: 0; }
+  td.id { white-space: nowrap; color: var(--dim); }
+  td.when { white-space: nowrap; }
+  .list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+  .list code { font: inherit; color: var(--amber); }
+  .missing li::before { content: "x  "; color: var(--red); }
+  .foot { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 12px; }
+  @media (max-width: 560px) { body { font-size: 13px; } h1 { font-size: 17px; } }
+</style>
+</head>
+<body>
+<main>
+  <p class="fiction">FICTION &middot; The archive for the story <a href="https://bfalkowski.github.io/writing/doctor-bones.html">Doctor Bones</a>. These are the things the young man collected about Dale before he built him. The people, accounts, posts, photographs and newspaper are all made up.</p>
+
+  <header>
+    <h1>Collection manifest</h1>
+    <dl class="subject">
+      <dt>Subject</dt><dd>Dale Hubbard</dd>
+      <dt>Lives</dt><dd>Dayton, Ohio</dd>
+      <dt>Wife</dt><dd>Marjorie</dd>
+      <dt>Used for</dt><dd>The copy of Dale, runs 1 to 4,113 (<a href="https://bfalkowski.github.io/writing/doctor-bones/world/">watch run 4,113</a>)</dd>
+    </dl>
+  </header>
+
+  <section>
+    <h2>Items</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>ID</th><th>Item</th><th>Date</th><th>Source</th><th>What it gave him</th></tr></thead>
+        <tbody>
+          <tr><td class="id">DB-001</td><td><a href="social/db-001-professional-profile.html">Professional profile</a></td><td class="when">Captured 18 Oct 2016</td><td>Professional network</td>
+            <td>Insurance since 1989, his own agency since 1998. Dayton. Follows local sports. No school, no address, nothing about his childhood.</td></tr>
+          <tr><td class="id">DB-002</td><td><a href="social/db-002-social-profile.html">Social profile</a></td><td class="when">Captured 22 Oct 2016</td><td>Social network</td>
+            <td>Married to Marjorie. A Bengals fan. She does the Sunday crossword. Their kids are grown. On the network since April 2009.</td></tr>
+          <tr><td class="id">DB-003</td><td><a href="social/db-003-wedding-album.html">Wedding album</a></td><td class="when">Posted May 2011</td><td>Photo sharing site</td>
+            <td>The wedding: May 30, 1990, in Dayton. The anniversary. What they looked like at 23.</td></tr>
+          <tr><td class="id">DB-004</td><td><a href="press/db-004-crossword-article.html">Newspaper feature</a></td><td class="when">Printed 18 Oct 2018</td><td>Local newspaper</td>
+            <td>Marjorie is a Thursday regular at a crossword group in west Dayton. She is good with wordplay.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Password ideas from these items</h2>
+    <ul class="list">
+      <li><code>Marjorie0530</code> &middot; DB-003, the anniversary</li>
+      <li><code>WhoDey88</code> &middot; DB-002, the Bengals</li>
+      <li><code>14Across</code> &middot; DB-004, Marjorie's crossword</li>
+      <li><code>Deductible500</code> &middot; DB-001, the job</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Not found in any item</h2>
+    <ul class="list missing">
+      <li>Pets. No dog, no cat.</li>
+      <li>Anything from before 1989.</li>
+    </ul>
+  </section>
+
+</main>
+</body>
+</html>

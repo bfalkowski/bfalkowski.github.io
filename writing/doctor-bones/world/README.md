@@ -93,6 +93,8 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   there is a dog (he does not answer). When the phone rings she usually gets up, walks over,
   says "Hello?" twice, and hangs up ("Nobody was there"). Dale does everything the toy Dale
   does: the hidden toy still runs his habits, and the real Dale copies its pose each frame.
+- **The archive.** In the inspector, Dale's "Built from: Everything he ever posted" links to
+  the story's archive (`../archive/`), the made-up things the young man collected about Dale.
 - **Wireframe view** shows the whole world as wireframes.
 - **Radio sound** (off by default) plays the radio's song: an original slow ballad in the
   style of a 1940s radio record, made in the page with Web Audio. It sounds muffled like a
