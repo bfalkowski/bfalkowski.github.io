@@ -14,6 +14,9 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/archive/
 | `social/db-002-social-profile.html` | Dale's social profile ("daybook"), captured 22 Oct 2016 |
 | `social/db-003-wedding-album.html` | Marjorie's wedding album ("keepsake"), posted May 2011; the wedding was May 30, 1990 |
 | `press/db-004-crossword-article.html` | A local paper's feature (Miami Valley Ledger, made up) on Marjorie's Thursday crossword group, 18 Oct 2018 |
+| `press/db-005-robert-hubbard-obituary.html` | The same paper's obituary for Dale's father, Robert (1936 to 2004), 21 Nov 2004 |
+| `records/db-006-property-deed.html` | A deed record on the "lotbook" property-records site: Dale and Marjorie bought the house on 16 Sep 1996 |
+| `press/db-007-business-directory.html` | Hubbard Insurance Services in the paper's business directory (made up) |
 | `press/db-008-neighborhood-food-drive.html` | The same paper on the Westwood food drive Dale organizes, 13 Sep 2008 |
 | `social/db-009-neighborhood-forum-thread.html` | A Westwood neighborhood forum thread (Dale is `daleh`), May 2012 |
 | `social/db-010-social-timeline.html` | Dale's "daybook" timeline, Oct to Nov 2014 |
@@ -28,11 +31,12 @@ seven in 1974 (born about 1967); Doctor Bones the dog never appears in any item.
 Every page has `noindex` and a "FICTION" bar at the top that links to the story and back
 to the manifest. The platforms and offices are made up ("Professional network", "daybook",
 "keepsake", "lotbook"), not real ones. The pages come from the author's archive folders
-(v0.5 for DB-001 to DB-004, v1.4 for DB-008 to DB-012). The copies here add the bar and
+(v0.5 for DB-001 to DB-004, v1.4 for DB-008 to DB-012, "complete" for DB-005 to DB-007). The copies here add the bar and
 `noindex`, use "keepsake" for the photo site (DB-003) and "daybook" for the 2014 timeline
-(DB-010, renamed from `db-010-facebook-timeline.html`), make DB-011 a property-records site
-("lotbook") instead of the real county auditor's office, caption the church photo "The
+(DB-010, renamed from `db-010-facebook-timeline.html`), make DB-006 and DB-011 pages on a property-records site
+("lotbook") instead of the real county recorder's and auditor's offices, call DB-007's
+directory the "Ledger Business Directory" (a real directory uses a name close to the
+original), say "a Dayton hospital" in DB-005 instead of a real hospital's name, caption the church photo "The
 church" (no real venue), and hide the cover-photo name on DB-002, which sat behind the
 profile picture. These changes are scripted, so new versions of the folder can be prepared
-the same way. DB-005 to DB-007 (an obituary, a deed index and a business directory) are
-listed in the author's notes but were not in the v1.4 folder.
+the same way.
