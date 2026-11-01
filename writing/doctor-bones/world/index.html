@@ -110,6 +110,7 @@
   .btn:disabled { opacity: 0.45; cursor: default; }
   .btn:focus-visible, select:focus-visible, .close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .pick { display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 15px; }
+  .pick input[type="checkbox"] { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
   select {
     font: 15px var(--sans); padding: 7px 8px; border-radius: 4px;
     border: 1px solid var(--line); background: var(--bg); color: var(--fg);
@@ -129,7 +130,7 @@
 
 <main>
   <h1>Run 4,113</h1>
-  <p class="lede">A toy version of the kitchen from <em>Doctor Bones</em>, seen the way the young man in the room with no windows sees it. Give Dale a dog from the Add menu, then ask him its name. Drag to look around, scroll or pinch to zoom, and click or tap anything to inspect it.</p>
+  <p class="lede">A toy version of the kitchen from <em>Doctor Bones</em>, seen the way the young man in the room with no windows sees it. Tick Real people to see Marjorie and Dale as people. Give Dale a dog from the Add menu, then ask him its name. Drag to look around, scroll or pinch to zoom, and click or tap anything to inspect it.</p>
 
   <div class="stage" id="stage">
     <canvas id="world" aria-label="A toy kitchen floating in a dark space. Marjorie does a crossword at the table. Dale is on his laptop at the table until he has a dog, then sits on the floor by it."></canvas>
@@ -144,6 +145,7 @@
     <div class="bubble" id="bubble" hidden></div>
     <div class="bubble small" id="bark" hidden>Woof.</div>
     <div class="bubble small" id="ring" hidden>Ring ring.</div>
+    <div class="bubble" id="marge-bubble" hidden></div>
     <section class="inspector" id="inspector" hidden aria-live="polite">
       <button class="close" id="insp-close" type="button" aria-label="Close inspector">&times;</button>
       <h2 id="insp-name"></h2>
@@ -186,6 +188,7 @@
           <option value="3">Sunlight, surfaces and shading</option>
         </select>
       </label>
+      <label class="pick" for="real"><input type="checkbox" id="real" autocomplete="off"> Real people <span id="real-note" hidden>(loading)</span></label>
       <button class="btn" id="off" type="button" disabled>Turn the run off</button>
       <button class="btn primary" id="again" type="button" hidden>Start run 4,114</button>
     </div>
@@ -197,6 +200,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/math/SimplexNoise.js"></script>
@@ -841,16 +845,17 @@
 
   const phone = entity('phone', 'Telephone', { spawnAt: 1.55, offAt: 0.3, inspect: true,
     info: () => [['Times it rang', String(state.rings || 0)], ['Calls answered', '0']] });
-  let phoneBody;
+  let phoneBody, receiver;
   {
     const g = phone.group, black = plastic(0x1f1d1c);
     phoneBody = new THREE.Group(); g.add(phoneBody);
     block(phoneBody, black, [0.05, 0, 0], [0.1, 0.27, 0.19]);
     const dial = mesh(G.cyl, M.cream, phoneBody); dial.scale.set(0.055, 0.012, 0.055); dial.rotation.z = Math.PI / 2; dial.position.set(0.106, 0.03, 0);
     ball(phoneBody, black, [0.114, 0.03, 0], 0.018);
-    rod(phoneBody, black, [0.125, -0.1, 0.12], [0.125, 0.1, 0.12], 0.022);
-    ball(phoneBody, black, [0.125, 0.12, 0.12], 0.036, [1, 0.7, 1]);
-    ball(phoneBody, black, [0.125, -0.12, 0.12], 0.036, [1, 0.7, 1]);
+    receiver = new THREE.Group(); receiver.position.set(0.125, 0, 0.12); phoneBody.add(receiver);
+    rod(receiver, black, [0, -0.1, 0], [0, 0.1, 0], 0.022);
+    ball(receiver, black, [0, 0.12, 0], 0.036, [1, 0.7, 1]);
+    ball(receiver, black, [0, -0.12, 0], 0.036, [1, 0.7, 1]);
     limb(phoneBody, black, [[0.1, -0.13, 0.05], [0.14, -0.26, 0.08], [0.125, -0.15, 0.115]], 0.006);
     g.position.set(-3.0, 1.35, -0.72);
   }
@@ -911,7 +916,7 @@
   finalize(hat);
 
   // ---------- Marjorie's frame (she faces the table) ----------
-  const TABLE = new THREE.Vector3(-1.35, 0, 0.6);
+  const TABLE = new THREE.Vector3(-1.35, 0, 0.6), tableParts = { apples: [] };
   const M_YAW = Math.PI / 2, M_POS = new THREE.Vector3(TABLE.x - 0.8 * FIG, 0, TABLE.z);
   const mFrame = new THREE.Object3D(); mFrame.position.copy(M_POS); mFrame.rotation.y = M_YAW; mFrame.scale.setScalar(FIG); mFrame.updateMatrixWorld();
   const atM = (x, y, z) => new THREE.Vector3(x, y, z).applyMatrix4(mFrame.matrixWorld);
@@ -920,14 +925,14 @@
   const table = entity('table', 'Kitchen table', { spawnAt: 2.1, offAt: 1.75, k: FIG, inspect: true, info: () => [['Built from', 'An old family photo'], ['Apples', '3, never eaten']] });
   {
     const g = table.group;
-    rod(g, M.wood, [0, 0.525, 0], [0, 0.575, 0], 0.62);
+    tableParts.top = rod(g, M.wood, [0, 0.525, 0], [0, 0.575, 0], 0.62);
     rod(g, M.woodDark, [0, 0.04, 0], [0, 0.525, 0], 0.06);
-    rod(g, M.woodDark, [0, 0, 0], [0, 0.04, 0], 0.3);
+    tableParts.foot = rod(g, M.woodDark, [0, 0, 0], [0, 0.04, 0], 0.3);
     const bowl = mesh(new THREE.SphereGeometry(0.15, 24, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), std(0xc08a52, { side: THREE.DoubleSide, roughness: 0.45 }), g);
-    bowl.position.set(0.22, 0.725, 0.18);
-    ball(g, M.apple, [0.18, 0.64, 0.15], 0.055);
-    ball(g, M.apple, [0.27, 0.645, 0.2], 0.055);
-    ball(g, M.apple, [0.22, 0.68, 0.22], 0.055);
+    bowl.position.set(0.22, 0.725, 0.18); tableParts.bowl = bowl;
+    tableParts.apples.push(ball(g, M.apple, [0.18, 0.64, 0.15], 0.055));
+    tableParts.apples.push(ball(g, M.apple, [0.27, 0.645, 0.2], 0.055));
+    tableParts.apples.push(ball(g, M.apple, [0.22, 0.68, 0.22], 0.055));
     g.position.copy(TABLE);
   }
   finalize(table);
@@ -1007,7 +1012,7 @@
   // ---------- Marjorie ----------
   const marjorie = entity('marjorie', 'Marjorie (copy)', {
     spawnAt: 2.8, offAt: 2.5, k: FIG, inspect: true,
-    info: () => [['Doing', mA.activity], ['Crossword', crossPct() + '% done'], ['Has noticed the dog', 'No'], ['Has noticed you', 'No']]
+    info: () => [['Doing', real.on && marge.ready ? marge.activity : mA.activity], ['Crossword', crossPct() + '% done'], ['Has noticed the dog', 'No'], ['Has noticed you', 'No']]
   });
   const MJ = {};
   {
@@ -1049,6 +1054,436 @@
     marjorie.group.position.copy(M_POS); marjorie.group.rotation.y = M_YAW;
   }
   finalize(marjorie);
+
+  // ---------- Real people (the checkbox): Marjorie and Dale as people, in place of the toys ----------
+  // The models are Mixamo-style skinned meshes, real size, loaded the first time the box is ticked. Each frame a
+  // target pose is built from the rest pose (bones aimed, two-bone reaches, the head turned toward what they look
+  // at), and the bones ease toward it, so every change is smooth.
+  const real = { on: false, loading: false, toyHabits: null };
+  camera.layers.enable(1); // people are on layer 1 (see the shading pass)
+  function loadGLB(file, key, onLoad) {
+    const fail = (e) => { console.log(file + ' failed to load', e && e.message); $('real-note').textContent = '(could not load)'; };
+    if (!file.endsWith('.js')) { new THREE.GLTFLoader().load(file, onLoad, undefined, fail); return; }
+    // a model packed as base64 in a .js file (for hosts that do not serve .glb files), unpacked here
+    const sc = document.createElement('script'); sc.src = file;
+    sc.onload = () => {
+      const bin = atob(window[key]), buf = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+      window[key] = null;
+      new THREE.GLTFLoader().parse(buf.buffer, '', onLoad, fail);
+    };
+    sc.onerror = fail;
+    document.head.appendChild(sc);
+  }
+  const WIRE_SKIN = new THREE.MeshBasicMaterial({ color: C(0x7fd8ff), wireframe: true, transparent: true, opacity: 0.5, depthWrite: false, skinning: true });
+  function makePerson(gl, height) {
+    const root = gl.scene, bones = {}, meshes = [];
+    root.traverse((o) => {
+      if (o.isBone) bones[o.name.replace(/^mixamorig:?/, '')] = o; // the loader drops the colon from bone names
+      if (o.isMesh) {
+        o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false; o.layers.set(1);
+        // the room's materials take about a third of the reflected room light; people at full strength looked washed out
+        o.material.envMapIntensity = 0.32; o.material.metalness = 0; meshes.push(o);
+      }
+    });
+    const V = () => new THREE.Vector3(), Q = () => new THREE.Quaternion();
+    const wp = (o) => o.getWorldPosition(V());
+    root.updateMatrixWorld(true);
+    const hgt = (wp(bones.HeadTop_End).y - wp(bones.LeftToe_End).y) * 1.02; // a skinned mesh's box is not its real size
+    root.scale.setScalar(height / hgt);
+    const holder = new THREE.Group(); holder.add(root); scene.add(holder);
+    holder.updateMatrixWorld(true);
+    root.position.y -= wp(bones.LeftToe_End).y; // feet on the floor when the holder is at y 0
+    holder.updateMatrixWorld(true);
+    const all = []; root.traverse((o) => { if (o.isBone) all.push(o); });
+    const bind = all.map((b) => b.quaternion.clone()), cur = all.map((b) => b.quaternion.clone()), hipsAt = bones.Hips.position.clone();
+    const mixer = new THREE.AnimationMixer(root), walkClip = mixer.clipAction(gl.animations.find((a) => a.name === 'Walking'));
+    // her or his frame: +z forward, +y up, +x their left
+    const hq = () => holder.getWorldQuaternion(Q());
+    const toW = (x, y, z) => new THREE.Vector3(x, y, z).applyQuaternion(hq());
+    function aimW(bone, child, dirW) {
+      const now = wp(child).sub(wp(bone)).normalize(), want = dirW.clone().normalize();
+      const delta = Q().setFromUnitVectors(now, want);
+      bone.quaternion.copy(bone.parent.getWorldQuaternion(Q()).invert().multiply(delta.multiply(bone.getWorldQuaternion(Q()))));
+      bone.updateMatrixWorld(true);
+    }
+    const aim = (bone, child, d) => aimW(bone, child, toW(...d));
+    function turnBy(bone, yaw, pitch) {
+      const q = Q().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw).multiply(Q().setFromAxisAngle(toW(1, 0, 0), -pitch));
+      bone.quaternion.copy(bone.parent.getWorldQuaternion(Q()).invert().multiply(q.multiply(bone.getWorldQuaternion(Q()))));
+      bone.updateMatrixWorld(true);
+    }
+    // two-bone reach: the end goes to the target, the middle joint bends toward the pole direction
+    function ik(up, mid, end, target, poleW) {
+      const S = wp(up), a = S.distanceTo(wp(mid)), b = wp(mid).distanceTo(wp(end));
+      const D = target.clone().sub(S); let d = D.length(); D.normalize();
+      d = Math.min(Math.max(d, Math.abs(a - b) + 0.002), a + b - 0.002);
+      const cosA = (a * a + d * d - b * b) / (2 * a * d), sinA = Math.sqrt(Math.max(0, 1 - cosA * cosA));
+      const pole = poleW.clone(); pole.sub(D.clone().multiplyScalar(pole.dot(D)));
+      if (pole.lengthSq() < 1e-8) pole.copy(toW(0, 0, 1)); pole.normalize();
+      aimW(up, mid, D.clone().multiplyScalar(a * cosA).addScaledVector(pole, a * sinA));
+      aimW(mid, end, target.clone().sub(wp(mid)));
+    }
+    const reach = (side, target) => ik(bones[side + 'Arm'], bones[side + 'ForeArm'], bones[side + 'Hand'], target, toW(side === 'Left' ? 0.45 : -0.45, -1, -0.35));
+    // arms hanging at the sides, when nothing is in the hands
+    function relaxArm(side) {
+      const x = side === 'Left' ? 1 : -1;
+      aim(bones[side + 'Arm'], bones[side + 'ForeArm'], [x * 0.13, -1, 0.03]); aim(bones[side + 'ForeArm'], bones[side + 'Hand'], [x * 0.05, -1, 0.16]);
+    }
+    function gazeAt(pt) {
+      const h = wp(bones.Head), v = pt.clone().sub(h).applyQuaternion(hq().invert());
+      const yaw = Math.max(-1.35, Math.min(1.35, Math.atan2(v.x, v.z))), pitch = Math.max(-0.95, Math.min(0.5, Math.atan2(v.y, Math.hypot(v.x, v.z))));
+      turnBy(bones.Spine2, yaw * 0.2, pitch * 0.15); turnBy(bones.Neck, yaw * 0.35, pitch * 0.35); turnBy(bones.Head, yaw * 0.45, pitch * 0.5);
+    }
+    function rest() { all.forEach((b, i) => b.quaternion.copy(bind[i])); bones.Hips.position.copy(hipsAt); root.updateMatrixWorld(true); }
+    // the Wireframe view
+    let wired = false;
+    function setWire(on) { if (on === wired) return; wired = on; meshes.forEach((m) => { m.userData.solid = m.userData.solid || m.material; m.material = on ? WIRE_SKIN : m.userData.solid; }); }
+    function settle(a) { all.forEach((b, i) => { cur[i].slerp(b.quaternion, a); b.quaternion.copy(cur[i]); }); root.updateMatrixWorld(true); }
+    return { root, bones, holder, all, bind, cur, mixer, walkClip, V, Q, wp, hq, toW, aimW, aim, turnBy, ik, reach, relaxArm, gazeAt, rest, settle, setWire };
+  }
+
+  // ---------- Marge ----------
+  const marge = { ready: false, activity: 'The crossword', toPhone: false, cupHeld: false };
+  function loadMarge() { loadGLB('models/marge.glb', 'MARGE_GLB_B64', (gl) => {
+    const { root, bones, holder, all, bind, cur, mixer, walkClip, V, Q, wp, hq, toW, aimW, aim, turnBy, reach, relaxArm, gazeAt, rest, setWire } = makePerson(gl, 1.65);
+    function sitBase() {
+      aim(bones.Spine, bones.Spine1, [0, 1, 0.1]); aim(bones.Spine1, bones.Spine2, [0, 1, 0.16]); aim(bones.Spine2, bones.Neck, [0, 1, 0.1]);
+      aim(bones.Neck, bones.Head, [0, 1, 0.08]); aim(bones.Head, bones.HeadTop_End, [0, 1, 0.05]);
+      [['Left', 1], ['Right', -1]].forEach(([sd, x]) => {
+        aim(bones[sd + 'UpLeg'], bones[sd + 'Leg'], [x * 0.12, -0.06, 1]);
+        aim(bones[sd + 'Leg'], bones[sd + 'Foot'], [0, -1, 0.1]);
+      });
+    }
+
+    // places on the table and in the room, in world space
+    const SEAT_YAW = M_YAW, SEAT = M_POS.clone();
+    const F = new THREE.Vector3(Math.sin(SEAT_YAW), 0, Math.cos(SEAT_YAW)), Lf = new THREE.Vector3(Math.cos(SEAT_YAW), 0, -Math.sin(SEAT_YAW));
+    const TOP = TABLE.y + 0.575 * FIG;
+    const at = (f, l, y) => SEAT.clone().addScaledVector(F, f).addScaledVector(Lf, l).setY(y);
+    const WRITE = at(0.4, -0.04, TOP + 0.035), LREST = at(0.36, 0.2, TOP + 0.03), THINK_AT = at(1.6, 0, 1.45);
+    const STAND_AT = at(0.1, 0, 0), PHONE_AT = new THREE.Vector3(-2.6, 0, -0.72), PHONE_YAW = -Math.PI / 2;
+    const clockPt = clock.group.position.clone(), phonePt = phone.group.position.clone().add(new THREE.Vector3(0.1, 0, 0));
+    const pencil = new THREE.Group(); scene.add(pencil);
+    rod(pencil, M.pencil, [0, 0, 0], [0, 0.15, 0], 0.0045); ball(pencil, M.eraser, [0, 0.152, 0], 0.0055);
+    const recvRest = { p: receiver.position.clone(), q: receiver.quaternion.clone() };
+    const bubble = $('marge-bubble');
+    let bubbleT = 0;
+    const say = (text, secs) => { bubble.textContent = text; bubble.hidden = false; bubbleT = secs; };
+
+    // where she is: the holder eases toward this; y is how far her body sits down
+    const hold = { p: SEAT.clone(), yaw: SEAT_YAW, y: 0, ease: 4 };
+    holder.position.copy(SEAT); holder.rotation.y = SEAT_YAW;
+    // how far down to put her so the backs of her thighs rest on the seat
+    let seatDY = 0;
+    {
+      all.forEach((b, i) => b.quaternion.copy(bind[i])); root.updateMatrixWorld(true); sitBase();
+      seatDY = 0.3 * FIG + 0.07 - (wp(bones.LeftUpLeg).y + wp(bones.RightUpLeg).y) / 2;
+      hold.y = seatDY; holder.position.y = seatDY;
+    }
+
+    // ---------- what she does ----------
+    const BASE = { body: 'sit', lw: 'rest', rw: 'write', gaze: 'crossword', speed: 6 };
+    const mg = { steps: [], step: null, t: 0, wait: 2, P: BASE, heardRing: false, askAfter: 0, tilt: 0, pencilDown: false, force: false };
+    const cupPt = () => cup.basePos.clone();
+    function mPlay(steps, label) { mg.steps = steps.slice(); marge.activity = label; next(); }
+    function next() {
+      if (mg.step && mg.step.exit) mg.step.exit();
+      mg.step = mg.steps.shift() || null; mg.t = 0;
+      mg.P = mg.step ? Object.assign({}, BASE, mg.step.P || {}) : BASE;
+      if (!mg.step) { marge.activity = 'The crossword'; mg.wait = rand(1.5, 4); return; }
+      if (mg.step.label) marge.activity = mg.step.label;
+      if (mg.step.enter) mg.step.enter();
+    }
+    // walking: in place clip, the holder carries her along the way
+    function walkTo(to, label) {
+      const s = { P: { body: 'walk' }, label, dur: 1 };
+      s.enter = () => { s.from = holder.position.clone().setY(0); s.to = to.clone(); s.dur = Math.max(0.6, s.from.distanceTo(s.to) / 0.75); walkClip.reset().play(); hold.ease = 30; };
+      s.update = (tt) => {
+        const k = Math.min(1, tt / s.dur); hold.p.lerpVectors(s.from, s.to, k);
+        const dx = s.to.x - s.from.x, dz = s.to.z - s.from.z; if (Math.hypot(dx, dz) > 0.01) hold.yaw = Math.atan2(dx, dz);
+      };
+      s.exit = () => { walkClip.stop(); hold.ease = 4; };
+      return s;
+    }
+    const turnTo = (yaw, dur) => ({ P: { body: 'stand', lw: null, rw: null, gaze: null }, dur, enter: () => { hold.yaw = yaw; } });
+    const headingTo = (from, to) => Math.atan2(to.x - from.x, to.z - from.z);
+    function answerPhone() {
+      marge.toPhone = true; mg.pencilDown = true;
+      const MID = at(0.32, -0.35, 0);
+      mPlay([
+        { P: { gaze: 'phone' }, dur: 0.6, label: 'Hearing the phone' },
+        { P: { body: 'stand', lw: null, rw: null, gaze: 'phone', speed: 4 }, dur: 1.2, label: 'Getting up', enter: () => { hold.p.copy(STAND_AT); hold.y = 0; } },
+        turnTo(headingTo(STAND_AT, MID), 0.5),
+        walkTo(MID, 'Going to the phone'),
+        { P: { body: 'stand', lw: null, rw: null, gaze: null }, dur: 0.01, enter: () => { hold.yaw = headingTo(MID, PHONE_AT); } },
+        walkTo(PHONE_AT, 'Going to the phone'),
+        turnTo(PHONE_YAW, 0.5),
+        { P: { body: 'stand', lw: null, rw: 'ear', gaze: 'wall', speed: 5 }, dur: 0.9, label: 'Answering the phone',
+          enter: () => {
+            scene.attach(receiver); mg.holdingReceiver = true; marge.toPhone = false;
+            state.ringT0 = 0; phoneBody.rotation.x = 0; $('ring').hidden = true; state.nextRing = now() + rand(45, 90);
+            log('Marjorie answered the phone');
+          } },
+        { P: { body: 'stand', lw: null, rw: 'ear', gaze: 'wall' }, dur: 1.8, enter: () => say('Hello?', 1.6) },
+        { P: { body: 'stand', lw: null, rw: 'ear', gaze: 'wall' }, dur: 1.4 },
+        { P: { body: 'stand', lw: null, rw: 'ear', gaze: 'wall' }, dur: 1.8, enter: () => say('Hello?', 1.6) },
+        { P: { body: 'stand', lw: null, rw: null, gaze: 'wall', speed: 5 }, dur: 0.9, label: 'Hanging up',
+          enter: () => { mg.holdingReceiver = false; phoneBody.attach(receiver); receiver.position.copy(recvRest.p); receiver.quaternion.copy(recvRest.q); log('Nobody was there'); } },
+        turnTo(headingTo(PHONE_AT, MID), 0.5),
+        walkTo(MID, 'Going back to the table'),
+        { P: { body: 'stand', lw: null, rw: null, gaze: null }, dur: 0.01, enter: () => { hold.yaw = headingTo(MID, STAND_AT); } },
+        walkTo(STAND_AT, 'Going back to the table'),
+        turnTo(SEAT_YAW, 0.6),
+        { P: { body: 'sit', gaze: 'crossword', speed: 4 }, dur: 1.3, label: 'Sitting down', enter: () => { hold.p.copy(SEAT); hold.y = seatDY; } },
+        { dur: 0.4, enter: () => { mg.pencilDown = false; } }
+      ], 'Hearing the phone');
+    }
+    const habits = [
+      { w: () => 3, label: 'The crossword', steps: () => [{ dur: rand(4, 9) }] },
+      { w: () => 2, label: 'Thinking about 14 across', steps: () => [{ P: { rw: 'chin', gaze: 'think', speed: 3.5 }, dur: rand(2.4, 3.8) }, { dur: 0.6 }] },
+      { w: () => 1.5, label: 'Drinking her coffee', steps: () => [
+        { P: { lw: 'cup', speed: 5 }, dur: 1.0 },
+        { P: { lw: 'mouth', gaze: 'sip', speed: 4 }, dur: 1.0, enter: () => { marge.cupHeld = true; } },
+        { P: { lw: 'mouth', gaze: 'sip', speed: 4 }, dur: 1.3, enter: () => { mg.tilt = 0.5; log('Coffee sipped. Temperature unchanged'); } },
+        { P: { lw: 'cup', speed: 4 }, dur: 1.0, enter: () => { mg.tilt = 0; } },
+        { P: { lw: 'rest', speed: 5 }, dur: 0.7, enter: () => { marge.cupHeld = false; } }
+      ] },
+      { w: () => 1.3, label: 'Checking the clock', steps: () => [{ P: { gaze: 'clock', rw: 'rest', speed: 4 }, dur: rand(1.5, 2.4) }, { dur: 0.4 }] },
+      { w: () => (state.dogPresent && now() > mg.askAfter ? 1.2 : 0), label: 'Asking Dale about the dog', steps: () => [
+        { P: { gaze: 'dale', rw: 'rest', speed: 4 }, dur: 0.7 },
+        { P: { gaze: 'dale', rw: 'rest' }, dur: 2.8, enter: () => {
+          mg.askAfter = now() + rand(40, 70);
+          say('Did you take the dog for a walk?', 2.6); log('Marjorie: "Did you take the dog for a walk?"');
+          if (state.daleSeat === 'floor' && !dA.busy && !state.asking) play(dA, [{ pose: D_LOOK_M, dur: 2.4, speed: 3 }], 'Looking at Marjorie');
+        } },
+        { P: { gaze: 'crossword' }, dur: 0.5, enter: () => log('Dale did not answer') }
+      ] }
+    ];
+    function pick() {
+      let sum = 0; habits.forEach((h) => { sum += h.w(); }); let r = Math.random() * sum;
+      for (const h of habits) { r -= h.w(); if (r <= 0) return h; } return habits[0];
+    }
+
+    // ---------- pose: build the target, then ease toward it ----------
+    const tmp = V();
+    function resolve(name, side) {
+      const t = performance.now() / 1000;
+      if (name === 'rest') return side === 'Left' ? LREST.clone() : WRITE.clone();
+      if (name === 'write') return WRITE.clone().addScaledVector(Lf, Math.sin(t * 7.5) * 0.012).addScaledVector(F, Math.sin(t * 3.1) * 0.012).add(new THREE.Vector3(0, Math.abs(Math.sin(t * 5.3)) * 0.008, 0));
+      if (name === 'chin') return marge.chin.clone();
+      if (name === 'cup') return cupPt().add(new THREE.Vector3(0, 0.07, 0)).addScaledVector(F, -0.07);
+      if (name === 'mouth') return marge.mouth.clone().addScaledVector(F, 0.05).add(new THREE.Vector3(0, -0.07, 0)).addScaledVector(Lf, 0.03);
+      if (name === 'ear') return marge.ear.clone().add(new THREE.Vector3(0, -0.06, 0));
+      return null;
+    }
+    function gazePoint(name) {
+      if (name === 'crossword') return crossword.group.position.clone();
+      if (name === 'clock') return clockPt;
+      if (name === 'think') return THINK_AT;
+      if (name === 'sip') return at(1.5, 0, 1.9);
+      if (name === 'phone') return phonePt;
+      if (name === 'wall') return holder.position.clone().addScaledVector(toW(0, 0, 1), 1).setY(1.45);
+      if (name === 'dale') return daleReal.ready && daleReal.head ? daleReal.head.clone() : DJ.head.getWorldPosition(V());
+      return null;
+    }
+    marge.chin = V(); marge.mouth = V(); marge.ear = V();
+    function buildTarget(dt) {
+      const P = mg.P;
+      rest();
+      if (P.body === 'walk') { mixer.update(dt); root.updateMatrixWorld(true); return; }
+      if (P.body === 'sit') sitBase();
+      const g = gazePoint(P.gaze); if (g) gazeAt(g);
+      const lt = resolve(P.lw, 'Left'), rt = resolve(P.rw, 'Right');
+      if (lt) reach('Left', lt); else if (P.body === 'stand') relaxArm('Left');
+      if (rt) reach('Right', rt); else if (P.body === 'stand') relaxArm('Right');
+    }
+    let lastT = performance.now(), wasVisible = false;
+    function tick() {
+      requestAnimationFrame(tick);
+      const t = performance.now(), dt = Math.min(0.05, (t - lastT) / 1000); lastT = t;
+      const show = real.on && marjorie.group.visible && !marjorie.gone;
+      holder.visible = show; pencil.visible = show; if (!show) { bubble.hidden = true; wasVisible = false; return; }
+      setWire(state.wire);
+      if (document.hidden || !onScreen) return;
+      // the phone: she answers most rings when she is free
+      if (state.ringT0 && !mg.heardRing) {
+        mg.heardRing = true;
+        const free = !mg.step || mg.step.free !== false && !marge.cupHeld && mg.steps.length === 0;
+        if (state.phase === 'live' && !reduce && free && (mg.force || Math.random() < 0.65)) answerPhone();
+        mg.force = false;
+      }
+      if (!state.ringT0) mg.heardRing = false;
+      // habits
+      if (mg.step) {
+        mg.t += dt; if (mg.step.update) mg.step.update(mg.t);
+        if (mg.t >= mg.step.dur) next();
+      } else if (state.phase === 'live' && !reduce) {
+        mg.wait -= dt; if (mg.wait <= 0) { const h = pick(); mPlay(h.steps(), h.label); }
+      }
+      // where she is
+      const k = 1 - Math.exp(-dt * hold.ease);
+      holder.position.x += (hold.p.x - holder.position.x) * k; holder.position.z += (hold.p.z - holder.position.z) * k;
+      holder.position.y += (hold.y - holder.position.y) * (1 - Math.exp(-dt * 4));
+      let dy = hold.yaw - holder.rotation.y; while (dy > Math.PI) dy -= Math.PI * 2; while (dy < -Math.PI) dy += Math.PI * 2;
+      holder.rotation.y += dy * (1 - Math.exp(-dt * 6));
+      holder.updateMatrixWorld(true);
+      // pose
+      buildTarget(dt);
+      const a = wasVisible ? 1 - Math.exp(-dt * (mg.P.speed || 6)) : 1; wasVisible = true;
+      all.forEach((b, i) => { cur[i].slerp(b.quaternion, a); b.quaternion.copy(cur[i]); });
+      root.updateMatrixWorld(true);
+      // points on her head for the next frame's reaches
+      const head = wp(bones.Head), fwdW = toW(0, 0, 1), leftW = toW(1, 0, 0);
+      marge.mouth.copy(head).add(new THREE.Vector3(0, 0.06, 0)).addScaledVector(fwdW, 0.085);
+      marge.chin.copy(head).add(new THREE.Vector3(0, 0.0, 0)).addScaledVector(fwdW, 0.1);
+      marge.ear.copy(head).add(new THREE.Vector3(0, 0.09, 0)).addScaledVector(leftW, -0.085);
+      // things in her hands
+      const rh = wp(bones.RightHand), rf = wp(bones.RightHandMiddle1).sub(rh).normalize();
+      if (mg.pencilDown) { pencil.position.copy(crossword.group.position).add(new THREE.Vector3(0, 0.012, 0)); pencil.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), Lf); }
+      else { pencil.position.copy(rh).addScaledVector(rf, 0.09).add(new THREE.Vector3(0, -0.03, 0)); pencil.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), rf.clone().multiplyScalar(-0.4).add(new THREE.Vector3(0, 1, 0)).addScaledVector(F, -0.2).normalize()); }
+      if (marge.cupHeld) {
+        const lh = wp(bones.LeftHand), lfo = lh.clone().sub(wp(bones.LeftForeArm)).normalize();
+        cup.group.position.copy(lh).addScaledVector(lfo, 0.05).add(new THREE.Vector3(0, -0.06, 0));
+        cup.group.rotation.z += ((mg.tilt) - cup.group.rotation.z) * 0.1;
+      }
+      if (mg.holdingReceiver) {
+        receiver.position.copy(rh).addScaledVector(rf, 0.05);
+        receiver.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), marge.ear.clone().add(new THREE.Vector3(0, 0.05, 0)).sub(rh).normalize());
+      }
+      // speech
+      if (!bubble.hidden) {
+        bubbleT -= dt; if (bubbleT <= 0) bubble.hidden = true;
+        tmp.copy(wp(bones.HeadTop_End)).add(new THREE.Vector3(0, 0.12, 0)).project(camera);
+        bubble.style.left = ((tmp.x + 1) / 2 * stage.clientWidth) + 'px'; bubble.style.top = ((1 - tmp.y) / 2 * stage.clientHeight) + 'px';
+      }
+    }
+    marge.reset = () => {
+      mg.steps = []; mg.step = null; mg.P = BASE; mg.wait = 2; marge.activity = 'The crossword'; marge.toPhone = false;
+      if (marge.cupHeld) { marge.cupHeld = false; cup.group.position.copy(cup.basePos); cup.group.rotation.z = 0; }
+      if (mg.holdingReceiver) { mg.holdingReceiver = false; phoneBody.attach(receiver); receiver.position.copy(recvRest.p); receiver.quaternion.copy(recvRest.q); }
+      mg.pencilDown = false; walkClip.stop(); bubble.hidden = true;
+      hold.p.copy(SEAT); hold.yaw = SEAT_YAW; hold.y = seatDY; hold.ease = 4; holder.position.copy(SEAT).setY(seatDY); holder.rotation.y = SEAT_YAW;
+    };
+    marge.ready = true; showPeople();
+    requestAnimationFrame(tick);
+  }); }
+
+  // ---------- Dale ----------
+  // The toy Dale still runs all of his habits, hidden. Each frame the real Dale copies it: his hips go where the
+  // toy's hips are, his back leans the way the toy's does, his hands and feet reach for the toy's hands and feet
+  // (elbows and knees bend toward the toy's), and his head turns the way the toy's head points. While the toy
+  // walks, his Walking clip plays instead.
+  const daleReal = { ready: false, head: null };
+  function loadDale() { loadGLB('models/dale.glb', 'DALE_GLB_B64', (gl) => {
+    const { root, bones, holder, mixer, walkClip, V, Q, wp, toW, aimW, ik, gazeAt, rest, settle, setWire } = makePerson(gl, 1.8);
+    // his hips above the floor when he stands, and above his hip joints; his ankles; the way his feet point
+    const hipsStand = wp(bones.Hips).y, hipGap = hipsStand - (wp(bones.LeftUpLeg).y + wp(bones.RightUpLeg).y) / 2;
+    const ankle = (wp(bones.LeftFoot).y + wp(bones.RightFoot).y) / 2;
+    const footDir = { Left: wp(bones.LeftToeBase).sub(wp(bones.LeftFoot)), Right: wp(bones.RightToeBase).sub(wp(bones.RightFoot)) };
+    const TOY_STAND = (0.53 + 0.07) * FIG; // the toy's hips when it stands
+    const toy = (v) => DJ.rig.localToWorld(v.clone());
+    const head = V();
+    let lastT = performance.now(), wasVisible = false, walking = false;
+    function tick() {
+      requestAnimationFrame(tick);
+      const t = performance.now(), dt = Math.min(0.05, (t - lastT) / 1000); lastT = t;
+      const show = real.on && dale.group.visible && !dale.gone; holder.visible = show;
+      if (!show) { wasVisible = false; return; }
+      setWire(state.wire);
+      if (document.hidden || !onScreen) return;
+      const p = dA.cur, g = dale.group;
+      g.updateMatrixWorld(true);
+      const nowWalking = !!(dA.busy && dA.step && dA.step.walk);
+      if (nowWalking !== walking) { if (nowWalking) walkClip.reset().play(); else walkClip.stop(); walking = nowWalking; }
+      holder.rotation.y = g.rotation.y;
+      rest();
+      if (walking) {
+        holder.position.set(g.position.x, 0, g.position.z); holder.updateMatrixWorld(true);
+        mixer.update(dt); root.updateMatrixWorld(true);
+      } else {
+        // hips: where the toy's are, with his hip joints just above the seat or the floor;
+        // as he stands up, his longer legs lift them higher than the toy's
+        const k = Math.max(0, Math.min(1, (p.lift - 0.3) / 0.23));
+        const pelvis = toy(D_PELVIS), hipT = pelvis.clone();
+        hipT.y += (hipGap - 0.01) * (1 - k) + (hipsStand - TOY_STAND) * k;
+        holder.position.set(0, 0, 0); holder.updateMatrixWorld(true);
+        const off = wp(bones.Hips); holder.position.copy(hipT).sub(off); holder.updateMatrixWorld(true);
+        // back: lean the way the toy's back leans
+        const up = toy(p.neck).sub(pelvis).normalize();
+        aimW(bones.Spine, bones.Spine1, up); aimW(bones.Spine1, bones.Spine2, up); aimW(bones.Spine2, bones.Neck, up);
+        // legs: feet to the toy's feet (never below the floor), knees toward the toy's knees, soles flat
+        // (the toy's "L" side is at -x in its own frame, which is the real Dale's right)
+        [['Left', 'R'], ['Right', 'L']].forEach(([sd, ts]) => {
+          const foot = toy(p['f' + ts]); foot.y = Math.max(foot.y, ankle);
+          ik(bones[sd + 'UpLeg'], bones[sd + 'Leg'], bones[sd + 'Foot'], foot, toy(p['k' + ts]).sub(wp(bones[sd + 'UpLeg'])));
+          aimW(bones[sd + 'Foot'], bones[sd + 'ToeBase'], toW(footDir[sd].x, footDir[sd].y, footDir[sd].z));
+        });
+      }
+      // head: point the way the toy's head points
+      const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(DJ.head.getWorldQuaternion(Q()));
+      gazeAt(wp(bones.Head).addScaledVector(fwd, 2));
+      head.copy(wp(bones.Head)).lerp(wp(bones.HeadTop_End), 0.45);
+      if (!walking) {
+        // hands: to the toy's hands, wrists a little back so his hands cover them;
+        // near the toy's head (scratching it, chin on hand), they follow his own head instead
+        const toyHead = DJ.head.getWorldPosition(V());
+        [['Left', 'R'], ['Right', 'L']].forEach(([sd, ts]) => {
+          const el = toy(p['e' + ts]), hand = toy(p['h' + ts]);
+          const w = Math.max(0, 1 - hand.distanceTo(toyHead) / (0.3 * FIG));
+          const target = hand.clone().addScaledVector(hand.clone().sub(el).normalize(), -0.07).addScaledVector(head.clone().sub(toyHead), w);
+          ik(bones[sd + 'Arm'], bones[sd + 'ForeArm'], bones[sd + 'Hand'], target, el.sub(wp(bones[sd + 'Arm'])));
+        });
+      }
+      settle(wasVisible ? 1 - Math.exp(-dt * 12) : 1); wasVisible = true;
+      daleReal.head = wp(bones.Head).lerp(wp(bones.HeadTop_End), 0.45);
+    }
+    daleReal.ready = true; showPeople();
+    requestAnimationFrame(tick);
+  }); }
+
+  // ---------- the Real people checkbox: the layout and sizes for each version ----------
+  // The toy version keeps its 1.67 m table, with the chairs 1.08 m from its centre. The real version has a 1.1 m
+  // table, so the chairs, the laptop, the cup and the crossword move in with its edge. The cup, the pets and the
+  // water bowl are real size, and the toy Marjorie and the toy Dale are hidden behind the real ones.
+  const SEAT_R = { toy: 0.8 * FIG, real: 0.82 };
+  const APPLES = {
+    toy: [[[0.18, 0.64, 0.15], 0.055], [[0.27, 0.645, 0.2], 0.055], [[0.22, 0.68, 0.22], 0.055]],
+    real: [[[0.2, 0.622, 0.16], 0.034], [[0.25, 0.624, 0.2], 0.034], [[0.215, 0.652, 0.205], 0.034]]
+  };
+  function showPeople() {
+    MJ.body.visible = !(real.on && marge.ready); DJ.rig.visible = !(real.on && daleReal.ready);
+    $('real-note').hidden = !(real.on && (!marge.ready || !daleReal.ready));
+  }
+  function setReal(on) {
+    real.on = on;
+    if (!real.toyHabits) real.toyHabits = mA.behaviors;
+    const R = on ? SEAT_R.real : SEAT_R.toy;
+    // the table: the same height, a smaller top and foot, and a smaller bowl of apples
+    tableParts.top.scale.x = tableParts.top.scale.z = on ? 0.41 : 0.62;
+    tableParts.foot.scale.x = tableParts.foot.scale.z = on ? 0.22 : 0.3;
+    tableParts.bowl.scale.setScalar(on ? 2 / 3 : 1); tableParts.bowl.position.y = on ? 0.675 : 0.725;
+    APPLES[on ? 'real' : 'toy'].forEach(([p, r], i) => { tableParts.apples[i].position.set(p[0], p[1], p[2]); tableParts.apples[i].scale.setScalar(r); });
+    // the chairs and what is in front of them
+    M_POS.set(TABLE.x - R, 0, TABLE.z); mFrame.position.copy(M_POS); mFrame.updateMatrixWorld();
+    CHAIR_SPOT.set(TABLE.x + 0.05, 0, TABLE.z - R); STAND_SPOT.copy(CHAIR_SPOT).add(new THREE.Vector3(0.38, 0, 0.02));
+    TO_DOG_YAW = Math.atan2(D_POS.x - STAND_SPOT.x, D_POS.z - STAND_SPOT.z); TO_TABLE_YAW = TO_DOG_YAW + Math.PI;
+    const put = (e, p) => { e.group.position.copy(p); e.basePos.copy(p); };
+    put(chair, M_POS); put(marjorie, M_POS); put(daleChair, CHAIR_SPOT);
+    put(cup, atM(0.25, 0.577, 0.34)); put(crossword, atM(0.0, 0.578, 0.37));
+    put(laptop, new THREE.Vector3(CHAIR_SPOT.x + Math.sin(CHAIR_YAW) * 0.44, TABLE.y + 0.575 * FIG, CHAIR_SPOT.z + Math.cos(CHAIR_YAW) * 0.44));
+    if (state.daleSeat === 'laptop') dale.group.position.set(CHAIR_SPOT.x, 0, CHAIR_SPOT.z);
+    // sizes: a 9 cm mug, a dog the size of a beagle, a real cat and water bowl
+    const size = (e, k) => { e.k = k; e.group.scale.setScalar(k); };
+    size(cup, on ? 1 : FIG); size(cat, on ? 0.8 : FIG); size(bowl, on ? 0.9 : 1.2);
+    if (!state.swap) size(dog, (on ? 0.85 : FIG) * DOG_KINDS[dogKind].size);
+    // the hidden toy Marjorie keeps to her crossword, so she never moves the cup that the real Marge uses
+    stopActor(mA); mA.behaviors = on ? [real.toyHabits[0]] : real.toyHabits;
+    if (!on && marge.reset) marge.reset();
+    if (on && !real.loading) { real.loading = true; loadMarge(); loadDale(); }
+    showPeople();
+  }
+  $('real').addEventListener('change', (ev) => setReal(ev.target.checked));
 
   // ---------- Dale ----------
   const D_POS = new THREE.Vector3(0.15, 0, 0.75), D_YAW = Math.PI / 2 - 0.12;
@@ -1176,7 +1611,7 @@
     });
     dogTail = new THREE.Group(); dogTail.position.set(0, 0.06, -0.22); g.add(dogTail);
     limb(dogTail, fur, [[0, 0, 0], [0.06, -0.025, -0.12], [0.17, -0.035, -0.16]], 0.022);
-    dog.k = FIG * K.size;
+    dog.k = (real.on ? 0.85 : FIG) * K.size;
   }
   buildDog('default');
   dog.group.position.copy(DOG_POS); dog.group.rotation.y = DOG_YAW;
@@ -1389,7 +1824,18 @@
     const ssao = new THREE.SSAOPass(scene, camera, 16, 10);
     ssao.beautyRenderTarget.stencilBuffer = true; // the glass marks the outdoors in the stencil
     const overrideRender = ssao.renderOverride.bind(ssao);
-    ssao.renderOverride = (...args) => { outdoors.visible = false; overrideRender(...args); outdoors.visible = true; };
+    const skinNormal = ssao.normalMaterial.clone(); skinNormal.skinning = true;
+    ssao.renderOverride = (rr, mat, target, cc, ca) => {
+      const mask = camera.layers.mask, su = rr.shadowMap.autoUpdate;
+      outdoors.visible = false; rr.shadowMap.autoUpdate = false;
+      camera.layers.set(0); overrideRender(rr, mat, target, cc, ca);
+      if (mat === ssao.normalMaterial && real.on) {
+        const bg = scene.background; scene.background = null;
+        camera.layers.set(1); overrideRender(rr, skinNormal, target, null, null);
+        scene.background = bg;
+      }
+      camera.layers.mask = mask; rr.shadowMap.autoUpdate = su; outdoors.visible = true;
+    };
     ssao.kernelRadius = 0.32; ssao.minDistance = 0.0004; ssao.maxDistance = 0.012;
     composer.addPass(ssao);
     composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(256, 256), 0.24, 0.5, 0.9));
@@ -1580,7 +2026,7 @@
   // Dale walks like a toy moved by a hand: a small hop with each step, legs and arms swinging
   function walkStep(from, to, activity) {
     const dg = dale.group, dist = from.distanceTo(to), walk = dist / 0.7;
-    return { pose: D_STAND, dur: walk, speed: 14, enter: (A) => { A.activity = activity; },
+    return { walk: true, pose: D_STAND, dur: walk, speed: 14, enter: (A) => { A.activity = activity; },
       update: (tt, A) => {
         const s = clamp01(tt / walk), sw = Math.sin(s * dist / 0.16 * Math.PI);
         dg.position.lerpVectors(from, to, s); dg.position.y = Math.abs(sw) * 0.025;
@@ -1591,7 +2037,7 @@
   }
   const turnStep = (from, to, dur) => ({ pose: D_STAND, dur, speed: 6,
     update: (tt) => { dale.group.position.y = 0; dale.group.rotation.y = from + angDiff(from, to) * ease(tt / dur); } });
-  const TO_DOG_YAW = Math.atan2(D_POS.x - STAND_SPOT.x, D_POS.z - STAND_SPOT.z), TO_TABLE_YAW = TO_DOG_YAW + Math.PI;
+  let TO_DOG_YAW = Math.atan2(D_POS.x - STAND_SPOT.x, D_POS.z - STAND_SPOT.z), TO_TABLE_YAW = TO_DOG_YAW + Math.PI;
   // From his laptop to the dog: he closes the laptop and walks over. The first time, he is surprised
   // by the dog before that. With reduced motion he is simply on the floor, and he stays there.
   function daleToFloor(surprised) {
@@ -1724,8 +2170,8 @@
       pencilE.set(p.pRx, p.pRy, p.pRz); pencilQ.setFromEuler(pencilE); MJ.pencil.quaternion.slerp(pencilQ, a);
     }
     if (f.cup) { mTmp.copy(mHandPos).add(CUP_OFF); MJ.body.localToWorld(mTmp); cup.group.position.lerp(mTmp, 1 - Math.exp(-dt * 16)); }
-    else if (state.phase !== 'ending') cup.group.position.lerp(cup.basePos, 1 - Math.exp(-dt * 10));
-    cup.group.rotation.z += ((f.tilt ? 0.6 : 0) - cup.group.rotation.z) * a;
+    else if (state.phase !== 'ending' && !marge.cupHeld) cup.group.position.lerp(cup.basePos, 1 - Math.exp(-dt * 10));
+    if (!marge.cupHeld) cup.group.rotation.z += ((f.tilt ? 0.6 : 0) - cup.group.rotation.z) * a;
   }
   const D_PELVIS = new THREE.Vector3(0, 0.07, 0), D_HIP_L = new THREE.Vector3(-0.085, 0.07, 0), D_HIP_R = new THREE.Vector3(0.085, 0.07, 0);
   const SHOE_OFF = new THREE.Vector3(0, -0.035, 0.04), NECK_UP_D = new THREE.Vector3(0, 0.05, 0.01);
@@ -2056,6 +2502,7 @@
   const backOut = (x) => { x = clamp01(x); const c = 1.6; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
 
   function startRun() {
+    if (marge.reset) marge.reset();
     state.sim = 0; state.dogSim = 0; state.dogName = null; state.asking = false; state.phase = 'intro'; state.t0 = now();
     entities.forEach((e) => {
       e.group.visible = false; e.group.position.copy(e.basePos); e.group.scale.setScalar(e.k);
@@ -2200,9 +2647,9 @@
       if (state.phase === 'live' && phone.spawned && !state.ringT0 && t > (state.nextRing ?? Infinity)) { state.ringT0 = t; state.rings = (state.rings || 0) + 1; }
       if (state.ringT0) {
         const r = t - state.ringT0;
-        $('ring').hidden = r > 2.6 || (r % 1.3) > 0.9;
+        $('ring').hidden = (r > 2.6 && !marge.toPhone) || (r % 1.3) > 0.9;
         phoneBody.rotation.x = reduce || (r % 1.3) > 0.9 ? 0 : Math.sin(r * 70) * 0.06;
-        if (r > 2.8) { state.ringT0 = 0; phoneBody.rotation.x = 0; $('ring').hidden = true; state.nextRing = t + rand(45, 90); log('The phone rang. Nobody answered'); }
+        if (r > 2.8 && !marge.toPhone) { state.ringT0 = 0; phoneBody.rotation.x = 0; $('ring').hidden = true; state.nextRing = t + rand(45, 90); log('The phone rang. Nobody answered'); }
       }
     }
     animateDecor(t);
@@ -2262,7 +2709,7 @@
     // speech bubbles follow Dale's head and the dog's head
     const bub = $('bubble'), bark = $('bark'), ringEl = $('ring');
     if (!bub.hidden) {
-      DJ.head.getWorldPosition(tmp); tmp.y += 0.2; tmp.project(camera);
+      if (real.on && daleReal.head) tmp.copy(daleReal.head); else DJ.head.getWorldPosition(tmp); tmp.y += 0.2; tmp.project(camera);
       bub.style.left = ((tmp.x + 1) / 2 * stage.clientWidth) + 'px';
       bub.style.top = ((1 - tmp.y) / 2 * stage.clientHeight) + 'px';
     }

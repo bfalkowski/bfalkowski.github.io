@@ -72,6 +72,18 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   and a light vignette, a soft glow on the brightest parts, and a warm grade like the story
   picture). The sunny looks are amber like the picture. A new visitor gets the last one. The browser remembers the choice.
   The first switch to a higher look can pause for a moment while it makes the textures.
+- **Real people** (a checkbox under the scene, off by default) shows Marjorie and Dale as
+  people (3D models made with Meshy) instead of toys. The first time it is ticked, the two
+  models load (about 4 MB, "(loading)" shows beside the box), and until then the toys stay.
+  It also makes the kitchen real size where the toy version was not: the table is 1.1 m
+  across instead of 1.67 m (same height), the chairs, the laptop, the cup and the crossword
+  move in with its edge, the fruit bowl and apples are smaller, the cup is a 9 cm mug, and
+  the dog (about the size of a beagle), the cat and the water bowl are real size. Unticking
+  it puts the toy version back. Marge does her crossword, thinks with her pencil at her chin,
+  drinks her coffee, checks the clock, and asks Dale "Did you take the dog for a walk?" when
+  there is a dog (he does not answer). When the phone rings she usually gets up, walks over,
+  says "Hello?" twice, and hangs up ("Nobody was there"). Dale does everything the toy Dale
+  does: the hidden toy still runs his habits, and the real Dale copies its pose each frame.
 - **Wireframe view** shows the whole world as wireframes.
 - **Radio sound** (off by default) plays the radio's song: an original slow ballad in the
   style of a 1940s radio record, made in the page with Web Audio. It sounds muffled like a
@@ -96,7 +108,7 @@ Useful places in the script:
 
 | What | Where |
 | --- | --- |
-| Figure size | `FIG` (1.35) scales the people, dog, table, chair, cup and crossword |
+| Figure size | `FIG` (1.35) scales the toy people, and in the toy version the dog, table, chair, cup and crossword |
 | Where people sit | `TABLE`, `M_POS`/`M_YAW` (Marjorie), `D_POS`/`D_YAW` (Dale on the floor), `CHAIR_SPOT`/`CHAIR_YAW` (Dale at the table), `DOG_POS` |
 | Dale's chair, laptop and walks | `state.daleSeat` ('laptop', 'moving' or 'floor') and `state.daleNext` (when he next moves); poses `D_CHAIR` (sitting, hands on the closed laptop), `D_LAPTOP`, `D_SURPRISED` and `D_STAND` (`lift` raises his body on `DJ.rig`); `laptopHabits` and `floorHabits`; `seatDale`, `walkStep`, `daleToFloor(surprised)` and `daleToLaptop`; the back-and-forth timer and the lid in the frame loop |
 | Laptop | `laptop`, `lid` (opens with `state.lidOpen`), `laptopScreen` and `screenTex` (the feed on the screen) |
@@ -117,8 +129,13 @@ Useful places in the script:
 | Story-picture details | `subway(w, h)` (the tile texture) and the three tile pieces in the cabinets block; the drawer row and bar pulls in the same block; `plaid` and `towel` on the stove; the plant in "counter things"; the bloom and the warm grade in `makeComposer` (the shading look); the sunny light colors in `setLook` |
 | Shadows | each mesh keeps its own `castShadow` in `userData.cast`, so switching to wireframe and back does not make the window glass block the sun |
 | Radio song | `SONG` (tempo, chords in `CH` and `BARS`, melody in `MEL` as bar, beat, length, MIDI note), `playEvent` (the instruments), `startAudio` (the speaker filter and crackle), `music` and `syncAudio` |
+| Real people switch | the "Real people" block after `finalize(marjorie)`: `real.on`, `setReal(on)` (the checkbox `#real`), `SEAT_R` (chair to table centre for each version), `tableParts` (the table top, foot, bowl and apples), `APPLES`, and the real sizes of the cup, dog, cat and water bowl (`e.k`); `showPeople()` hides a toy once its real person has loaded |
+| Real people models | `models/marge.glb` and `models/dale.glb` (Meshy, Mixamo-style skeletons with a Walking clip; textures shrunk to 2048 and 1024 px JPEG); `loadGLB`, `makePerson(gl, height)` (size, rest pose, `aimW`, two-bone `ik`, `gazeAt`, `relaxArm`, `setWire`), `loadMarge` and `loadDale` |
+| Marge's habits | `habits` and `answerPhone()` in `loadMarge`: steps of `{ P, dur, enter }`, where `P` names the body ('sit', 'stand', 'walk'), what each hand reaches for (`resolve`) and where she looks (`gazePoint`); `marge.reset()` puts the cup, pencil and phone receiver back |
+| Real Dale | `loadDale`: each frame his hips go to the toy's hips (`D_PELVIS`), his back leans like the toy's, his hands and feet reach for the toy's (elbows and knees bend toward the toy's), and his head points where the toy's head points; walk steps are marked `walk: true` and play his Walking clip |
+| Shading with people | the people are on layer 1; in `makeComposer` the shading pass draws the room, then the people with a skinned copy of its normal material (`skinNormal`), with no background and no shadow update |
 
-The figures are built from spheres, cylinders and boxes with the `ball`, `rod`, `limb`
+The toy figures are built from spheres, cylinders and boxes with the `ball`, `rod`, `limb`
 and `block` helpers. Arms, legs, necks and torsos that move are rebuilt every frame
 from joint positions (`dynLimb` and `setLimb`), in meters, facing +z.
 
