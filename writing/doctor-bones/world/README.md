@@ -30,7 +30,7 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   steams but never boils, a back door whose window shows the outside is not rendered, a wall
   phone that rings now and then (the log says "Nobody answered"), a calendar that says
   TUESDAY instead of a month, a radio on the fridge with notes floating up (The same song),
-  Dale's chair at the table (Sat in: Now and then), a closed laptop at Dale's place (Fits the
+  Dale's chair at the table (Sat in: Now and then), Dale's laptop at his place (Fits the
   kitchen: No; On the screen: His own posts), Dale's hat on a hook (Worn: Never), a
   shelf of jars and plates, a trash can, a bread box, a braided rug and a sink mat. A dog
   bed arrives with the first dog. The walls have oak Arts and Crafts woodwork: wainscoting
@@ -40,15 +40,15 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   seconds, so the room never repeats exactly. Marjorie thinks with her pencil on her
   chin, sips her coffee (setting the pencil down first), checks the clock and fixes her
   glasses, but never looks at the dog or at you. Dale starts each run in his chair at the
-  table, where he rests his chin on his hand, drums his fingers, looks at the floor, sighs,
-  and looks at Marjorie. When the first dog arrives, he does not notice it for a moment.
-  Then he is startled ("Dale saw the dog"): he leans back with his hands up. He stares at
-  it, gets up ("Dale got up from the table"), walks over like a toy moved by a hand, and
-  sits on the floor by the dog ("Dale sat on the floor by the dog"). After that he goes
-  back and forth: 20 to 40 seconds on the floor with the dog, then he gets up, walks back
-  to his chair and opens his laptop for 15 to 30 seconds (typing, reading his posts, chin on
-  his hand, a look at the dog, and now and then "Dale posted something"), then he closes it
-  and goes back to the dog. The dog watches him wherever he is, and visits him only on the
+  table with his laptop open: he types, reads his posts, rests his chin on his hand, looks
+  at the floor, sighs, and looks at Marjorie. Now and then the log says "Dale posted
+  something". When the first dog arrives, he keeps typing for a moment. Then he is startled
+  ("Dale saw the dog"): he leans back with his hands up. He stares at it, closes his laptop
+  ("Dale closed his laptop"), gets up ("Dale got up from the table"), walks over like a toy
+  moved by a hand, and sits on the floor by the dog ("Dale sat on the floor by the dog").
+  After that he goes back and forth: 20 to 40 seconds on the floor with the dog, then he
+  gets up, walks back to his chair and opens his laptop for 15 to 30 seconds (now with a
+  look at the dog now and then), then he closes it and goes back to the dog. The dog watches him wherever he is, and visits him only on the
   floor. With reduced motion he is simply on the floor, and he stays there. You can ask him
   the dog's name when he is on the floor or at his laptop. On the floor he scratches his head, rests
   his chin on his hand, leans back, sighs, and turns to look at Marjorie ("She did not
@@ -80,7 +80,7 @@ Useful places in the script:
 | --- | --- |
 | Figure size | `FIG` (1.35) scales the people, dog, table, chair, cup and crossword |
 | Where people sit | `TABLE`, `M_POS`/`M_YAW` (Marjorie), `D_POS`/`D_YAW` (Dale on the floor), `CHAIR_SPOT`/`CHAIR_YAW` (Dale at the table), `DOG_POS` |
-| Dale's chair, laptop and walks | `state.daleSeat` ('chair', 'laptop', 'moving' or 'floor') and `state.daleNext` (when he next moves); poses `D_CHAIR`, `D_LAPTOP`, `D_SURPRISED` and `D_STAND` (`lift` raises his body on `DJ.rig`); `chairHabits`, `laptopHabits` and `floorHabits`; `seatDale`, `walkStep`, `daleToFloor(surprised)` and `daleToLaptop`; the back-and-forth timer and the lid in the frame loop |
+| Dale's chair, laptop and walks | `state.daleSeat` ('laptop', 'moving' or 'floor') and `state.daleNext` (when he next moves); poses `D_CHAIR` (sitting, hands on the closed laptop), `D_LAPTOP`, `D_SURPRISED` and `D_STAND` (`lift` raises his body on `DJ.rig`); `laptopHabits` and `floorHabits`; `seatDale`, `walkStep`, `daleToFloor(surprised)` and `daleToLaptop`; the back-and-forth timer and the lid in the frame loop |
 | Laptop | `laptop`, `lid` (opens with `state.lidOpen`), `laptopScreen` and `screenTex` (the feed on the screen) |
 | Camera | `HOME` (default view), `START` (fly-in), `TARGET` |
 | Build order | `spawnAt` on each `entity(...)`, in seconds |
