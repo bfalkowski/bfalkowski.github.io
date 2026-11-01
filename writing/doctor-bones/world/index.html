@@ -462,34 +462,36 @@
 
   // ---------- oak wainscoting (Arts and Crafts) ----------
   const trim = entity('trim', 'Wainscoting', { spawnAt: 0.85, offAt: 1.15, inspect: true,
-    info: () => [['Wood', 'Oak'], ['Style', 'Arts and Crafts'], ['Built by', 'Nobody']] });
+    info: () => [['Wood', 'Oak, painted cream'], ['Style', 'Arts and Crafts'], ['Built by', 'Nobody']] });
   {
-    const g = trim.group, panel = std(0xb98a5a, { roughness: 0.55 }), H = 1.0, BASE = 0.15, RAIL = 0.1;
+    // painted a 1950s cream in semi-gloss enamel; the panels and baseboard a shade darker so the shapes still read
+    M.wainPanel = std(0xeae0c4, { roughness: 0.4 }); M.wainRail = std(0xf4ecd6, { roughness: 0.36 }); M.wainBase = std(0xddd0b0, { roughness: 0.42 });
+    const g = trim.group, panel = M.wainPanel, H = 1.0, BASE = 0.15, RAIL = 0.1;
     const stileH = H - RAIL - BASE, stileY = BASE + stileH / 2;
     // left wall: along z at x = -3.0, skipping the back door
     [[-2.25, -1.97], [-0.93, 2.25]].forEach(([z0, z1]) => {
       const len = z1 - z0, zc = (z0 + z1) / 2;
       block(g, panel, [-2.99, H / 2, zc], [0.02, H, len]);
-      block(g, M.oakDark, [-2.975, BASE / 2, zc], [0.04, BASE, len]);
-      block(g, M.oak, [-2.978, H - RAIL / 2, zc], [0.035, RAIL, len]);
-      block(g, M.oakDark, [-2.963, H + 0.012, zc], [0.075, 0.025, len + 0.02]);
+      block(g, M.wainBase, [-2.975, BASE / 2, zc], [0.04, BASE, len]);
+      block(g, M.wainRail, [-2.978, H - RAIL / 2, zc], [0.035, RAIL, len]);
+      block(g, M.wainBase, [-2.963, H + 0.012, zc], [0.075, 0.025, len + 0.02]);
       const n = Math.max(1, Math.round(len / 0.48));
       for (let i = 0; i <= n; i++) {
         const z = Math.min(z1 - 0.035, Math.max(z0 + 0.035, z0 + len * i / n));
-        block(g, M.oak, [-2.977, stileY, z], [0.03, stileH, 0.07]);
+        block(g, M.wainRail, [-2.977, stileY, z], [0.03, stileH, 0.07]);
       }
     });
     // back wall: along x at z = -2.25, from the corner to the cabinets
     {
       const x0 = -3.0, x1 = -0.9, len = x1 - x0, xc = (x0 + x1) / 2;
       block(g, panel, [xc, H / 2, -2.24], [len, H, 0.02]);
-      block(g, M.oakDark, [xc, BASE / 2, -2.225], [len, BASE, 0.04]);
-      block(g, M.oak, [xc, H - RAIL / 2, -2.228], [len, RAIL, 0.035]);
-      block(g, M.oakDark, [xc, H + 0.012, -2.213], [len + 0.02, 0.025, 0.075]);
+      block(g, M.wainBase, [xc, BASE / 2, -2.225], [len, BASE, 0.04]);
+      block(g, M.wainRail, [xc, H - RAIL / 2, -2.228], [len, RAIL, 0.035]);
+      block(g, M.wainBase, [xc, H + 0.012, -2.213], [len + 0.02, 0.025, 0.075]);
       const n = Math.round(len / 0.48);
       for (let i = 0; i <= n; i++) {
         const x = Math.min(x1 - 0.035, Math.max(x0 + 0.035, x0 + len * i / n));
-        block(g, M.oak, [x, stileY, -2.227], [0.07, stileH, 0.03]);
+        block(g, M.wainRail, [x, stileY, -2.227], [0.07, stileH, 0.03]);
       }
     }
   }
@@ -1372,6 +1374,7 @@
     [M.wallBack, M.wallLeft].forEach((m) => Object.assign(m, { map: on ? S.plaster : null, bumpMap: on ? S.plaster : null, bumpScale: 0.002 }));
     Object.assign(M.cabinet, { map: on ? S.paint : null, bumpMap: on ? S.paint : null, bumpScale: 0.001, roughness: on ? 0.42 : 0.5 });
     Object.assign(M.door, { map: on ? S.paint : null, bumpMap: on ? S.paint : null, bumpScale: 0.001, roughness: on ? 0.42 : 0.45 });
+    [M.wainPanel, M.wainRail, M.wainBase].forEach((m) => Object.assign(m, { map: on ? S.paint : null, bumpMap: on ? S.paint : null, bumpScale: 0.001 }));
     Object.assign(floorTop.material, on ? { map: S.tiles, roughnessMap: S.tileRough, roughness: 1, bumpMap: S.tileBump, bumpScale: 0.003 }
       : { map: floorPlain.map, roughnessMap: null, roughness: floorPlain.roughness, bumpMap: null });
     ENAMELS.forEach(([m, r]) => Object.assign(m, { clearcoat: on ? 0.8 : 0, roughness: on ? r - 0.03 : r }));

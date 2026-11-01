@@ -33,9 +33,11 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   Dale's chair at the table (Sat in: Now and then), Dale's laptop at his place (Fits the
   kitchen: No; On the screen: His own posts), Dale's hat on a hook (Worn: Never), a
   shelf of jars and plates, a trash can, a bread box, a braided rug and a sink mat. A dog
-  bed arrives with the first dog. The walls have oak Arts and Crafts woodwork: wainscoting
-  with battens and a cap ledge, and Craftsman casing on the window (with an oak sill and
-  apron) and the back door (with plinth blocks). The inspector calls it "Built by: Nobody".
+  bed arrives with the first dog. The walls have Arts and Crafts woodwork: wainscoting with
+  battens and a cap ledge, painted a 1950s cream (Wood: Oak, painted cream), and oak
+  Craftsman casing on the window (with an oak sill and apron) and the back door (with plinth
+  blocks). The inspector calls it "Built by: Nobody". The paint colors are `M.wainPanel`,
+  `M.wainRail` and `M.wainBase` in the wainscoting block.
 - **Everyone has habits.** Each character picks a small habit at random every few
   seconds, so the room never repeats exactly. Marjorie thinks with her pencil on her
   chin, sips her coffee (setting the pencil down first), checks the clock and fixes her
