@@ -210,6 +210,8 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/MaskPass.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 <script>
 (function () {
   'use strict';
@@ -329,7 +331,7 @@
   const windowLight = new THREE.PointLight(C(0xffd9a0), 0.55, 6, 2);
   windowLight.position.set(0.4, 1.7, -1.5);
   scene.add(windowLight);
-  const sunIn = new THREE.SpotLight(C(0xffd29a), 2.2, 0, 0.42, 0.35, 1);
+  const sunIn = new THREE.SpotLight(C(0xffc27a), 3.0, 0, 0.42, 0.35, 1);
   sunIn.position.set(1.6, 4.2, -5.5); sunIn.target.position.set(0.0, 0.0, 0.2);
   sunIn.castShadow = true; sunIn.shadow.mapSize.set(2048, 2048); sunIn.shadow.bias = -0.0003; sunIn.shadow.normalBias = 0.02;
   sunIn.shadow.camera.near = 1; sunIn.shadow.camera.far = 14; sunIn.visible = false;
@@ -408,12 +410,15 @@
       x.beginPath(); x.moveTo(64 + Math.sin(a) * 50, 64 - Math.cos(a) * 50); x.lineTo(64 + Math.sin(a) * 58, 64 - Math.cos(a) * 58); x.stroke();
     }
   });
-  const tileTex = canvasTex(128, 64, (x) => {
-    x.fillStyle = '#f3efe4'; x.fillRect(0, 0, 128, 64);
-    x.strokeStyle = '#cfc8b6'; x.lineWidth = 2;
-    for (let i = 0; i <= 128; i += 32) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, 64); x.stroke(); }
-    for (let j = 0; j <= 64; j += 16) { x.beginPath(); x.moveTo(0, j); x.lineTo(128, j); x.stroke(); }
-  }, [6, 1]);
+  const subway = (wm, hm) => canvasTex(256, 128, (x, w, h) => {
+    x.fillStyle = '#cbc4b6'; x.fillRect(0, 0, w, h);
+    for (let row = 0; row < 4; row++) for (let i = -1; i < 4; i++) {
+      const bx = i * 64 + (row % 2 ? 32 : 0) + 2, by = row * 32 + 2, bw = 60, bh = 28;
+      const g = x.createLinearGradient(0, by, 0, by + bh); g.addColorStop(0, '#fbf9f2'); g.addColorStop(1, '#ebe6da');
+      x.fillStyle = g; x.fillRect(bx, by, bw, bh);
+      x.fillStyle = 'rgba(255,255,255,0.7)'; x.fillRect(bx, by, bw, 2);
+    }
+  }, [wm / 0.6, hm / 0.3]);
   const softDot = canvasTex(64, 64, (x) => {
     const g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
     g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.35, 'rgba(255,236,200,0.6)'); g.addColorStop(1, 'rgba(255,220,170,0)');
@@ -529,8 +534,10 @@
     block(g, M.cabinet, [cx, 0.41, -1.96], [w, 0.82, 0.58]);
     for (let i = 0; i < 5; i++) {
       const dx = x0 + w * (i + 0.5) / 5;
-      block(g, M.door, [dx, 0.45, -1.665], [w / 5 - 0.05, 0.62, 0.02]);
-      block(g, M.chrome, [dx + (i % 2 ? -0.17 : 0.17), 0.62, -1.65], [0.03, 0.12, 0.025]);
+      block(g, M.door, [dx, 0.385, -1.665], [w / 5 - 0.05, 0.49, 0.02]);
+      block(g, M.door, [dx, 0.715, -1.665], [w / 5 - 0.05, 0.13, 0.02]);
+      block(g, M.chrome, [dx, 0.715, -1.65], [0.18, 0.014, 0.016]);
+      block(g, M.chrome, [dx, 0.575, -1.65], [0.13, 0.014, 0.016]);
     }
     // toe kick: its front sits 6 mm in front of the cabinet face, so the two faces do not flicker against each other
     block(g, M.dark, [cx, 0.05, -1.664], [w, 0.1, 0.02]);
@@ -539,8 +546,12 @@
     rod(g, M.chrome, [0.4, 0.87, -2.18], [0.4, 1.12, -2.18], 0.018);
     rod(g, M.chrome, [0.4, 1.12, -2.18], [0.4, 1.12, -2.03], 0.016);
     rod(g, M.chrome, [0.4, 1.12, -2.03], [0.4, 1.06, -2.03], 0.014);
-    const splash = mesh(new THREE.PlaneGeometry(w, 0.3), std(0xffffff, { map: tileTex, roughness: 0.3 }), g);
-    splash.position.set(cx, 1.02, -2.248); splash.castShadow = false;
+    // tiles: left of the window, under it, and right of it up to the upper cabinet
+    [[x0, -0.36, 0.87, 1.55], [-0.36, 1.16, 0.87, 1.02], [1.16, x1, 0.87, 1.53]].forEach(([a, b, lo, hi]) => {
+      const tile = mesh(new THREE.PlaneGeometry(b - a, hi - lo), std(0xffffff, { map: subway(b - a, hi - lo), roughness: 0.22 }), g);
+      tile.position.set((a + b) / 2, (lo + hi) / 2, -2.248); tile.castShadow = false;
+    });
+    block(g, M.chrome, [cx, 0.845, -1.6275], [w + 0.08, 0.022, 0.006]); // chrome edge on the counter
     block(g, M.cabinet, [1.71, 1.9, -2.08], [0.96, 0.74, 0.34]);
     block(g, M.door, [1.47, 1.9, -1.905], [0.44, 0.66, 0.02]);
     block(g, M.door, [1.95, 1.9, -1.905], [0.44, 0.66, 0.02]);
@@ -600,9 +611,9 @@
     });
     rod(g, M.terracotta, [1.02, 0.87, -2.05], [1.02, 1.01, -2.05], 0.09, 0.07);
     const r = rnd(3);
-    for (let k = 0; k < 9; k++) {
-      const a = k / 9 * Math.PI * 2, lean = 0.5 + r() * 0.4;
-      const leafM = ball(g, M.leaf, [1.02 + Math.cos(a) * 0.08, 1.12 + r() * 0.08, -2.05 + Math.sin(a) * 0.08], 0.075, [0.45, 1, 0.22]);
+    for (let k = 0; k < 16; k++) {
+      const a = k / 16 * Math.PI * 4 + r(), lean = 0.5 + r() * 0.5;
+      const leafM = ball(g, M.leaf, [1.02 + Math.cos(a) * (0.07 + r() * 0.05), 1.11 + r() * 0.16, -2.05 + Math.sin(a) * (0.07 + r() * 0.04)], 0.08 + r() * 0.03, [0.45, 1, 0.22]);
       leafM.rotation.set(Math.sin(a) * lean, -a, -Math.cos(a) * lean);
     }
   }
@@ -775,6 +786,14 @@
     block(g, stoveEnamel, [0, 0.42, 0.305], [0.64, 0.56, 0.02]);
     block(g, black, [0, 0.45, 0.317], [0.42, 0.22, 0.006]);
     block(g, M.chrome, [0, 0.66, 0.33], [0.5, 0.025, 0.03]);
+    const plaid = canvasTex(128, 128, (x, w, h) => {
+      x.fillStyle = '#f1e7d2'; x.fillRect(0, 0, w, h);
+      x.fillStyle = 'rgba(196,92,84,0.45)'; for (let i = 0; i < w; i += 32) { x.fillRect(i, 0, 12, h); x.fillRect(0, i, w, 12); }
+      x.fillStyle = 'rgba(160,60,56,0.5)'; for (let i = 20; i < w; i += 32) { x.fillRect(i, 0, 3, h); x.fillRect(0, i, w, 3); }
+    });
+    const towel = std(0xffffff, { map: plaid, roughness: 0.9 });
+    block(g, towel, [0.13, 0.52, 0.353], [0.17, 0.28, 0.01]);
+    block(g, towel, [0.13, 0.665, 0.338], [0.17, 0.03, 0.035]);
     [-0.27, -0.09, 0.09, 0.27].forEach((x) => rod(g, black, [x, 0.8, 0.3], [x, 0.8, 0.335], 0.022));
     const pot = plastic(0xb3362e), potLid = plastic(0x8c2a24);
     rod(g, pot, [-0.19, 0.905, -0.12], [-0.19, 1.04, -0.12], 0.1);
@@ -1276,6 +1295,27 @@
   const dGeo = new THREE.BufferGeometry(); dGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
   const dustMat = new THREE.PointsMaterial({ size: 0.022, map: softDot, color: C(0xffe9c4), transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending });
   const dust = new THREE.Points(dGeo, dustMat); dust.visible = false; dust.renderOrder = 100; scene.add(dust);
+  const shaft = (() => {
+    // the window opening pushed along the sun's direction down to the floor
+    const d = new THREE.Vector3(-1.6, -4.2, 5.7), top = [[-0.25, 2.15], [1.05, 2.15], [1.05, 1.15], [-0.25, 1.15]];
+    const p = [];
+    top.forEach(([x, y]) => p.push(new THREE.Vector3(x, y, -2.31)));
+    top.forEach(([x, y]) => p.push(new THREE.Vector3(x, y, -2.31).addScaledVector(d, y / 4.2)));
+    const pos = [], uv = [];
+    for (let i = 0; i < 4; i++) {
+      const a = p[i], b = p[(i + 1) % 4], c = p[4 + (i + 1) % 4], e = p[4 + i];
+      [[a, 0, 1], [b, 1, 1], [c, 1, 0], [a, 0, 1], [c, 1, 0], [e, 0, 0]].forEach(([q, u, v]) => { pos.push(q.x, q.y, q.z); uv.push(u, v); });
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    const R = rnd(5), rays = canvasTex(256, 128, (x, w, h) => {
+      for (let i = 0; i < w; i++) { const k = 0.35 + R() * 0.65; x.fillStyle = 'rgb(' + [255, 214, 150].map((c) => Math.round(c * k)).join(',') + ')'; x.fillRect(i, 0, 1, h); }
+      const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,1)'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+    });
+    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: rays, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending,
+      depthWrite: false, side: THREE.DoubleSide, fog: false, toneMapped: false }));
+    m.renderOrder = 101; m.visible = false; scene.add(m); return m;
+  })();
 
   // ---------- simulation bounds ----------
   const bounds = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(6.4, 2.95, 4.9)),
@@ -1329,7 +1369,7 @@
     // floor: worn tiles with grout and color variation, a glossy but scuffed surface
     S.tiles = canvasTex(W, H, (x) => {
       for (let j = 0; j < 12; j++) for (let i = 0; i < 16; i++) {
-        const dark = (i + j) % 2, v = (R() - 0.5) * 14, c = dark ? [43 + v, 41 + v, 38 + v] : [226 + v, 214 + v, 189 + v];
+        const dark = (i + j) % 2, v = (R() - 0.5) * 14, c = dark ? [40 + v, 37 + v, 33 + v] : [214 + v, 198 + v, 166 + v];
         x.fillStyle = 'rgb(' + c.map((q) => Math.round(q)).join(',') + ')'; x.fillRect(i * T, j * T, T, T);
         for (let k = 0; k < 60; k++) { x.fillStyle = 'rgba(' + (dark ? '255,255,255' : '0,0,0') + ',' + (R() * 0.05).toFixed(3) + ')'; x.fillRect(i * T + R() * T, j * T + R() * T, 1 + R() * 3, 1 + R() * 3); }
       }
@@ -1370,7 +1410,16 @@
     ssao.renderOverride = (...args) => { outdoors.visible = false; overrideRender(...args); outdoors.visible = true; };
     ssao.kernelRadius = 0.32; ssao.minDistance = 0.0004; ssao.maxDistance = 0.012;
     composer.addPass(ssao);
+    composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(256, 256), 0.32, 0.55, 0.82));
     composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
+    // a warm grade, as in the story picture: a little more contrast and saturation, cream and amber instead of white
+    composer.addPass(new THREE.ShaderPass({
+      uniforms: { tDiffuse: { value: null } },
+      vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      fragmentShader: 'uniform sampler2D tDiffuse; varying vec2 vUv; void main() { vec4 c = texture2D(tDiffuse, vUv); vec3 g = c.rgb;' +
+        ' g = mix(vec3(dot(g, vec3(0.299, 0.587, 0.114))), g, 1.1); g *= vec3(1.04, 0.97, 0.84); g = pow(max(g, 0.0), vec3(1.12));' +
+        ' gl_FragColor = vec4(g, c.a); }'
+    }));
     fxaa = new THREE.ShaderPass(THREE.FXAAShader); composer.addPass(fxaa);
     const vig = new THREE.ShaderPass(THREE.VignetteShader); vig.uniforms.offset.value = 1.05; vig.uniforms.darkness.value = 1.05; composer.addPass(vig);
     resize();
@@ -1380,7 +1429,8 @@
     const sunny = n >= 1;
     if (sunny && !envTex) envTex = new THREE.PMREMGenerator(renderer).fromScene(new THREE.RoomEnvironment(), 0.04).texture;
     scene.environment = sunny ? envTex : null;
-    hemi.intensity = sunny ? 0.4 : 0.62; sun.intensity = sunny ? 1.35 : 1.75; windowLight.intensity = sunny ? 0.3 : 0.55;
+    hemi.intensity = sunny ? 0.4 : 0.62; sun.intensity = sunny ? 1.1 : 1.75; windowLight.intensity = sunny ? 0.45 : 0.55;
+    hemi.color.copy(sunny ? C(0xffd9a8) : C(0xfff1dc)); sun.color.copy(sunny ? C(0xffc68a) : C(0xffe0b5));
     renderer.toneMappingExposure = sunny ? 0.95 : 1.05; sunIn.visible = sunny;
     Object.assign(M.chrome, sunny ? { metalness: 0.95, roughness: 0.16, envMapIntensity: 1 } : { metalness: 0.35, roughness: 0.28 });
     Object.assign(M.sink, sunny ? { metalness: 0.85, roughness: 0.3, envMapIntensity: 1 } : { metalness: 0.3, roughness: 0.4 });
@@ -2120,6 +2170,8 @@
       lid.rotation.x += (want - lid.rotation.x) * (1 - Math.exp(-dt * 7));
       laptopScreen.visible = lid.rotation.x > -1.2;
     }
+
+    shaft.visible = lookLevel >= 1 && win.group.visible && win.mode === 'solid' && !win.gone && state.phase !== 'off';
 
     // the radio's song: plays while the radio is in the world and the sound is on, from the top each time
     if (music.ctx) {

@@ -67,7 +67,9 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   that casts the window frame on the floor), Sunlight and surfaces (also wood grain, worn
   glossy floor tiles with grout, plaster, painted cabinets, enamel with a clear coat, and
   rounded edges), and Sunlight, surfaces and shading (also ambient occlusion, antialiasing
-  and a light vignette). A new visitor gets the last one. The browser remembers the choice.
+  and a light vignette, a soft glow on the brightest parts, and a warm grade like the story
+  picture). The sunny looks are amber like the picture, with a soft shaft of sunlight from
+  the window. A new visitor gets the last one. The browser remembers the choice.
   The first switch to a higher look can pause for a moment while it makes the textures.
 - **Wireframe view** shows the whole world as wireframes.
 - **Radio sound** (off by default) plays the radio's song: an original slow ballad in the
@@ -110,7 +112,8 @@ Useful places in the script:
 | Clock speed | `state.sim += dt * 4` (4 story seconds per real second) |
 | Look | `setLook(n)` (0 to 3) in the "look" block before the state; `makeSurfaces` (the canvas textures), `setSurfaces` (maps, clear coat, and sharp or rounded boxes from `roundables`), `makeComposer` (ambient occlusion and the passes after it), `sunIn` (the sun through the window), `hemi`; the choice is kept in localStorage as `run4113-look` |
 | Outdoors | `glassMat` (the window and door glass draw nothing and write 1 to the stencil, renderOrder 1); the "outdoors" block after the back door: `outMat` (stencil equal 1, no depth test, no fog, no tone mapping), `outAdd` (draws back to front by renderOrder), the sky, lawn, tree line, sun glow, `treeTex` (painted trees and shrubs) and their positions; the shading pass hides the outdoors from its normal pass and keeps a stencil buffer |
-| Design standard | `../kitchen.jpg`, the picture on the story page: warm late light, a window of small panes, fall trees outside, sage cabinets, cream enamel, a worn checkerboard floor |
+| Design standard | `../kitchen.jpg`, the picture on the story page: warm late light, a window of small panes, fall trees outside, sage cabinets with a drawer row and long chrome pulls, white subway tile, a chrome counter edge, cream enamel, a full plant in the window, a plaid towel, a worn cream and black checkerboard floor |
+| Story-picture details | `subway(w, h)` (the tile texture) and the three tile pieces in the cabinets block; the drawer row and bar pulls in the same block; `plaid` and `towel` on the stove; the plant in "counter things"; `shaft` (the sun's shaft from the window, sunny looks only); the bloom and the warm grade in `makeComposer` (the shading look); the sunny light colors in `setLook` |
 | Shadows | each mesh keeps its own `castShadow` in `userData.cast`, so switching to wireframe and back does not make the window glass block the sun |
 | Radio song | `SONG` (tempo, chords in `CH` and `BARS`, melody in `MEL` as bar, beat, length, MIDI note), `playEvent` (the instruments), `startAudio` (the speaker filter and crackle), `music` and `syncAudio` |
 
