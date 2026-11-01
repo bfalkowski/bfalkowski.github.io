@@ -400,13 +400,6 @@
     x.fillStyle = '#8c9c63'; x.beginPath(); x.moveTo(0, 120); x.quadraticCurveTo(50, 80, 128, 112); x.lineTo(128, 176); x.lineTo(0, 176); x.fill();
     x.fillStyle = '#6e7d4c'; x.beginPath(); x.moveTo(0, 150); x.quadraticCurveTo(70, 118, 128, 146); x.lineTo(128, 176); x.lineTo(0, 176); x.fill();
   });
-  const outsideTex = canvasTex(256, 192, (x, w, h) => {
-    const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#fff6dc'); g.addColorStop(1, '#ffd79a');
-    x.fillStyle = g; x.fillRect(0, 0, w, h);
-    x.strokeStyle = 'rgba(120, 170, 200, 0.35)'; x.lineWidth = 1;
-    for (let i = 0; i <= w; i += 16) { x.beginPath(); x.moveTo(i + 0.5, 0); x.lineTo(i + 0.5, h); x.stroke(); }
-    for (let j = 0; j <= h; j += 16) { x.beginPath(); x.moveTo(0, j + 0.5); x.lineTo(w, j + 0.5); x.stroke(); }
-  });
   const clockTex = canvasTex(128, 128, (x) => {
     x.fillStyle = '#f6efdc'; x.beginPath(); x.arc(64, 64, 63, 0, Math.PI * 2); x.fill();
     x.strokeStyle = '#3a2e22';
@@ -497,18 +490,24 @@
   }
   finalize(trim);
 
+  // ---------- glass: it only marks where the outdoors may show (a stencil), so the outdoors exists only through it ----------
+  const glassMat = () => new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, stencilWrite: true, stencilRef: 1,
+    stencilFunc: THREE.AlwaysStencilFunc, stencilZPass: THREE.ReplaceStencilOp });
+
   // ---------- window ----------
-  const win = entity('window', 'Window', { spawnAt: 1.0, offAt: 0.0, inspect: true, info: () => [['Outside', 'Not rendered']] });
+  const win = entity('window', 'Window', { spawnAt: 1.0, offAt: 0.0, inspect: true, info: () => [['Outside', 'Only what the glass shows'], ['Season', 'Fall, always']] });
   {
     const g = win.group;
-    const glass = mesh(new THREE.PlaneGeometry(1.3, 1.0), new THREE.MeshBasicMaterial({ map: outsideTex, toneMapped: false }), g);
-    glass.position.set(0.4, 1.65, -2.33); glass.castShadow = false;
+    const glass = mesh(new THREE.PlaneGeometry(1.3, 1.0), glassMat(), g);
+    glass.position.set(0.4, 1.65, -2.33); glass.castShadow = false; glass.receiveShadow = false; glass.renderOrder = 1;
     block(g, M.frame, [0.4, 2.13, -2.27], [1.34, 0.06, 0.1]);
     block(g, M.frame, [0.4, 1.17, -2.27], [1.34, 0.06, 0.1]);
     block(g, M.frame, [-0.24, 1.65, -2.27], [0.06, 1.0, 0.1]);
     block(g, M.frame, [1.04, 1.65, -2.27], [0.06, 1.0, 0.1]);
     block(g, M.frame, [0.4, 1.65, -2.29], [0.035, 0.94, 0.05]);
     block(g, M.frame, [0.4, 1.65, -2.29], [1.24, 0.035, 0.05]);
+    [0.09, 0.71].forEach((x) => block(g, M.frame, [x, 1.65, -2.295], [0.018, 0.94, 0.03]));
+    [1.415, 1.885].forEach((y) => block(g, M.frame, [0.4, y, -2.295], [1.24, 0.018, 0.03]));
     block(g, M.oak, [0.4, 1.135, -2.17], [1.62, 0.035, 0.18]);
     block(g, M.oakDark, [0.4, 1.072, -2.236], [1.42, 0.09, 0.028]);
     block(g, M.oak, [-0.3, 1.651, -2.236], [0.1, 0.998, 0.03]);
@@ -654,7 +653,7 @@
   }
   finalize(rugs);
 
-  const door = entity('door', 'Back door', { spawnAt: 0.95, offAt: 1.0, inspect: true, info: () => [['Leads to', 'Not rendered'], ['Locked', 'Does not need to be']] });
+  const door = entity('door', 'Back door', { spawnAt: 0.95, offAt: 1.0, inspect: true, info: () => [['Leads to', 'Only what the glass shows'], ['Locked', 'Does not need to be']] });
   {
     const g = door.group, slab = std(0x7f9f86, { roughness: 0.5 }), panel = std(0x739279, { roughness: 0.5 });
     block(g, slab, [0, 0.975, 0], [0.05, 1.95, 0.8]);
@@ -665,8 +664,8 @@
     block(g, M.oakDark, [0.012, 1.975, 0], [0.07, 0.02, 0.98]);
     block(g, M.oak, [0.005, 2.05, 0], [0.06, 0.14, 1.04]);
     block(g, M.oakDark, [0.02, 2.135, 0], [0.08, 0.035, 1.12]);
-    const pane = mesh(new THREE.PlaneGeometry(0.46, 0.5), new THREE.MeshBasicMaterial({ map: outsideTex, toneMapped: false }), g);
-    pane.rotation.y = Math.PI / 2; pane.position.set(0.027, 1.45, 0); pane.castShadow = false;
+    const pane = mesh(new THREE.PlaneGeometry(0.46, 0.5), glassMat(), g);
+    pane.rotation.y = Math.PI / 2; pane.position.set(0.027, 1.45, 0); pane.castShadow = false; pane.receiveShadow = false; pane.renderOrder = 1;
     block(g, M.woodDark, [0.03, 1.45, 0], [0.012, 0.5, 0.03]);
     block(g, M.woodDark, [0.03, 1.45, 0], [0.012, 0.03, 0.46]);
     block(g, panel, [0.03, 0.66, 0], [0.012, 0.3, 0.58]);
@@ -676,6 +675,89 @@
     g.position.set(-2.975, 0, -1.45);
   }
   finalize(door);
+
+  // ---------- the outdoors: a sunny fall afternoon, as in the story picture ----------
+  // Drawn only where the glass marked the stencil, and without depth, back to front by renderOrder:
+  // sky, lawn, a far tree line, the sun's glow, then near trees and a hedge. Painted, so it ignores the room's lights.
+  const outdoors = new THREE.Group(); scene.add(outdoors);
+  let outOrder = 2;
+  const outMat = (MatClass, o) => new MatClass(Object.assign({ stencilWrite: true, stencilRef: 1, stencilFunc: THREE.EqualStencilFunc,
+    depthTest: false, depthWrite: false, fog: false, toneMapped: false }, o));
+  const outAdd = (obj) => { obj.renderOrder = outOrder++; obj.castShadow = false; obj.receiveShadow = false; outdoors.add(obj); return obj; };
+  {
+    const R = rnd(2024);
+    const sky = canvasTex(32, 512, (x, w, h) => {
+      const gr = x.createLinearGradient(0, 0, 0, h);
+      gr.addColorStop(0, '#8fb5d3'); gr.addColorStop(0.3, '#b9d2e2'); gr.addColorStop(0.47, '#f6e6c4'); gr.addColorStop(0.5, '#fbe9c2'); gr.addColorStop(1, '#c9b78b');
+      x.fillStyle = gr; x.fillRect(0, 0, w, h);
+    });
+    outAdd(new THREE.Mesh(new THREE.SphereGeometry(30, 32, 16), outMat(THREE.MeshBasicMaterial, { map: sky, side: THREE.BackSide })));
+    // lawn with fallen leaves and dappled light
+    const lawn = canvasTex(256, 256, (x, w, h) => {
+      x.fillStyle = '#93a04c'; x.fillRect(0, 0, w, h);
+      for (let k = 0; k < 2600; k++) {
+        x.fillStyle = ['#a9b25a', '#7d8c3f', '#b8a24e', '#d2a347', '#6f7d38'][Math.floor(R() * 5)];
+        x.globalAlpha = 0.35 + R() * 0.5; x.fillRect(R() * w, R() * h, 1 + R() * 3, 1 + R() * 3);
+      }
+      x.globalAlpha = 1;
+      for (let k = 0; k < 40; k++) { x.fillStyle = 'rgba(60,50,20,0.10)'; x.beginPath(); x.arc(R() * w, R() * h, 6 + R() * 22, 0, Math.PI * 2); x.fill(); }
+    }, [10, 10]);
+    const ground = outAdd(new THREE.Mesh(new THREE.CircleGeometry(30, 48), outMat(THREE.MeshBasicMaterial, { map: lawn })));
+    ground.rotation.x = -Math.PI / 2; ground.position.y = -0.02;
+    // a far tree line, hazy with distance, around the back and the left of the house
+    const line = canvasTex(2048, 512, (x, w, h) => {
+      for (let k = 0; k < 140; k++) {
+        const cx = R() * w, r = 30 + R() * 70, cy = h * (0.55 + R() * 0.2);
+        for (let j = 0; j < 90; j++) {
+          const a = R() * Math.PI * 2, d = Math.sqrt(R()) * r;
+          x.fillStyle = ['#d6c48a', '#c8b67a', '#bfc08a', '#e3cf96', '#b9a86e'][Math.floor(R() * 5)];
+          x.globalAlpha = 0.5 + R() * 0.4; x.beginPath(); x.arc(cx + Math.cos(a) * d * 1.3, cy + Math.sin(a) * d, 6 + R() * 12, 0, Math.PI * 2); x.fill();
+        }
+      }
+      x.globalAlpha = 1; x.fillStyle = '#b4a774'; x.fillRect(0, h * 0.78, w, h * 0.22);
+    });
+    const band = outAdd(new THREE.Mesh(new THREE.CylinderGeometry(17, 17, 9, 48, 1, true, Math.PI * 0.75, Math.PI * 1.1),
+      outMat(THREE.MeshBasicMaterial, { map: line, side: THREE.BackSide, transparent: true, alphaTest: 0.02 })));
+    band.position.y = 3.2;
+    // the late sun, behind the trees, high on the right of the window
+    const glowSun = outAdd(new THREE.Sprite(outMat(THREE.SpriteMaterial, { map: softDot, color: 0xfff0c8, transparent: true, blending: THREE.AdditiveBlending })));
+    glowSun.position.set(5, 7, -14); glowSun.scale.setScalar(12);
+    // near trees with backlit fall leaves, and a hedge under the window
+    function treeTex(seed, hedge) {
+      const T = rnd(seed);
+      return canvasTex(512, hedge ? 256 : 640, (x, w, h) => {
+        const cx = w * 0.5, cy = hedge ? h * 0.55 : h * 0.4, rx = w * (hedge ? 0.48 : 0.42), ry = hedge ? h * 0.42 : h * 0.33;
+        if (!hedge) {
+          x.strokeStyle = '#4a3322'; x.lineCap = 'round';
+          x.lineWidth = w * 0.05; x.beginPath(); x.moveTo(cx, h); x.quadraticCurveTo(cx - w * 0.03, h * 0.65, cx + w * 0.01, h * 0.42); x.stroke();
+          for (let k = 0; k < 6; k++) { x.lineWidth = w * (0.01 + T() * 0.012); x.beginPath(); const y0 = h * (0.45 + T() * 0.2); x.moveTo(cx, y0); x.lineTo(cx + (T() - 0.5) * w * 0.7, y0 - h * (0.12 + T() * 0.2)); x.stroke(); }
+        }
+        const dark = ['#6f5a24', '#7d6a2a', '#5f6a2a'], mid = ['#b9862f', '#c99a3c', '#9aa84a', '#b07a2a'], lit = ['#f0cf6a', '#f6dc86', '#e8b04a', '#d9c45e'];
+        for (let k = 0; k < (hedge ? 1000 : 1700); k++) {
+          const a = T() * Math.PI * 2, d = Math.pow(T(), 0.75);
+          const px = cx + Math.cos(a) * d * rx * (0.85 + T() * 0.3), py = cy + Math.sin(a) * d * ry * (0.85 + T() * 0.3);
+          const sunSide = (Math.cos(a) * 0.6 - Math.sin(a) * 0.8) * 0.5 + 0.5, edge = d * d;
+          const pick = sunSide * 0.6 + edge * 0.5 + (T() - 0.5) * 0.4;
+          const pal = pick > 0.75 ? lit : pick > 0.4 ? mid : dark;
+          x.fillStyle = pal[Math.floor(T() * pal.length)]; x.globalAlpha = 0.75 + T() * 0.25;
+          x.beginPath(); x.ellipse(px, py, 3 + T() * 7, 2 + T() * 5, T() * 3, 0, Math.PI * 2); x.fill();
+        }
+        x.globalAlpha = 1;
+      });
+    }
+    [[-7.5, -11, 6.5, 11], [3.6, -9, 6, 12], [-9.5, 2.5, 6, 13], [1.2, -5.2, 5.2, 14], [-6.2, -2.2, 5.6, 15], [-1.9, -6.5, 5, 16]]
+      .sort((a, b) => Math.hypot(b[0], b[1]) - Math.hypot(a[0], a[1]))
+      .forEach(([x, z, size, seed]) => {
+        const t = outAdd(new THREE.Sprite(outMat(THREE.SpriteMaterial, { map: treeTex(seed), transparent: true, alphaTest: 0.02 })));
+        t.center.set(0.5, 0); t.position.set(x, -0.1, z); t.scale.set(size, size * 1.25, 1);
+      });
+    // tall shrubs close behind the window and the door, so leaves fill part of the view as in the picture
+    [[-0.4, -4.7, 3.4, 2.3, 23], [1.3, -3.9, 2.8, 2.1, 24], [-4.4, 0.3, 3.2, 2.6, 25], [0.4, -3.0, 2.8, 1.5, 21], [-3.5, -1.0, 2.6, 1.4, 22]]
+      .forEach(([x, z, w, h, seed]) => {
+        const hs = outAdd(new THREE.Sprite(outMat(THREE.SpriteMaterial, { map: treeTex(seed, true), transparent: true, alphaTest: 0.02 })));
+        hs.center.set(0.5, 0); hs.position.set(x, -0.05, z); hs.scale.set(w, h, 1);
+      });
+  }
 
   const stove = entity('stove', 'Stove', { spawnAt: 1.3, offAt: 0.8, inspect: true,
     info: () => [['Cooking', 'Pot roast'], ['Ready', 'Never'], ['Kettle', 'About to boil']] });
@@ -1193,7 +1275,7 @@
   { const r = rnd(11); for (let k = 0; k < DUST; k++) dBase.push([-0.4 + r() * 1.7, 0.9 + r() * 1.3, -2.1 + r() * 1.7, r() * 6.28, 0.5 + r()]); }
   const dGeo = new THREE.BufferGeometry(); dGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
   const dustMat = new THREE.PointsMaterial({ size: 0.022, map: softDot, color: C(0xffe9c4), transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending });
-  const dust = new THREE.Points(dGeo, dustMat); dust.visible = false; scene.add(dust);
+  const dust = new THREE.Points(dGeo, dustMat); dust.visible = false; dust.renderOrder = 100; scene.add(dust);
 
   // ---------- simulation bounds ----------
   const bounds = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(6.4, 2.95, 4.9)),
@@ -1283,6 +1365,9 @@
   function makeComposer() {
     composer = new THREE.EffectComposer(renderer);
     const ssao = new THREE.SSAOPass(scene, camera, 16, 10);
+    ssao.beautyRenderTarget.stencilBuffer = true; // the glass marks the outdoors in the stencil
+    const overrideRender = ssao.renderOverride.bind(ssao);
+    ssao.renderOverride = (...args) => { outdoors.visible = false; overrideRender(...args); outdoors.visible = true; };
     ssao.kernelRadius = 0.32; ssao.minDistance = 0.0004; ssao.maxDistance = 0.012;
     composer.addPass(ssao);
     composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));

@@ -24,10 +24,10 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   added once per run.
 - **Observe it.** Drag to orbit, scroll or pinch to zoom. Hover shows a box around a
   thing and its name. Click, tap, or use the Inspect menu to open its details. Some of
-  them: the window's outside is "Not rendered", the coffee's temperature "Never changes",
+  them: the window's outside is "Only what the glass shows", the coffee's temperature "Never changes",
   and Marjorie "Has noticed you: No".
 - **A full 1950s kitchen.** A stove with a pot roast (Ready: Never) and a kettle that
-  steams but never boils, a back door whose window shows the outside is not rendered, a wall
+  steams but never boils, a back door that leads only to what its glass shows, a wall
   phone that rings now and then (the log says "Nobody answered"), a calendar that says
   TUESDAY instead of a month, a radio on the fridge with notes floating up (The same song),
   Dale's chair at the table (Sat in: Now and then), Dale's laptop at his place (Fits the
@@ -57,6 +57,11 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   visits Dale, who pets it. The inspector shows what each one is doing.
 - **Ask Dale the dog's name** (once there is a dog). Whatever dog you gave him, he thinks, then says "Doctor Bones." The log records it,
   then "Security answer accepted". Marjorie keeps doing her crossword.
+- **The outdoors** is a sunny fall afternoon, as in the story picture: sky, a lawn with
+  fallen leaves, a far tree line, the low sun, trees with backlit fall leaves, and shrubs
+  close to the house. It shows only through the glass of the window and the back door.
+  From above the walls there is no yard, only the dark, and in wireframe view the outdoors
+  is gone. The window has small panes (four across, four down), as in the picture.
 - **Look** (a menu under the scene) changes how real the kitchen looks while it runs:
   Toy (the original light), Sunlight (reflections, real chrome, and sun through the window
   that casts the window frame on the floor), Sunlight and surfaces (also wood grain, worn
@@ -104,6 +109,8 @@ Useful places in the script:
 | Kitchen things | the "more of the kitchen" block after the painting; steam and radio notes in `animateDecor`; the phone's ringing in the frame loop (`state.nextRing`) |
 | Clock speed | `state.sim += dt * 4` (4 story seconds per real second) |
 | Look | `setLook(n)` (0 to 3) in the "look" block before the state; `makeSurfaces` (the canvas textures), `setSurfaces` (maps, clear coat, and sharp or rounded boxes from `roundables`), `makeComposer` (ambient occlusion and the passes after it), `sunIn` (the sun through the window), `hemi`; the choice is kept in localStorage as `run4113-look` |
+| Outdoors | `glassMat` (the window and door glass draw nothing and write 1 to the stencil, renderOrder 1); the "outdoors" block after the back door: `outMat` (stencil equal 1, no depth test, no fog, no tone mapping), `outAdd` (draws back to front by renderOrder), the sky, lawn, tree line, sun glow, `treeTex` (painted trees and shrubs) and their positions; the shading pass hides the outdoors from its normal pass and keeps a stencil buffer |
+| Design standard | `../kitchen.jpg`, the picture on the story page: warm late light, a window of small panes, fall trees outside, sage cabinets, cream enamel, a worn checkerboard floor |
 | Shadows | each mesh keeps its own `castShadow` in `userData.cast`, so switching to wireframe and back does not make the window glass block the sun |
 | Radio song | `SONG` (tempo, chords in `CH` and `BARS`, melody in `MEL` as bar, beat, length, MIDI note), `playEvent` (the instruments), `startAudio` (the speaker filter and crackle), `music` and `syncAudio` |
 
