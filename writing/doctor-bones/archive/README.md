@@ -23,6 +23,8 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/archive/
 | `records/db-011-property-tax-summary.html` | A property-records page ("lotbook"): Dale and Marjorie, owners since September 1996, tax year 2014 |
 | `social/db-012-alumni-directory.html` | West Dayton High School (made up) alumni directory: Dale, class of 1985 |
 | `media/db-003-wedding-photo-grid.jpg` | The album's photos |
+| `media/db-dale-profile-illustration.svg` | Dale's illustrated profile portrait (DB-001 and DB-002) |
+| `media/db-002-autumn-porch-illustration.svg` | The porch with fall flowers in DB-002's September post |
 
 Rules for the items (from the author's continuity notes): everything is made up; no real
 accounts, addresses, venues, schools or employers; Dayton only at city level; Dale was
@@ -31,7 +33,7 @@ seven in 1974 (born about 1967); Doctor Bones the dog never appears in any item.
 Every page has `noindex` and a "FICTION" bar at the top that links to the story and back
 to the manifest. The platforms and offices are made up ("Professional network", "daybook",
 "keepsake", "lotbook"), not real ones. The pages come from the author's archive folders
-(v0.5 for DB-001 to DB-004, v1.4 for DB-008 to DB-012, "complete" for DB-005 to DB-007). The copies here add the bar and
+(now all from "doctor_bones_archive_complete 2", which also adds the two illustrations). The copies here add the bar and
 `noindex`, use "keepsake" for the photo site (DB-003) and "daybook" for the 2014 timeline
 (DB-010, renamed from `db-010-facebook-timeline.html`), make DB-006 and DB-011 pages on a property-records site
 ("lotbook") instead of the real county recorder's and auditor's offices, call DB-007's
