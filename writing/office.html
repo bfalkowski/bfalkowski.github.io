@@ -72,10 +72,10 @@
     </div>
 
     <figure>
-      <video controls muted playsinline preload="metadata" poster="office/office-demo-poster.jpg" width="1280" height="800">
+      <video controls muted playsinline preload="metadata" poster="office/office-demo-poster.jpg" width="970" height="606">
         <source src="office/office-demo.mp4" type="video/mp4">
       </video>
-      <figcaption>The office's demo, which plays three pretend sessions. The sessions are faster than real ones. Watch for the hands that go up when a session needs permission, and for the manager, whom I sent through near the end.</figcaption>
+      <figcaption>The office's demo, which plays three pretend sessions, faster than real ones. Watch for the hands that go up when a session needs permission. Near the end I sent the manager through, and everyone without real work sits down and looks busy.</figcaption>
     </figure>
 
     <h2>The gap</h2>
@@ -97,13 +97,17 @@
     </table></div>
     <p>The raised hand is the part I use most. The browser tab's title counts the raised hands, so I can see that someone is waiting even when the office is in a background tab. While a worker waits, they stay in their chair and pass the time. They check their phone, swivel, lean back and look around, and the hand goes back up every so often.</p>
     <figure>
-      <img src="office/office-waiting.jpg" width="1600" height="1000" alt="The loft office in the evening. Three developers sit at long wooden desks with their monitors on. One has a hand raised, and a speech bubble says Needs your OK. A name tag above each person shows what their session is working on.">
+      <img src="office/office-waiting.jpg" width="1554" height="972" alt="The loft office in the evening. Three developers sit at long wooden desks with their monitors on. One has a hand raised, and a speech bubble says Needs your OK. A name tag above each person shows what their session is working on.">
       <figcaption>Three sessions at work, and one of them is waiting for my OK. The tag above each person shows the session's title.</figcaption>
     </figure>
     <p>Some of it is only for fun. Every few minutes a manager in a suit walks through, and anyone without real work sits down at a desk and looks busy until the manager leaves. A radio plays six old records that are a little out of tune. The org chart puts me at the top as the manager, and its Reorg button arranges everyone another way and says that nothing else changes. The company is called Building 58, which the rename pull request, written by a worker, describes as "a location inside the automated Ilium Works in Kurt Vonnegut's <em>Player Piano</em>".</p>
 
     <h2>How a session becomes a person</h2>
     <p>Claude Code runs hooks on events such as a prompt, a tool call, a permission request and the end of a turn. My hook sends a short summary of each event to the relay, and the relay passes it to the office page. The hook trims what it sends: skill names, file paths inside the project, the first two words of a shell command such as <code>npm test</code>, and the session's title. It does not send prompts unless I turn that on. It gives up on the relay after one second, and most events run it in the background, so it never slows Claude Code down.</p>
+    <figure>
+      <img src="office/office-desks.jpg" width="1554" height="972" alt="A closer view of two developers typing at their desks. Their monitors show lines of tool calls. Behind them, the whiteboard on the brick wall has sticky notes under Doing and one under Waiting on you.">
+      <figcaption>Up close, each monitor shows its session's tool calls. The whiteboard on the wall lists what is in progress, and the Lead's note sits under Waiting on you.</figcaption>
+    </figure>
     <p>Sessions started from the office run in a terminal panel beside the scene. The relay starts <code>claude</code> in a pseudo-terminal on my Mac, and the page shows it with xterm.js. A web page that can run commands on my computer is a risk, so the relay only answers the office page on the same computer. A request from another website, a tunnel or another computer is refused, even with the key.</p>
     <p>Each session takes the first free desk. There are nine desks, so nine sessions can run at once. The browser remembers who had which session, so after a reload everyone is back at the same desk.</p>
 
