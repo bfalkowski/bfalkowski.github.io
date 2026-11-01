@@ -13,8 +13,7 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
 
 - **The world builds itself.** Floor, walls, kitchen, table, Marjorie, then Dale. Each
   piece shows as a blue wireframe for a moment before it turns solid. There is no dog.
-  The log says "Password accepted", then the bank's security question, "What was the
-  name of your first dog?", then "Dale has never had a dog".
+  The log says "Run 4,113 started". The bank's lines come when Dale logs in (below).
 - **Add things from the menu.** Pick a dog and press "Add to the world": Default (already
   selected, since it is the dog you get when you do not take the time to choose), Spotted,
   Small or Black. The water bowl comes with the first dog. There is one dog per run, so
@@ -58,15 +57,17 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   hand: it drinks from the bowl, sniffs, chases its tail, wanders, barks "Woof.", and
   visits Dale, who pets it. The inspector shows what each one is doing.
 - **Ask Dale the dog's name** (once there is a dog). Whatever dog you gave him, he thinks, then says "Doctor Bones." The log records it,
-  then "Security answer accepted". Marjorie keeps doing her crossword.
+  then "Security answer accepted" (once Dale has logged in and the bank has asked). Marjorie
+  keeps doing her crossword.
 - **Log in to the bank** has Dale try a password. If he is on the floor, he gets up and
   goes to his laptop first. He thinks ("Hmm. What was my password?", then "Oh yeah."), types
   a password, which shows letter by letter, and says why it is his password ("GemCity540.
   Dayton is the Gem City. And I get home at 5:40."). Each one comes from his world: Dayton,
-  Marjorie, the year he was born, his job, the TV of his childhood. None is right. The log
-  says "Wrong password. Run 1,720 tried it too" (a random earlier run). The right one was
-  typed at the start of the run, and the page never shows it. The inspector counts
-  "Passwords typed this run".
+  Marjorie, the year he was born, his job, the TV of his childhood. In the copy of Dayton it
+  is always right: the log says "Dale typed GemCity540", then "Password accepted", then the
+  bank's security question, "What was the name of your first dog?", then "Dale has never had
+  a dog" (unless he already has one). The inspector shows the password as "Password this run". There is one login per run. Pressing the button
+  again adds a red line to the log: "One login per run. Turn the run off and start run 4,114".
 - **The outdoors** is a sunny fall afternoon, as in the story picture: sky, a lawn with
   fallen leaves, a far tree line, the low sun, trees with backlit fall leaves, and shrubs
   close to the house. It shows only through the glass of the window and the back door.
@@ -137,7 +138,7 @@ Useful places in the script:
 | Story-picture details | `subway(w, h)` (the tile texture) and the three tile pieces in the cabinets block; the drawer row and bar pulls in the same block; `plaid` and `towel` on the stove; the plant in "counter things"; the bloom and the warm grade in `makeComposer` (the shading look); the sunny light colors in `setLook` |
 | Shadows | each mesh keeps its own `castShadow` in `userData.cast`, so switching to wireframe and back does not make the window glass block the sun |
 | Radio song | `SONG` (tempo, chords in `CH` and `BARS`, melody in `MEL` as bar, beat, length, MIDI note), `playEvent` (the instruments), `startAudio` (the speaker filter and crackle), `music` and `syncAudio` |
-| Bank login | `PASSWORDS` (each with what Dale says about it), `startLogin`, `endLogin`, `state.login` and `state.pwTried`; `daleSays(text, kind)` sets Dale's bubble, where the kind is `thought`, `typed` or `wrap` (a long line) |
+| Bank login | `PASSWORDS` (each with what Dale says about it), `startLogin`, `endLogin`, `state.login`, `state.pw` and `state.loggedIn` (one login per run); `log(text, 'warn')` writes a red line; `daleSays(text, kind)` sets Dale's bubble, where the kind is `thought`, `typed` or `wrap` (a long line) |
 | Experiment mode switch | the "Experiment mode" block after `finalize(marjorie)`: `real.on`, `setReal(on)` (the checkbox `#real`), `SEAT_R` (chair to table centre for each version), `tableParts` (the table top, foot, bowl and apples), `APPLES`, and the real sizes of the cup, dog, cat and water bowl (`e.k`); `showPeople()` hides a toy once its real person has loaded |
 | Experiment mode models | `models/marge.glb` and `models/dale.glb` (Meshy, Mixamo-style skeletons with a Walking clip; textures shrunk to 2048 and 1024 px JPEG); `loadGLB`, `makePerson(gl, height)` (size, rest pose, `aimW`, two-bone `ik`, `gazeAt`, `relaxArm`, `setWire`), `loadMarge` and `loadDale` |
 | Marge's habits | `habits` and `answerPhone()` in `loadMarge`: steps of `{ P, dur, enter }`, where `P` names the body ('sit', 'stand', 'walk'), what each hand reaches for (`resolve`) and where she looks (`gazePoint`); `marge.reset()` puts the cup, pencil and phone receiver back |
