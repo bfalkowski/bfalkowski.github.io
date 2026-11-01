@@ -1295,27 +1295,6 @@
   const dGeo = new THREE.BufferGeometry(); dGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
   const dustMat = new THREE.PointsMaterial({ size: 0.022, map: softDot, color: C(0xffe9c4), transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending });
   const dust = new THREE.Points(dGeo, dustMat); dust.visible = false; dust.renderOrder = 100; scene.add(dust);
-  const shaft = (() => {
-    // the window opening pushed along the sun's direction down to the floor
-    const d = new THREE.Vector3(-1.6, -4.2, 5.7), top = [[-0.25, 2.15], [1.05, 2.15], [1.05, 1.15], [-0.25, 1.15]];
-    const p = [];
-    top.forEach(([x, y]) => p.push(new THREE.Vector3(x, y, -2.31)));
-    top.forEach(([x, y]) => p.push(new THREE.Vector3(x, y, -2.31).addScaledVector(d, y / 4.2)));
-    const pos = [], uv = [];
-    for (let i = 0; i < 4; i++) {
-      const a = p[i], b = p[(i + 1) % 4], c = p[4 + (i + 1) % 4], e = p[4 + i];
-      [[a, 0, 1], [b, 1, 1], [c, 1, 0], [a, 0, 1], [c, 1, 0], [e, 0, 0]].forEach(([q, u, v]) => { pos.push(q.x, q.y, q.z); uv.push(u, v); });
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-    const R = rnd(5), rays = canvasTex(256, 128, (x, w, h) => {
-      for (let i = 0; i < w; i++) { const k = 0.35 + R() * 0.65; x.fillStyle = 'rgb(' + [255, 214, 150].map((c) => Math.round(c * k)).join(',') + ')'; x.fillRect(i, 0, 1, h); }
-      const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.55, 'rgba(0,0,0,1)'); x.fillStyle = g; x.fillRect(0, 0, w, h);
-    });
-    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: rays, transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending,
-      depthWrite: false, side: THREE.DoubleSide, fog: false, toneMapped: false }));
-    m.renderOrder = 101; m.visible = false; scene.add(m); return m;
-  })();
 
   // ---------- simulation bounds ----------
   const bounds = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(6.4, 2.95, 4.9)),
@@ -2170,8 +2149,6 @@
       lid.rotation.x += (want - lid.rotation.x) * (1 - Math.exp(-dt * 7));
       laptopScreen.visible = lid.rotation.x > -1.2;
     }
-
-    shaft.visible = lookLevel >= 1 && win.group.visible && win.mode === 'solid' && !win.gone && state.phase !== 'off';
 
     // the radio's song: plays while the radio is in the world and the sound is on, from the top each time
     if (music.ctx) {
