@@ -57,6 +57,13 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   visits Dale, who pets it. The inspector shows what each one is doing.
 - **Ask Dale the dog's name** (once there is a dog). Whatever dog you gave him, he thinks, then says "Doctor Bones." The log records it,
   then "Security answer accepted". Marjorie keeps doing her crossword.
+- **Look** (a menu under the scene) changes how real the kitchen looks while it runs:
+  Toy (the original light), Sunlight (reflections, real chrome, and sun through the window
+  that casts the window frame on the floor), Sunlight and surfaces (also wood grain, worn
+  glossy floor tiles with grout, plaster, painted cabinets, enamel with a clear coat, and
+  rounded edges), and Sunlight, surfaces and shading (also ambient occlusion, antialiasing
+  and a light vignette). A new visitor gets the last one. The browser remembers the choice.
+  The first switch to a higher look can pause for a moment while it makes the textures.
 - **Wireframe view** shows the whole world as wireframes.
 - **Radio sound** (off by default) plays the radio's song: an original slow ballad in the
   style of a 1940s radio record, made in the page with Web Audio. It sounds muffled like a
@@ -72,7 +79,10 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
 ## Code
 
 Everything is in `index.html`: page, styles, and three.js code. It uses three.js r128
-from cdnjs and its OrbitControls from jsDelivr (`three@0.128.0`).
+from cdnjs, and from jsDelivr (`three@0.128.0/examples/js`) its OrbitControls,
+RoomEnvironment, RoundedBoxGeometry, and the post-processing files for the shading
+(EffectComposer, RenderPass, ShaderPass, MaskPass, SSAOPass with SSAOShader and
+SimplexNoise, CopyShader, GammaCorrectionShader, FXAAShader, VignetteShader).
 
 Useful places in the script:
 
@@ -93,6 +103,8 @@ Useful places in the script:
 | Add menu | `addBtn` click handler; `updateButtons()` decides which buttons are on |
 | Kitchen things | the "more of the kitchen" block after the painting; steam and radio notes in `animateDecor`; the phone's ringing in the frame loop (`state.nextRing`) |
 | Clock speed | `state.sim += dt * 4` (4 story seconds per real second) |
+| Look | `setLook(n)` (0 to 3) in the "look" block before the state; `makeSurfaces` (the canvas textures), `setSurfaces` (maps, clear coat, and sharp or rounded boxes from `roundables`), `makeComposer` (ambient occlusion and the passes after it), `sunIn` (the sun through the window), `hemi`; the choice is kept in localStorage as `run4113-look` |
+| Shadows | each mesh keeps its own `castShadow` in `userData.cast`, so switching to wireframe and back does not make the window glass block the sun |
 | Radio song | `SONG` (tempo, chords in `CH` and `BARS`, melody in `MEL` as bar, beat, length, MIDI note), `playEvent` (the instruments), `startAudio` (the speaker filter and crackle), `music` and `syncAudio` |
 
 The figures are built from spheres, cylinders and boxes with the `ball`, `rod`, `limb`
