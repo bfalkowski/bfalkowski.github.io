@@ -86,6 +86,10 @@
     <p>The office is the second world in a repo I already had. The first is the 1950s kitchen from my short story <a href="doctor-bones.html">Doctor Bones</a>, a 3D scene that code can drive through a small relay server. Curl, an Appian process model or an agent can send it commands. A Claude Code hook can send events the same way, so a world can show what a session is doing.</p>
     <p>In my first version, each developer was one of <a href="https://github.com/mattpocock/skills">Matt Pocock's skills</a>. When the agent used <code>/tdd</code>, Marcus went to his desk. When it used <code>/diagnose</code>, Priya did. It looked good in the demo, but it did not hold up in real sessions. Most of a session is reads, edits and shell commands, not skills, so the Lead did all the work while everyone else drank coffee.</p>
     <p>So I changed the model. Each developer is now a session. <strong>Add worker</strong> starts a new Claude Code session for a repo I pick, in its own checkout, and a developer goes to a desk for it. Clicking anyone opens their session in the terminal beside the office.</p>
+    <figure>
+      <a href="office/office-full.jpg"><img src="office/office-full-1600.jpg" width="1600" height="1000" alt="The office page in a browser. On the left, the 3D loft with name tags over the developers, and the Floor list below it. On the right, a full-height Claude Code terminal showing June's session, which reports that ticket T-27 is built and open as pull request 19 and explains which branch it should merge into."></a>
+      <figcaption>My office at the end of the day, with June's session open in the Claude Code panel. June built T-27 and is explaining the pull request she opened. The sign still says Studio 4B, because my relay was serving the files from before the rename. Select the image to see it at full size.</figcaption>
+    </figure>
 
     <h2>What the office shows</h2>
     <div class="table-wrap"><table>
@@ -105,8 +109,8 @@
     <h2>How a session becomes a person</h2>
     <p>Claude Code runs hooks on events such as a prompt, a tool call, a permission request and the end of a turn. My hook sends a short summary of each event to the relay, and the relay passes it to the office page. The hook trims what it sends: skill names, file paths inside the project, the first two words of a shell command such as <code>npm test</code>, and the session's title. It does not send prompts unless I turn that on. It gives up on the relay after one second, and most events run it in the background, so it never slows Claude Code down.</p>
     <figure>
-      <img src="office/office-desks.jpg" width="1554" height="972" alt="A closer view of two developers typing at their desks. Their monitors show lines of tool calls. Behind them, the whiteboard on the brick wall has sticky notes under Doing and one under Waiting on you.">
-      <figcaption>Up close, each monitor shows its session's tool calls. The whiteboard on the wall lists what is in progress, and the Lead's note sits under Waiting on you.</figcaption>
+      <img src="office/office-monitor.jpg" width="1866" height="1168" alt="A close view of the Lead at a desk with two monitors. The left monitor lists the session's tool calls, such as skill /tdd, write src/cart/discount.test.ts and $ npm test. The right monitor lists what the other developers are doing, such as Marcus: read docs/checkout.md.">
+      <figcaption>From the demo, as close as the camera goes. The Lead's left monitor shows its own tool calls, and the right one shows what everyone in the office is doing.</figcaption>
     </figure>
     <p>Sessions started from the office run in a terminal panel beside the scene. The relay starts <code>claude</code> in a pseudo-terminal on my Mac, and the page shows it with xterm.js. A web page that can run commands on my computer is a risk, so the relay only answers the office page on the same computer. A request from another website, a tunnel or another computer is refused, even with the key.</p>
     <p>Each session takes the first free desk. There are nine desks, so nine sessions can run at once. The browser remembers who had which session, so after a reload everyone is back at the same desk.</p>
