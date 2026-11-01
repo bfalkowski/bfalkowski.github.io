@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Bryan Falkowski">
+  <meta name="description" content="A 3D loft office where each developer is one of my Claude Code sessions. They type while it works, raise a hand when it needs my OK and get coffee when it is done. By the afternoon, the office's own workers were filing, building and reviewing its tickets.">
+  <title>An Office for My Claude Code Sessions | Bryan Falkowski</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --text: #2c2c2c;
+      --muted: #666666;
+      --line: #e0e0e0;
+      --alt-bg: #fafafa;
+      --accent: #1d3f72;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: #fff; color: var(--text);
+      font: 17px/1.6 "Source Sans 3", "Source Sans Pro", sans-serif;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .topbar { border-bottom: 1px solid var(--line); padding: 14px 32px; }
+    .topbar .container { display: flex; justify-content: space-between; font-size: 15px; }
+    .topbar a.home { color: var(--text); font-weight: 600; }
+    .container { max-width: 760px; margin: 0 auto; }
+    article { padding: 48px 32px 64px; }
+    h1 { font-size: 36px; font-weight: 600; line-height: 1.2; margin: 0 0 10px; }
+    .byline { color: var(--muted); font-size: 15px; margin: 0 0 36px; }
+    h2 { font-size: 24px; font-weight: 700; margin: 44px 0 14px; }
+    p { margin: 0 0 14px; }
+    ul, ol { margin: 0 0 16px; padding-left: 24px; }
+    li { margin-bottom: 6px; }
+    .table-wrap { overflow-x: auto; margin: 0 0 18px; }
+    table { border-collapse: collapse; width: 100%; font-size: 15px; }
+    th, td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; vertical-align: top; }
+    th { background: var(--alt-bg); font-weight: 600; }
+    code { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 0.9em; }
+    figure { margin: 0 0 22px; text-align: center; }
+    figure img, figure video { display: block; width: 100%; height: auto; border-radius: 6px; background: #0c0f14; }
+    figcaption { color: var(--muted); font-size: 15px; margin-top: 6px; }
+    .tldr { background: var(--alt-bg); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 6px 6px 0; margin-bottom: 24px; }
+    .tldr p:last-child { margin-bottom: 0; }
+    footer { text-align: center; color: var(--muted); font-size: 14px; padding: 32px; border-top: 1px solid var(--line); }
+    @media (max-width: 720px) {
+      .topbar, article { padding-left: 16px; padding-right: 16px; }
+      h1 { font-size: 30px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="container">
+      <a class="home" href="../">Bryan Falkowski</a>
+      <a href="../#writing">All writing</a>
+    </div>
+  </div>
+
+  <article class="container">
+    <h1>An Office for My Claude Code Sessions</h1>
+    <p class="byline">Bryan Falkowski · November 1, 2026 · Follows <a href="hands-free.html">Steering Claude Code Without a Keyboard</a></p>
+
+    <div class="tldr">
+      <p>My last post ended on a gap. I run several Claude Code sessions at once, one per Terminal tab, and a tab does not tell me from across the room which session is waiting for me.</p>
+      <p>So I built an office. It is a 3D loft in New York with brick walls, steel windows and a coffee bar, and each developer in it is one of my Claude Code sessions. While a session works, its developer types at their desk with its tool calls on the monitor. When it needs my OK, they raise a hand. When its turn ends, they get coffee. I click a person instead of a tab.</p>
+      <p>By the afternoon the office was working on itself. Its workers filed tickets, I approved them, and other workers built them and reviewed the pull requests. This post covers what I built, how it works, and what I still decide myself.</p>
+    </div>
+
+    <figure>
+      <video controls muted playsinline preload="metadata" poster="office/office-demo-poster.jpg" width="1280" height="800">
+        <source src="office/office-demo.mp4" type="video/mp4">
+      </video>
+      <figcaption>The office's demo, which plays three pretend sessions. The sessions are faster than real ones. Watch for the hands that go up when a session needs permission, and for the manager who walks through near the end.</figcaption>
+    </figure>
+
+    <h2>The gap</h2>
+    <p>In <a href="hands-free.html">Steering Claude Code Without a Keyboard</a>, I described running several agents at once, each in its own git worktree and its own Terminal tab. Getting to an agent took one press of a button. Knowing which one needed me was harder, because a tab shows a title and nothing else. Finding the session that was waiting meant clicking through the tabs.</p>
+    <p>The question I need answered most often is which session is waiting on me. A list of sessions can answer it, but a list is one more thing to read. I wanted something I could understand at a glance.</p>
+
+    <h2>From skills to sessions</h2>
+    <p>The office is the second world in a repo I already had. The first is the 1950s kitchen from my short story <a href="doctor-bones.html">Doctor Bones</a>, a 3D scene that code can drive through a small relay server. Curl, an Appian process model or an agent can send it commands. A Claude Code hook can send events the same way, so a world can show what a session is doing.</p>
+    <p>In my first version, each developer was one of <a href="https://github.com/mattpocock/skills">Matt Pocock's skills</a>. When the agent used <code>/tdd</code>, Marcus went to his desk. When it used <code>/diagnose</code>, Priya did. It looked good in the demo, but it did not hold up in real sessions. Most of a session is reads, edits and shell commands, not skills, so the Lead did all the work while everyone else drank coffee.</p>
+    <p>So I changed the model. Each developer is now a session. <strong>Add worker</strong> starts a new Claude Code session in a folder I pick, and a developer goes to a desk for it. Clicking anyone opens their session in the terminal beside the office.</p>
+
+    <h2>What the office shows</h2>
+    <div class="table-wrap"><table>
+      <tr><th>In the office</th><th>In the session</th></tr>
+      <tr><td>Typing at their desk, with the tool calls on their monitor</td><td>Working</td></tr>
+      <tr><td>A raised hand, then passing the time in their chair</td><td>Waiting for permission or for an answer to a question</td></tr>
+      <tr><td>At the coffee machine, on the couch or at the window</td><td>The turn is over, and it is ready for the next prompt</td></tr>
+      <tr><td>Free for another session. Anyone past the first three people leaves the office.</td><td>The session ended</td></tr>
+    </table></div>
+    <p>The raised hand is the part I use most. The browser tab's title counts the raised hands, so I can see that someone is waiting even when the office is in a background tab. While a worker waits, they stay in their chair and pass the time. They check their phone, swivel, lean back and look around, and the hand goes back up every so often.</p>
+    <figure>
+      <img src="office/office-waiting.jpg" width="1600" height="1000" alt="The loft office in the evening. Three developers sit at long wooden desks with their monitors on. One has a hand raised, and a speech bubble says Needs your OK. A name tag above each person shows what their session is working on.">
+      <figcaption>Three sessions at work, and one of them is waiting for my OK. The tag above each person shows the session's title.</figcaption>
+    </figure>
+    <p>Some of it is only for fun. Every few minutes a manager in a suit walks through, and anyone without real work sits down at a desk and looks busy until the manager leaves. A radio plays six old records that are a little out of tune. The org chart puts me at the top as the manager, and its Reorg button arranges everyone another way and says that nothing else changes. The company is called Building 58, which my rename pull request describes as "a location inside the automated Ilium Works in Kurt Vonnegut's <em>Player Piano</em>".</p>
+
+    <h2>How a session becomes a person</h2>
+    <p>Claude Code runs hooks on events such as a prompt, a tool call, a permission request and the end of a turn. My hook sends a short summary of each event to the relay, and the relay passes it to the office page. The hook trims what it sends: skill names, file paths inside the project, the first two words of a shell command such as <code>npm test</code>, and the session's title. It does not send prompts unless I turn that on. It runs in the background and gives up after one second, so it never slows Claude Code down.</p>
+    <p>Sessions started from the office run in a terminal panel beside the scene. The relay starts <code>claude</code> in a pseudo-terminal on my Mac, and the page shows it with xterm.js. A web page that can run commands on my computer is a risk, so the relay only answers the office page on the same computer. A request from another website, a tunnel or another computer is refused, even with the key.</p>
+    <p>Each session takes the first free desk. There are nine desks, so nine sessions can run at once. The browser remembers who had which session, so after a reload everyone is back at the same desk.</p>
+
+    <h2>The office worked on itself</h2>
+    <p>I started on the session version at 9:25 in the morning. The first pull request opened at 10:02, and the last one merged at 5:18 in the afternoon. In between, 17 pull requests merged, with 35 commits that added about 6,500 lines.</p>
+    <p>The first pull requests came from sessions I opened and directed myself. Then the office got a Board, and from 2:12 in the afternoon on, the work came through it. A ticket waits in Triage until I approve it. When I press <strong>Start</strong> on a Ready ticket, the relay makes a copy of the repo, a new branch and a Claude Code session, and types the ticket in as the worker's brief. The worker builds it and opens a pull request. When the pull request opens, another worker starts as a reviewer and posts a review as a comment on it.</p>
+    <p>The first ticket was a bug in the office itself. After the waiting animation merged, every worker's head had disappeared. The angle a head turns to and the worker's appearance were both stored in a field called <code>look</code>, and the appearance overwrote the angle.</p>
+    <p>The workers also filed tickets while they worked. Of the 27 tickets on the Board at the end of the day, I wrote 4 and the workers wrote 23. A worker who found a problem outside its task filed it, such as a clean-up step that silently deleted gitignored files, and the ticket waited in Triage for me.</p>
+    <figure>
+      <img src="office/board.png" width="1468" height="860" alt="The Board, with six columns: Triage, Ready, Building, In review, Waiting on you, and Done. Triage has five tickets with Approve and Reject buttons. Ready has tickets with Start buttons. Building has one ticket with a pull request link. Done has seven tickets, some with pull request links.">
+      <figcaption>The Board at the end of the day, cropped to the top. I wrote T-1 to T-4, and the workers wrote the rest.</figcaption>
+    </figure>
+    <p>The automatic review of the rename to Building 58 is a good example of what the reviewers posted. It checked every place the company name appears, and measured the wider neon sign in headless Chrome to make sure it did not clip. It ended with a list of things for a person to check by hand, and it said plainly that it had not looked at the rendered office. To check that the new CI pipeline could fail, one worker opened a pull request that was meant to go red and was never merged.</p>
+
+    <h2>I still make every move</h2>
+    <p>The help page, which one of the workers wrote, says it plainly: no ticket starts by itself. A ticket gets a worker only when I press Start. Nothing moves a card past Building, not even a merged pull request. Workers are told not to merge, so I merge on GitHub and move the task myself. At most three tasks are built at once.</p>
+    <p>In <a href="who-owns-the-process.html">Who Owns the Process?</a> I wrote about Lauren Tan's trust ladder. You give agents more as they prove themselves, and the proof comes from verification. This office sits on the bottom rungs on purpose. Its Ready column reads like the next rungs: review comments that reach the worker without anyone carrying them (T-17), a clean pipeline before review (T-11), and a Lead whose brief is to keep tickets moving (T-18). Each one hands a move from me to the agents. I want to start each one only when I have evidence that the checks before it catch what they should.</p>
+    <p>These rules are a check on the process, not a security boundary. "Told not to merge" means the words in a worker's brief. Sessions run with my normal permissions, and one could read the relay key from my hook settings. The token the relay gives each session only lets it list and file tickets, but a session that read the key would not need the token.</p>
+
+    <h2>What I don't know yet</h2>
+    <p>I have not measured whether the office makes me faster. It does answer the question it was built for, which session needs me. That leaves the hard question from my last post. The workers filed 23 tickets in an afternoon, and approving one costs a single click. That is the same pattern as the A button on the game controller: approving got cheap, and reading what I approve did not.</p>
+    <p>Three numbers would tell me whether the office helps:</p>
+    <ul>
+      <li>How long a raised hand waits before I answer.</li>
+      <li>How often I reject a ticket from Triage.</li>
+      <li>How many review findings turn into changes.</li>
+    </ul>
+    <p>The relay already sees the events it needs for the first two.</p>
+
+    <h2>Code</h2>
+    <p>The code is in a private repo for now. The office runs locally and needs Node 18, <code>python3</code> for the terminal, and Claude Code. Running it needs no packages to install.</p>
+  </article>
+
+  <footer>&copy; 2026 Bryan Falkowski · <a href="../">Home</a></footer>
+
+</body>
+</html>
