@@ -59,6 +59,14 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   visits Dale, who pets it. The inspector shows what each one is doing.
 - **Ask Dale the dog's name** (once there is a dog). Whatever dog you gave him, he thinks, then says "Doctor Bones." The log records it,
   then "Security answer accepted". Marjorie keeps doing her crossword.
+- **Log in to the bank** has Dale try a password. If he is on the floor, he gets up and
+  goes to his laptop first. He thinks ("Hmm. What was my password?", then "Oh yeah."), types
+  a password, which shows letter by letter, and says why it is his password ("GemCity540.
+  Dayton is the Gem City. And I get home at 5:40."). Each one comes from his world: Dayton,
+  Marjorie, the year he was born, his job, the TV of his childhood. None is right. The log
+  says "Wrong password. Run 1,720 tried it too" (a random earlier run). The right one was
+  typed at the start of the run, and the page never shows it. The inspector counts
+  "Passwords typed this run".
 - **The outdoors** is a sunny fall afternoon, as in the story picture: sky, a lawn with
   fallen leaves, a far tree line, the low sun, trees with backlit fall leaves, and shrubs
   close to the house. It shows only through the glass of the window and the back door.
@@ -72,7 +80,7 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   and a light vignette, a soft glow on the brightest parts, and a warm grade like the story
   picture). The sunny looks are amber like the picture. A new visitor gets the last one. The browser remembers the choice.
   The first switch to a higher look can pause for a moment while it makes the textures.
-- **Real people** (a checkbox under the scene, off by default) shows Marjorie and Dale as
+- **Experiment mode** (a checkbox under the scene, off by default) shows Marjorie and Dale as
   people (3D models made with Meshy) instead of toys. The first time it is ticked, the two
   models load (about 4 MB, "(loading)" shows beside the box), and until then the toys stay.
   It also makes the kitchen real size where the toy version was not: the table is 1.1 m
@@ -129,8 +137,9 @@ Useful places in the script:
 | Story-picture details | `subway(w, h)` (the tile texture) and the three tile pieces in the cabinets block; the drawer row and bar pulls in the same block; `plaid` and `towel` on the stove; the plant in "counter things"; the bloom and the warm grade in `makeComposer` (the shading look); the sunny light colors in `setLook` |
 | Shadows | each mesh keeps its own `castShadow` in `userData.cast`, so switching to wireframe and back does not make the window glass block the sun |
 | Radio song | `SONG` (tempo, chords in `CH` and `BARS`, melody in `MEL` as bar, beat, length, MIDI note), `playEvent` (the instruments), `startAudio` (the speaker filter and crackle), `music` and `syncAudio` |
-| Real people switch | the "Real people" block after `finalize(marjorie)`: `real.on`, `setReal(on)` (the checkbox `#real`), `SEAT_R` (chair to table centre for each version), `tableParts` (the table top, foot, bowl and apples), `APPLES`, and the real sizes of the cup, dog, cat and water bowl (`e.k`); `showPeople()` hides a toy once its real person has loaded |
-| Real people models | `models/marge.glb` and `models/dale.glb` (Meshy, Mixamo-style skeletons with a Walking clip; textures shrunk to 2048 and 1024 px JPEG); `loadGLB`, `makePerson(gl, height)` (size, rest pose, `aimW`, two-bone `ik`, `gazeAt`, `relaxArm`, `setWire`), `loadMarge` and `loadDale` |
+| Bank login | `PASSWORDS` (each with what Dale says about it), `startLogin`, `endLogin`, `state.login` and `state.pwTried`; `daleSays(text, kind)` sets Dale's bubble, where the kind is `thought`, `typed` or `wrap` (a long line) |
+| Experiment mode switch | the "Experiment mode" block after `finalize(marjorie)`: `real.on`, `setReal(on)` (the checkbox `#real`), `SEAT_R` (chair to table centre for each version), `tableParts` (the table top, foot, bowl and apples), `APPLES`, and the real sizes of the cup, dog, cat and water bowl (`e.k`); `showPeople()` hides a toy once its real person has loaded |
+| Experiment mode models | `models/marge.glb` and `models/dale.glb` (Meshy, Mixamo-style skeletons with a Walking clip; textures shrunk to 2048 and 1024 px JPEG); `loadGLB`, `makePerson(gl, height)` (size, rest pose, `aimW`, two-bone `ik`, `gazeAt`, `relaxArm`, `setWire`), `loadMarge` and `loadDale` |
 | Marge's habits | `habits` and `answerPhone()` in `loadMarge`: steps of `{ P, dur, enter }`, where `P` names the body ('sit', 'stand', 'walk'), what each hand reaches for (`resolve`) and where she looks (`gazePoint`); `marge.reset()` puts the cup, pencil and phone receiver back |
 | Real Dale | `loadDale`: each frame his hips go to the toy's hips (`D_PELVIS`), his back leans like the toy's, his hands and feet reach for the toy's (elbows and knees bend toward the toy's), and his head points where the toy's head points; walk steps are marked `walk: true` and play his Walking clip |
 | Shading with people | the people are on layer 1; in `makeComposer` the shading pass draws the room, then the people with a skinned copy of its normal material (`skinNormal`), with no background and no shadow update |

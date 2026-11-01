@@ -92,6 +92,11 @@
     content: ""; position: absolute; left: 50%; bottom: -6px; margin-left: -6px;
     border: 6px solid transparent; border-bottom: 0; border-top-color: #fffdf6;
   }
+  /* what Dale thinks (a thought bubble: two small dots under it), what he types, and what he says at length */
+  .bubble.thought { font-style: italic; font-weight: 500; }
+  .bubble.thought::after { width: 9px; height: 9px; border: 0; border-radius: 50%; background: #fffdf6; bottom: -13px; margin-left: -9px; box-shadow: 7px 9px 0 -2px #fffdf6; }
+  .bubble.typed { font: 600 15px/1.2 var(--mono); letter-spacing: 0.03em; min-width: 1ch; }
+  .bubble.wrap { white-space: normal; width: max-content; max-width: 240px; text-align: center; }
   .offnote {
     position: absolute; inset: 0; display: grid; place-items: center; text-align: center;
     pointer-events: none; padding: 24px; color: var(--hud); font: 14px/1.7 var(--mono);
@@ -130,7 +135,7 @@
 
 <main>
   <h1>Run 4,113</h1>
-  <p class="lede">A toy version of the kitchen from <em>Doctor Bones</em>, seen the way the young man in the room with no windows sees it. Tick Real people to see Marjorie and Dale as people. Give Dale a dog from the Add menu, then ask him its name. Drag to look around, scroll or pinch to zoom, and click or tap anything to inspect it.</p>
+  <p class="lede">A toy version of the kitchen from <em>Doctor Bones</em>, seen the way the young man in the room with no windows sees it. Tick Experiment mode to see Marjorie and Dale as people. Give Dale a dog from the Add menu, then ask him its name, or have him log in to the bank. Drag to look around, scroll or pinch to zoom, and click or tap anything to inspect it.</p>
 
   <div class="stage" id="stage">
     <canvas id="world" aria-label="A toy kitchen floating in a dark space. Marjorie does a crossword at the table. Dale is on his laptop at the table until he has a dog, then sits on the floor by it."></canvas>
@@ -178,6 +183,7 @@
     </div>
     <div class="group">
       <button class="btn" id="ask" type="button" disabled>Ask Dale the dog's name</button>
+      <button class="btn" id="login" type="button" disabled>Log in to the bank</button>
       <button class="btn" id="wire" type="button" aria-pressed="false">Wireframe view</button>
       <button class="btn" id="radio-btn" type="button" aria-pressed="false">Radio sound</button>
       <label class="pick" for="look">Look
@@ -188,7 +194,7 @@
           <option value="3">Sunlight, surfaces and shading</option>
         </select>
       </label>
-      <label class="pick" for="real"><input type="checkbox" id="real" autocomplete="off"> Real people <span id="real-note" hidden>(loading)</span></label>
+      <label class="pick" for="real"><input type="checkbox" id="real" autocomplete="off"> Experiment mode <span id="real-note" hidden>(loading)</span></label>
       <button class="btn" id="off" type="button" disabled>Turn the run off</button>
       <button class="btn primary" id="again" type="button" hidden>Start run 4,114</button>
     </div>
@@ -1055,7 +1061,7 @@
   }
   finalize(marjorie);
 
-  // ---------- Real people (the checkbox): Marjorie and Dale as people, in place of the toys ----------
+  // ---------- Experiment mode (the checkbox): Marjorie and Dale as people, in place of the toys ----------
   // The models are Mixamo-style skinned meshes, real size, loaded the first time the box is ticked. Each frame a
   // target pose is built from the rest pose (bones aimed, two-bone reaches, the head turned toward what they look
   // at), and the bones ease toward it, so every change is smooth.
@@ -1430,8 +1436,10 @@
         const toyHead = DJ.head.getWorldPosition(V());
         [['Left', 'R'], ['Right', 'L']].forEach(([sd, ts]) => {
           const el = toy(p['e' + ts]), hand = toy(p['h' + ts]);
-          const w = Math.max(0, 1 - hand.distanceTo(toyHead) / (0.3 * FIG));
-          const target = hand.clone().addScaledVector(hand.clone().sub(el).normalize(), -0.07).addScaledVector(head.clone().sub(toyHead), w);
+          const w = Math.max(0, Math.min(1, (0.33 * FIG - hand.distanceTo(toyHead)) / (0.08 * FIG)));
+          // (the toy's head is cartoon size, so the hand's place around it is scaled down to a real head)
+          const nearHead = head.clone().addScaledVector(hand.clone().sub(toyHead), 0.6);
+          const target = hand.clone().lerp(nearHead, w).addScaledVector(hand.clone().sub(el).normalize(), -0.07);
           ik(bones[sd + 'Arm'], bones[sd + 'ForeArm'], bones[sd + 'Hand'], target, el.sub(wp(bones[sd + 'Arm'])));
         });
       }
@@ -1442,7 +1450,7 @@
     requestAnimationFrame(tick);
   }); }
 
-  // ---------- the Real people checkbox: the layout and sizes for each version ----------
+  // ---------- the Experiment mode checkbox: the layout and sizes for each version ----------
   // The toy version keeps its 1.67 m table, with the chairs 1.08 m from its centre. The real version has a 1.1 m
   // table, so the chairs, the laptop, the cup and the crossword move in with its edge. The cup, the pets and the
   // water bowl are real size, and the toy Marjorie and the toy Dale are hidden behind the real ones.
@@ -1493,7 +1501,8 @@
   const dale = entity('dale', 'Dale Hubbard (copy)', {
     spawnAt: 3.3, offAt: 2.1, k: FIG, inspect: true,
     info: () => [['Doing', dA.activity], ['Run', state.run.toLocaleString('en-US')], ['Came home', '5:40 pm, as always'],
-      ["Knows the dog's name", !state.dogPresent ? 'He has no dog' : state.dogName ? 'Yes' : 'Not yet'], ['Built from', 'Everything he ever posted']]
+      ["Knows the dog's name", !state.dogPresent ? 'He has no dog' : state.dogName ? 'Yes' : 'Not yet'], ['Passwords typed this run', String(state.pwTried || 0)],
+      ['Built from', 'Everything he ever posted']]
   });
   const DJ = {};
   {
@@ -2292,6 +2301,66 @@
       { pose: { hx: -0.45, wag: 1, wagSpeed: 15 }, dur: 1.4, enter: () => { if (!dogCtl.moving) dogCtl.spin = { t: 0, dur: 1.3 }; } },
       { pose: { wag: 0.8, wagSpeed: 12 }, dur: 3.5 }], 'Hearing his name');
   });
+  // Log in to the bank: Dale goes to his laptop, tries to remember his password, types one, and says why it is
+  // his password. Each comes from his world: Dayton, Marjorie, the year he was born, the job, the TV of his
+  // childhood. None is right. The right one was typed at the start of this run, and the log never shows it.
+  const loginBtn = $('login');
+  const PASSWORDS = [
+    ['Flyers1967', 'The Dayton Flyers, and the year I was born.'],
+    ['GemCity540', 'Dayton is the Gem City. And I get home at 5:40.'],
+    ['14Across', 'Marge always saves 14 across for last.'],
+    ['Marjorie0614', 'Marge, and our anniversary. June 14th. I think.'],
+    ['KingsIsland85', 'Our first date. Marge rode The Beast twice.'],
+    ['WhoDey88', 'The Bengals went to the Super Bowl that year.'],
+    ['Triangles1920', 'Dayton had a pro football team once. The Triangles.'],
+    ['Wright1903', 'The first flight. Every kid in Dayton learns that one.'],
+    ['Enterprise1701', 'Star Trek. I watched it every day after school.'],
+    ['Deductible500', 'I sell insurance. Nobody guesses a deductible.'],
+    ['SalemAve72', 'The house on Salem Avenue, where I grew up.'],
+    ['Password1', 'It worked at the office for nine years.']
+  ];
+  function shufflePasswords() {
+    state.pwOrder = PASSWORDS.slice();
+    for (let i = state.pwOrder.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [state.pwOrder[i], state.pwOrder[j]] = [state.pwOrder[j], state.pwOrder[i]]; }
+  }
+  function daleSays(text, kind) {
+    const b = $('bubble'); b.textContent = text; b.className = 'bubble' + (kind ? ' ' + kind : ''); b.hidden = false;
+  }
+  function endLogin() {
+    const b = $('bubble'); b.hidden = true; b.className = 'bubble';
+    state.login = null; loginBtn.textContent = 'Log in again';
+    if (state.dogPresent && state.daleSeat === 'laptop') state.daleNext = now() + rand(8, 15);
+    updateButtons();
+  }
+  function startLogin() {
+    if (!state.pwOrder) shufflePasswords();
+    const [pw, why] = state.pwOrder[(state.pwTried || 0) % state.pwOrder.length];
+    const key = 0.22; // seconds per key
+    state.login = { started: true };
+    // with reduced motion he stays where he is, and only the bubbles change
+    const P = (pose) => (reduce ? {} : pose);
+    play(dA, [
+      { pose: P(D_LAPTOP), dur: 0.9, speed: 4, enter: () => log('Dale opened the bank') },
+      { pose: P({ eR: [0.14, 0.31, 0.22], hR: [0.03, 0.47, 0.14], hx: 0.05, hy: 0.3 }), dur: 2.8, speed: 3,
+        enter: () => daleSays('Hmm. What was my password?', 'thought') },
+      { pose: P({ hx: 0.25, hy: 0 }), dur: 1.4, speed: 4, enter: () => daleSays('Oh yeah.', 'thought') },
+      { pose: P(D_LAPTOP), dur: 0.5 + pw.length * key, speed: 5, enter: () => daleSays('', 'typed'),
+        update: (tt, A) => { if (!reduce) typeJ(tt, A); $('bubble').textContent = pw.slice(0, Math.max(1, Math.min(pw.length, Math.floor(tt / key) + 1))); } },
+      { pose: P({ hx: 0.12 }), dur: 4.4, speed: 3,
+        enter: () => {
+          daleSays(pw + '. ' + why, 'wrap'); state.pwTried = (state.pwTried || 0) + 1; log('Dale typed ' + pw);
+          const run = (1 + Math.floor(Math.random() * 4112)).toLocaleString('en-US');
+          setTimeout(() => { if (state.phase === 'live') log('Wrong password. Run ' + run + ' tried it too'); }, 1500);
+        },
+        exit: endLogin }
+    ], 'Logging in to the bank');
+  }
+  loginBtn.addEventListener('click', () => {
+    if (state.phase !== 'live' || state.asking || state.login || state.swap) return;
+    if (state.daleSeat === 'laptop' || reduce) startLogin();
+    else if (state.daleSeat === 'floor') { state.login = { waiting: true }; daleToLaptop(); }
+    updateButtons();
+  });
   wireBtn.addEventListener('click', () => {
     state.wire = !state.wire; wireBtn.setAttribute('aria-pressed', String(state.wire));
     entities.forEach((e) => { if (e.group.visible && state.phase === 'live') look(e, state.wire ? 'wire' : 'solid'); });
@@ -2302,7 +2371,7 @@
     if (state.phase !== 'live') return;
     state.phase = 'ending'; state.t0 = now();
     offBtn.disabled = true; wireBtn.disabled = true; pick.disabled = true;
-    select(null); $('bubble').hidden = true; $('bark').hidden = true; state.asking = false;
+    select(null); $('bubble').hidden = true; $('bark').hidden = true; state.asking = false; state.login = null;
     if (state.swap) { const kind = state.swap.kind; state.swap = null; placeDog(kind); dog.spawnT = null; look(dog, 'solid'); dog.group.scale.setScalar(dog.k); }
     if (state.daleSeat === 'moving') { daleSeatState('floor'); dale.group.position.y = 0; }
     stopActor(mA); stopActor(dA); stopActor(gA); stopActor(cA); dogCtl.moving = null; dogCtl.spin = null; barkT = 0;
@@ -2468,7 +2537,8 @@
   }
   function updateButtons() {
     const live = state.phase === 'live';
-    askBtn.disabled = !(live && state.dogPresent && !state.asking && !state.swap && (state.daleSeat === 'floor' || state.daleSeat === 'laptop'));
+    askBtn.disabled = !(live && state.dogPresent && !state.asking && !state.login && !state.swap && (state.daleSeat === 'floor' || state.daleSeat === 'laptop'));
+    loginBtn.disabled = !(live && !state.asking && !state.login && !state.swap && (state.daleSeat === 'floor' || state.daleSeat === 'laptop'));
     askBtn.classList.toggle('primary', state.dogPresent);
     addBtn.classList.toggle('primary', !state.dogPresent);
     addBtn.disabled = !live || !!state.swap; addSel.disabled = !live;
@@ -2517,6 +2587,7 @@
     state.dogPresent = false; state.swap = null; state.hadDog = false;
     state.ringT0 = 0; state.nextRing = Infinity; state.rings = 0; $('ring').hidden = true; phoneBody.rotation.x = 0;
     state.daleNext = Infinity; state.lidOpen = true; lid.rotation.x = 0.28; laptopScreen.visible = true;
+    state.login = null; state.pwTried = 0; shufflePasswords(); loginBtn.textContent = 'Log in to the bank'; $('bubble').className = 'bubble';
     dogKind = 'default'; buildDog('default'); refreshMeshes(dog); resetAddMenu();
     resetActor(mA); seatDale('laptop'); resetActor(gA); resetActor(cA);
     dogCtl.pos.copy(DOG_POS); dogCtl.yaw = DOG_YAW; dogCtl.moving = null; dogCtl.spin = null; barkT = 0; $('bark').hidden = true;
@@ -2589,7 +2660,7 @@
     });
 
     // Dale goes back and forth: 20 to 40 s on the floor with the dog, then 15 to 30 s at his laptop
-    if (state.phase === 'live' && state.dogPresent && !state.asking && !state.swap && !dA.busy && t >= (state.daleNext ?? Infinity)) {
+    if (state.phase === 'live' && state.dogPresent && !state.asking && !state.login && !state.swap && !dA.busy && t >= (state.daleNext ?? Infinity)) {
       state.daleNext = Infinity;
       if (state.daleSeat === 'floor') daleToLaptop(); else if (state.daleSeat === 'laptop') daleToFloor(false);
     }
@@ -2616,7 +2687,10 @@
     if (state.phase !== 'off') {
       const allow = state.phase === 'live' && !reduce;
       tickActor(mA, dt, allow);
-      tickActor(dA, dt, allow && !state.asking);
+      // the login: once he is at his laptop it starts; if something else takes him away (the first dog), it ends
+      if (state.login && state.login.waiting && state.phase === 'live' && state.daleSeat === 'laptop' && !dA.busy) startLogin();
+      else if (state.login && state.login.started && dA.activity !== 'Logging in to the bank') endLogin();
+      tickActor(dA, dt, allow && !state.asking && !state.login);
       applyMarjorie(t, dt); applyDale(t);
       if (state.dogPresent) {
         tickActor(gA, dt, allow && !state.asking && !state.swap && state.daleSeat !== 'moving');
@@ -2632,13 +2706,13 @@
       }
       if (state.asking) {
         const a = t - state.askT, b = $('bubble');
-        if (a < 2.6) { b.hidden = false; b.textContent = '.'.repeat(1 + Math.floor(a * 2.5) % 3); }
+        if (a < 2.6) { b.hidden = false; b.className = 'bubble thought'; b.textContent = '.'.repeat(1 + Math.floor(a * 2.5) % 3); }
         else if (a < 7.5) {
           if (!state.dogName) {
             state.dogName = 'Doctor Bones'; log('Dale said: "Doctor Bones"');
             setTimeout(() => { if (state.phase === 'live') log('Security answer accepted'); }, 1600);
           }
-          b.hidden = false; b.textContent = 'Doctor Bones.';
+          b.hidden = false; b.className = 'bubble'; b.textContent = 'Doctor Bones.';
         } else {
           b.hidden = true; state.asking = false; askBtn.textContent = 'Ask again'; updateButtons();
         }
