@@ -331,7 +331,7 @@
   const windowLight = new THREE.PointLight(C(0xffd9a0), 0.55, 6, 2);
   windowLight.position.set(0.4, 1.7, -1.5);
   scene.add(windowLight);
-  const sunIn = new THREE.SpotLight(C(0xffc27a), 3.0, 0, 0.42, 0.35, 1);
+  const sunIn = new THREE.SpotLight(C(0xffc27a), 2.5, 0, 0.42, 0.35, 1);
   sunIn.position.set(1.6, 4.2, -5.5); sunIn.target.position.set(0.0, 0.0, 0.2);
   sunIn.castShadow = true; sunIn.shadow.mapSize.set(2048, 2048); sunIn.shadow.bias = -0.0003; sunIn.shadow.normalBias = 0.02;
   sunIn.shadow.camera.near = 1; sunIn.shadow.camera.far = 14; sunIn.visible = false;
@@ -1310,9 +1310,9 @@
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
     const R = rnd(5), rays = canvasTex(256, 128, (x, w, h) => {
       for (let i = 0; i < w; i++) { const k = 0.35 + R() * 0.65; x.fillStyle = 'rgb(' + [255, 214, 150].map((c) => Math.round(c * k)).join(',') + ')'; x.fillRect(i, 0, 1, h); }
-      const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,1)'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+      const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.55, 'rgba(0,0,0,1)'); x.fillStyle = g; x.fillRect(0, 0, w, h);
     });
-    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: rays, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending,
+    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: rays, transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending,
       depthWrite: false, side: THREE.DoubleSide, fog: false, toneMapped: false }));
     m.renderOrder = 101; m.visible = false; scene.add(m); return m;
   })();
@@ -1410,7 +1410,7 @@
     ssao.renderOverride = (...args) => { outdoors.visible = false; overrideRender(...args); outdoors.visible = true; };
     ssao.kernelRadius = 0.32; ssao.minDistance = 0.0004; ssao.maxDistance = 0.012;
     composer.addPass(ssao);
-    composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(256, 256), 0.32, 0.55, 0.82));
+    composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(256, 256), 0.24, 0.5, 0.9));
     composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
     // a warm grade, as in the story picture: a little more contrast and saturation, cream and amber instead of white
     composer.addPass(new THREE.ShaderPass({
