@@ -63,11 +63,11 @@
 
   <article class="container">
     <h1>An Office for My Claude Code Sessions</h1>
-    <p class="byline">Bryan Falkowski · November 1, 2026 · Follows <a href="hands-free.html">Steering Claude Code Without a Keyboard</a></p>
+    <p class="byline">Bryan Falkowski · November 1, 2026 · Follows <a href="building-run-4113.html">Building a 3D World for a Short Story</a></p>
 
     <div class="tldr">
-      <p>My post on steering Claude Code without a keyboard left a gap. I run several Claude Code sessions at once, one per Terminal tab, and a tab does not tell me from across the room which session is waiting for me.</p>
-      <p>So I built an office. It is a 3D loft in New York with brick walls, steel windows and a coffee bar, and each developer in it is one of my Claude Code sessions. While a session works, its developer types at their desk with its tool calls on the monitor. When it needs my OK, they raise a hand. When its turn ends, they get coffee. I click a person instead of a tab.</p>
+      <p>I think of my agents as specialists. Besides the ones that write code, I have dedicated PM and QE agents, and I use agent skills, like Matt Pocock's skills for Claude Code, to give them their jobs. In Terminal tabs they all look the same. Then I built a 3D kitchen for my short story <a href="doctor-bones.html">Doctor Bones</a>, and it made me wonder if I could build an office where I could see them as a team.</p>
+      <p>So I built one. It is a 3D loft in New York with brick walls, steel windows and a coffee bar, and each developer in it is one of my Claude Code sessions. While a session works, its developer types at their desk with its tool calls on the monitor. When it needs my OK, they raise a hand. When its turn ends, they get coffee. I click a person instead of a tab.</p>
       <p>By the afternoon the office was working on itself. Its sessions filed tickets, I approved them, and workers built them and reviewed each other's pull requests. This post covers what I built, how it works, and what I still decide myself.</p>
     </div>
 
@@ -75,20 +75,20 @@
       <video controls muted playsinline preload="metadata" poster="office/office-demo-poster.jpg" width="970" height="606">
         <source src="office/office-demo.mp4" type="video/mp4">
       </video>
-      <figcaption>The office's demo, which plays three pretend sessions, faster than real ones. Watch for the hands that go up when a session needs permission. Near the end I sent the manager through, and everyone without real work sits down and looks busy.</figcaption>
+      <figcaption>Watch for the hands that go up when a session needs permission. Near the end I sent the manager through, and everyone without real work sits down and looks busy.</figcaption>
     </figure>
 
-    <h2>The gap</h2>
-    <p>In <a href="hands-free.html">Steering Claude Code Without a Keyboard</a>, I described running several agents at once, each in its own git worktree and its own Terminal tab. Getting to an agent took one press of a button. Knowing which one needed me was harder, because a tab shows a title and nothing else. Finding the session that was waiting meant clicking through the tabs.</p>
-    <p>The question I need answered most often is which session is waiting on me. A list of sessions can answer it, but a list is one more thing to read. I wanted something I could understand at a glance.</p>
+    <h2>Why an office</h2>
+    <p>A 3D world is more than I need to see which session is waiting on me. A list of sessions can do that. I wanted a way to picture my agents the way I think about them, as a team of specialists with their own desks and their own work. Seeing who is waiting came with it.</p>
 
     <h2>From skills to sessions</h2>
     <p>The office is the second world in a repo I already had. The first is the 1950s kitchen from my short story <a href="doctor-bones.html">Doctor Bones</a>, a 3D scene that code can drive through a small relay server. Curl, an Appian process model or an agent can send it commands. A Claude Code hook can send events the same way, so a world can show what a session is doing. I wrote about how I built the kitchen in <a href="building-run-4113.html">Building a 3D World for a Short Story</a>.</p>
     <p>In my first version, each developer was one of <a href="https://github.com/mattpocock/skills">Matt Pocock's skills</a>. When the agent used <code>/tdd</code>, Marcus went to his desk. When it used <code>/diagnose</code>, Priya did. It looked good in the demo, but it did not hold up in real sessions. Most of a session is reads, edits and shell commands, not skills, so the Lead did all the work while everyone else drank coffee.</p>
     <p>So I changed the model. Each developer is now a session. <strong>Add worker</strong> starts a new Claude Code session for a repo I pick, in its own checkout, and a developer goes to a desk for it. Clicking anyone opens their session in the terminal beside the office.</p>
+    <p>The sessions still have jobs. The PM reads the repo and splits an idea of mine into tickets, which wait in Triage until I approve them, and it is told not to change code. Devs build tickets, each in their own copy of the repo and on their own branch. Reviewers are my QEs. They read each pull request and post what they find as a comment. The Lead is whoever gets the first desk. The job titles from the skills version, such as Priya's Debugging and Marcus's Tests, are still there, but who gets a ticket is just the next free desk, not a match to the work.</p>
     <figure>
       <a href="office/office-full.jpg"><img src="office/office-full-1600.jpg" width="1600" height="1000" alt="The office page in a browser. On the left, the 3D loft with name tags over the developers, and the Floor list below it. On the right, a full-height Claude Code terminal showing June's session, which reports that ticket T-27 is built and open as pull request 19 and explains which branch it should merge into."></a>
-      <figcaption>My office at the end of the day, with June's session open in the Claude Code panel. June built T-27 and is explaining the pull request she opened. The sign still says Studio 4B, because my relay was serving the files from before the rename. Select the image to see it at full size.</figcaption>
+      <figcaption>My office at the end of the day, with June's session open in the Claude Code panel. June built T-27 and is explaining the pull request she opened. Select the image to see it at full size.</figcaption>
     </figure>
 
     <h2>What the office shows</h2>
@@ -133,7 +133,7 @@
     <p>These rules are a check on the process, not a security boundary. "Told not to merge" means the words in a worker's brief. Sessions run with my normal permissions, and one could read the relay key from my hook settings. The token the relay gives each session only lets it list and file tickets, unless it is a Lead I have let move the board. A session that read the relay key would not need the token.</p>
 
     <h2>What I don't know yet</h2>
-    <p>I have not measured whether the office makes me faster. It does answer the question it was built for, which session needs me. That leaves the hard question from that post. Sessions filed 23 tickets in an afternoon, and approving one costs a single click. That is the same pattern as the A button on the game controller: approving got cheap, and reading what I approve did not.</p>
+    <p>I have not measured whether the office makes me faster. It does answer the question it was built for, which session needs me. That leaves the hard question from <a href="hands-free.html">Steering Claude Code Without a Keyboard</a>. Sessions filed 23 tickets in an afternoon, and approving one costs a single click. That is the same pattern as the A button on the game controller: approving got cheap, and reading what I approve did not.</p>
     <p>Three numbers would tell me whether the office helps:</p>
     <ul>
       <li>How long a raised hand waits before I answer.</li>
@@ -141,6 +141,7 @@
       <li>How many review findings turn into changes.</li>
     </ul>
     <p>The relay already sees the events it needs for the first two.</p>
+    <p>The agents had a big part in building their own office, and I am curious where that goes. Their goals stay narrow on purpose. Every piece of work starts from something in the office: a ticket I approved, a task I started or a prompt I typed. When they think of new work, they file a ticket, and it waits in Triage for me. They do not set goals of their own outside that. As I wrote above, that is a rule about the process, not a security boundary.</p>
 
     <h2>Code</h2>
     <p>The code is in a private repo for now. The office runs locally and needs Node 18, <code>python3</code> for the terminal, and Claude Code. Running it needs no packages to install.</p>
