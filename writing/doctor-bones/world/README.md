@@ -88,10 +88,13 @@ Live at https://bfalkowski.github.io/writing/doctor-bones/world/
   across instead of 1.67 m (same height), the chairs, the laptop, the cup and the crossword
   move in with its edge, the fruit bowl and apples are smaller, the cup is a 9 cm mug, and
   the dog (about the size of a beagle), the cat and the water bowl are real size. Unticking
-  it puts the toy version back. Marge does her crossword, thinks with her pencil at her chin,
-  drinks her coffee, checks the clock, and asks Dale "Did you take the dog for a walk?" when
-  there is a dog (he does not answer). When the phone rings she usually gets up, walks over,
-  says "Hello?" twice, and hangs up ("Nobody was there"). Dale does everything the toy Dale
+  it puts the toy version back. Marge sits with her knees together and does her crossword
+  with the pencil held between her thumb and fingers. She thinks by tapping the pencil on the
+  page and looking off, drinks her coffee (two fingers through the mug's handle, the mug tipped
+  at her lips), checks the clock, and asks Dale "Did you take the dog for a walk?" when there
+  is a dog (he does not answer). When the phone rings she usually pushes her chair back, gets
+  up, walks around the chair to the phone, holds the handset from her ear to her mouth, says
+  "Hello?" twice, and hangs up ("Nobody was there"). Dale does everything the toy Dale
   does: the hidden toy still runs his habits, and the real Dale copies its pose each frame.
 - **The archive.** In the inspector, Dale's "Built from: Everything he ever posted" links to
   the story's archive (`../archive/`), the made-up things the young man collected about Dale.
@@ -143,7 +146,8 @@ Useful places in the script:
 | Bank login | `PASSWORDS` (each with what Dale says about it), `startLogin`, `endLogin`, `state.login`, `state.pw` and `state.loggedIn` (one login per run); `log(text, 'warn')` writes a red line; `daleSays(text, kind)` sets Dale's bubble, where the kind is `thought`, `typed` or `wrap` (a long line) |
 | Experiment mode switch | the "Experiment mode" block after `finalize(marjorie)`: `real.on`, `setReal(on)` (the checkbox `#real`), `SEAT_R` (chair to table centre for each version), `tableParts` (the table top, foot, bowl and apples), `APPLES`, and the real sizes of the cup, dog, cat and water bowl (`e.k`); `showPeople()` hides a toy once its real person has loaded |
 | Experiment mode models | `models/marge.glb` and `models/dale.glb` (Meshy, Mixamo-style skeletons with a Walking clip; textures shrunk to 2048 and 1024 px JPEG); `loadGLB`, `makePerson(gl, height)` (size, rest pose, `aimW`, two-bone `ik`, `gazeAt`, `relaxArm`, `setWire`), `loadMarge` and `loadDale` |
-| Marge's habits | `habits` and `answerPhone()` in `loadMarge`: steps of `{ P, dur, enter }`, where `P` names the body ('sit', 'stand', 'walk'), what each hand reaches for (`resolve`) and where she looks (`gazePoint`); `marge.reset()` puts the cup, pencil and phone receiver back |
+| Marge's habits | `habits` and `answerPhone()` in `loadMarge`: steps of `{ P, dur, enter }`, where `P` names the body ('sit', 'stand', 'walk'), what each hand does (`resolve`) and where she looks (`gazePoint`); `mg.chairBack` slides her chair back while she gets up; `marge.reset()` puts the cup, pencil, chair and phone receiver back |
+| Marge's hands | `holdAt(side, r)` puts a point of the hand (the pencil tip, the mug's rim, the wrist) on a target, turns the hand (`HANDS`, `orientHand`, which gives half the turn to the forearm) and closes the fingers (`CURL`, `thumbTo`); `pencilFrame()` and `mugFrame()` place the pencil and the mug in her hand; `mg.turn` and `mg.tilt` turn and tip the mug |
 | Real Dale | `loadDale`: each frame his hips go to the toy's hips (`D_PELVIS`), his back leans like the toy's, his hands and feet reach for the toy's (elbows and knees bend toward the toy's), and his head points where the toy's head points; walk steps are marked `walk: true` and play his Walking clip |
 | Shading with people | the people are on layer 1; in `makeComposer` the shading pass draws the room, then the people with a skinned copy of its normal material (`skinNormal`), with no background and no shadow update |
 

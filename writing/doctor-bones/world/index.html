@@ -1154,7 +1154,7 @@
   // ---------- Marge ----------
   const marge = { ready: false, activity: 'The crossword', toPhone: false, cupHeld: false };
   function loadMarge() { loadGLB('models/marge.glb', 'MARGE_GLB_B64', (gl) => {
-    const { root, bones, holder, all, bind, cur, mixer, walkClip, V, Q, wp, hq, toW, aimW, aim, turnBy, reach, relaxArm, gazeAt, rest, setWire } = makePerson(gl, 1.65);
+    const { root, bones, holder, all, bind, cur, mixer, walkClip, V, Q, wp, hq, toW, aimW, aim, turnBy, ik, reach, relaxArm, gazeAt, rest, setWire } = makePerson(gl, 1.65);
     function sitBase() {
       aim(bones.Spine, bones.Spine1, [0, 1, 0.1]); aim(bones.Spine1, bones.Spine2, [0, 1, 0.16]); aim(bones.Spine2, bones.Neck, [0, 1, 0.1]);
       aim(bones.Neck, bones.Head, [0, 1, 0.08]); aim(bones.Head, bones.HeadTop_End, [0, 1, 0.05]);
@@ -1165,17 +1165,129 @@
       });
     }
 
+    // ---------- hands: where they point, which way the palm faces, and how far each finger bends ----------
+    const boneIx = new Map(all.map((b, i) => [b, i]));
+    const hb = (side, name) => bones[side + 'Hand' + name];
+    function turnW(bone, axisW, ang) {
+      const q = Q().setFromAxisAngle(axisW, ang);
+      bone.quaternion.copy(bone.parent.getWorldQuaternion(Q()).invert().multiply(q.multiply(bone.getWorldQuaternion(Q()))));
+      bone.updateMatrixWorld(true);
+    }
+    // n: out of the palm, fd: toward the fingers, kn: along the knuckles toward the thumb
+    function palmOf(side) {
+      const h = wp(bones[side + 'Hand']), fd = wp(hb(side, 'Middle1')).sub(h).normalize();
+      const kn = wp(hb(side, 'Index1')).sub(wp(hb(side, 'Pinky1'))).normalize();
+      return { n: (side === 'Right' ? kn.clone().cross(fd) : fd.clone().cross(kn)).normalize(), fd, kn };
+    }
+    function setHand(side, fdW, palmW) {
+      aimW(bones[side + 'Hand'], hb(side, 'Middle1'), fdW);
+      const { n, fd } = palmOf(side);
+      const want = palmW.clone().addScaledVector(fd, -palmW.dot(fd)).normalize(), now = n.addScaledVector(fd, -n.dot(fd)).normalize();
+      turnW(bones[side + 'Hand'], fd, Math.atan2(now.clone().cross(want).dot(fd), now.dot(want)));
+    }
+    // the forearm takes half of the turn, so the wrist does not twist like a candy wrapper
+    function orientHand(side, fdW, palmW) {
+      const hand = bones[side + 'Hand'], fore = bones[side + 'ForeArm'];
+      setHand(side, fdW, palmW);
+      const A = wp(hand).sub(wp(fore)).normalize();
+      const D = hand.getWorldQuaternion(Q()).multiply(fore.getWorldQuaternion(Q()).multiply(bind[boneIx.get(hand)]).invert());
+      if (D.w < 0) { D.x = -D.x; D.y = -D.y; D.z = -D.z; D.w = -D.w; }
+      turnW(fore, A, Math.atan2(A.x * D.x + A.y * D.y + A.z * D.z, D.w));
+      setHand(side, fdW, palmW);
+    }
+    // each finger bends at its three joints toward the palm: [Index, Middle, Ring, Pinky]
+    const FINGERS = ['Index', 'Middle', 'Ring', 'Pinky'];
+    const CURL = {
+      pencil: [[0.2, 0.2, 0.1], [0.45, 0.6, 0.35], [0.95, 1.1, 0.6], [1.05, 1.15, 0.6]],
+      mug: [[0.45, 1.25, 0.6], [0.5, 1.25, 0.6], [0.85, 1.3, 0.6], [0.95, 1.3, 0.6]],
+      fist: [[0.9, 1.2, 0.7], [0.95, 1.25, 0.7], [1.0, 1.3, 0.7], [1.05, 1.3, 0.7]],
+      flat: [[0.12, 0.2, 0.12], [0.14, 0.22, 0.12], [0.18, 0.26, 0.14], [0.2, 0.3, 0.14]],
+      lap: [[0.2, 0.3, 0.15], [0.22, 0.32, 0.15], [0.26, 0.36, 0.18], [0.3, 0.4, 0.18]],
+      loose: [[0.25, 0.35, 0.2], [0.3, 0.4, 0.2], [0.35, 0.45, 0.25], [0.4, 0.5, 0.25]]
+    };
+    function curlFingers(side, c) {
+      const { n } = palmOf(side);
+      FINGERS.forEach((f, k) => {
+        const ax = wp(hb(side, f + 2)).sub(wp(hb(side, f + 1))).cross(n).normalize();
+        for (let j = 1; j <= 3; j++) turnW(hb(side, f + j), ax, c[k][j - 1]);
+      });
+    }
+    // the thumb reaches for a point; its base takes half of the turn
+    function thumbTo(side, T) {
+      for (let j = 1; j <= 3; j++) {
+        const b = hb(side, 'Thumb' + j), q0 = b.quaternion.clone();
+        aimW(b, hb(side, 'Thumb' + (j + 1)), T.clone().sub(wp(b)));
+        if (j === 1) { b.quaternion.slerp(q0, 0.5); b.updateMatrixWorld(true); }
+      }
+    }
+    // how she holds her hand for each thing, in her frame for her left hand (x is outward); the right hand mirrors it.
+    // The mug turns in her hand as she lifts it (mg.turn, so her wrist stays clear of her cheek) and tips (mg.tilt).
+    const HANDS = {
+      pencil: { fd: () => [-0.3, -0.3, 0.9], palm: () => [-0.75, -0.45, -0.1] },
+      mug: {
+        fd: () => [-Math.sin(mg.turn), Math.cos(mg.turn) * Math.sin(mg.tilt), Math.cos(mg.turn) * Math.cos(mg.tilt)],
+        palm: () => [-Math.cos(mg.turn), -Math.sin(mg.turn) * Math.sin(mg.tilt), -Math.sin(mg.turn) * Math.cos(mg.tilt)]
+      },
+      flat: { fd: () => [-0.3, -0.1, 0.95], palm: () => [0, -1, 0] },
+      lap: { fd: () => [-0.25, -0.35, 0.9], palm: () => [0, -1, 0] },
+      fist: {}, loose: {}
+    };
+    // the pencil lies between the thumb and the index finger and leans back toward her right shoulder
+    function pencilFrame() {
+      const pad = wp(hb('Right', 'Index3')).add(wp(hb('Right', 'Index4'))).multiplyScalar(0.5);
+      const pinch = wp(hb('Right', 'Thumb4')).add(pad).multiplyScalar(0.5), dir = toW(-0.3, 0.7, -0.6).normalize();
+      return { tip: pinch.clone().addScaledVector(dir, -0.03), dir };
+    }
+    // the mug: two fingers through the handle, the thumb on top, the palm toward the mug
+    const HANDLE = new THREE.Vector3(0.05, 0.05, 0);
+    function mugFrame() {
+      const { n, kn } = palmOf('Left');
+      const x = n.clone().negate(), y = kn.clone().addScaledVector(x, -kn.dot(x)).normalize(), z = x.clone().cross(y);
+      const q = Q().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
+      const hook = ['Index1', 'Index2', 'Middle1', 'Middle2'].reduce((s, b) => s.add(wp(hb('Left', b))), V()).multiplyScalar(0.25);
+      return { q, hook, pos: hook.clone().sub(HANDLE.clone().applyQuaternion(q)) };
+    }
+    function gripPoint(side, pt) {
+      if (pt === 'tip') return pencilFrame().tip;
+      if (pt === 'hook') return mugFrame().hook;
+      // the point of the rim nearest her mouth
+      if (pt === 'rim') { const m = mugFrame(); return m.pos.add(V().set(-0.042 * Math.sin(mg.turn), 0.088, -0.042 * Math.cos(mg.turn)).applyQuaternion(m.q)); }
+      return wp(bones[side + 'Hand']);
+    }
+    // put a point of the hand (the pencil tip, the mug's rim) on a target: the wrist goes where last frame's
+    // offset says, then the hand turns and the fingers close
+    const gripOff = { Left: {}, Right: {} };
+    function holdAt(side, r) {
+      const off = gripOff[side][r.pt] || (gripOff[side][r.pt] = V());
+      if (r.pole) ik(bones[side + 'Arm'], bones[side + 'ForeArm'], bones[side + 'Hand'], r.at.clone().sub(off), toW(...r.pole));
+      else reach(side, r.at.clone().sub(off));
+      const H = HANDS[r.kind], s = side === 'Left' ? 1 : -1;
+      if (r.fdW) orientHand(side, r.fdW, r.palmW);
+      else if (H.fd) { const f = H.fd(), p = H.palm(); orientHand(side, toW(s * f[0], f[1], f[2]), toW(s * p[0], p[1], p[2])); }
+      curlFingers(side, CURL[r.kind]);
+      if (r.kind === 'pencil') thumbTo(side, wp(hb(side, 'Index3')).add(wp(hb(side, 'Index4'))).multiplyScalar(0.5).addScaledVector(palmOf(side).n, 0.01));
+      else if (r.kind === 'mug') thumbTo(side, wp(hb(side, 'Index2')).addScaledVector(palmOf(side).kn, 0.02));
+      else if (r.kind === 'fist') thumbTo(side, wp(hb(side, 'Index2')).addScaledVector(palmOf(side).n, 0.015));
+      if (r.pt === 'wrist') off.set(0, 0, 0); else off.copy(gripPoint(side, r.pt)).sub(wp(bones[side + 'Hand']));
+    }
+
     // places on the table and in the room, in world space
     const SEAT_YAW = M_YAW, SEAT = M_POS.clone();
     const F = new THREE.Vector3(Math.sin(SEAT_YAW), 0, Math.cos(SEAT_YAW)), Lf = new THREE.Vector3(Math.cos(SEAT_YAW), 0, -Math.sin(SEAT_YAW));
     const TOP = TABLE.y + 0.575 * FIG;
     const at = (f, l, y) => SEAT.clone().addScaledVector(F, f).addScaledVector(Lf, l).setY(y);
-    const WRITE = at(0.4, -0.04, TOP + 0.035), LREST = at(0.36, 0.2, TOP + 0.03), THINK_AT = at(1.6, 0, 1.45);
-    const STAND_AT = at(0.1, 0, 0), PHONE_AT = new THREE.Vector3(-2.6, 0, -0.72), PHONE_YAW = -Math.PI / 2;
+    const THINK_AT = at(1.6, 0, 1.45);
+    // the pencil's point on the crossword, a little right of its middle; her left hand rests past its left edge
+    const paperAt = () => crossword.group.position.clone().addScaledVector(Lf, -0.035).addScaledVector(F, -0.03).setY(crossword.group.position.y + 0.004);
+    const lrestAt = () => crossword.group.position.clone().addScaledVector(Lf, 0.17).addScaledVector(F, -0.06).setY(TOP + 0.022);
+    // getting up: the chair slides back, she stands in front of it and walks around its left side, clear of it
+    const BACK = 0.4, STAND_AT = at(0.07, 0, 0), OUT = at(0.07, 0.55, 0);
+    const PHONE_AT = new THREE.Vector3(-2.6, 0, -0.72), PHONE_YAW = -Math.PI / 2;
     const clockPt = clock.group.position.clone(), phonePt = phone.group.position.clone().add(new THREE.Vector3(0.1, 0, 0));
+    const CUP_REST_Q = Q().setFromEuler(new THREE.Euler(0, SEAT_YAW, 0)); // the handle toward her left hand
     const pencil = new THREE.Group(); scene.add(pencil);
     rod(pencil, M.pencil, [0, 0, 0], [0, 0.15, 0], 0.0045); ball(pencil, M.eraser, [0, 0.152, 0], 0.0055);
-    const recvRest = { p: receiver.position.clone(), q: receiver.quaternion.clone() };
+    const recvRest = { p: receiver.position.clone(), q: receiver.quaternion.clone(), s: receiver.scale.clone() };
     const bubble = $('marge-bubble');
     let bubbleT = 0;
     const say = (text, secs) => { bubble.textContent = text; bubble.hidden = false; bubbleT = secs; };
@@ -1193,7 +1305,7 @@
 
     // ---------- what she does ----------
     const BASE = { body: 'sit', lw: 'rest', rw: 'write', gaze: 'crossword', speed: 6 };
-    const mg = { steps: [], step: null, t: 0, wait: 2, P: BASE, heardRing: false, askAfter: 0, tilt: 0, pencilDown: false, force: false };
+    const mg = { steps: [], step: null, t: 0, wait: 2, P: BASE, heardRing: false, askAfter: 0, tilt: 0, turn: 0, pencilDown: false, force: false, chairBack: 0, chairOff: 0, cupEase: 0 };
     const cupPt = () => cup.basePos.clone();
     function mPlay(steps, label) { mg.steps = steps.slice(); marge.activity = label; next(); }
     function next() {
@@ -1219,18 +1331,19 @@
     const headingTo = (from, to) => Math.atan2(to.x - from.x, to.z - from.z);
     function answerPhone() {
       marge.toPhone = true; mg.pencilDown = true;
-      const MID = at(0.32, -0.35, 0);
       mPlay([
         { P: { gaze: 'phone' }, dur: 0.6, label: 'Hearing the phone' },
-        { P: { body: 'stand', lw: null, rw: null, gaze: 'phone', speed: 4 }, dur: 1.2, label: 'Getting up', enter: () => { hold.p.copy(STAND_AT); hold.y = 0; } },
-        turnTo(headingTo(STAND_AT, MID), 0.5),
-        walkTo(MID, 'Going to the phone'),
-        { P: { body: 'stand', lw: null, rw: null, gaze: null }, dur: 0.01, enter: () => { hold.yaw = headingTo(MID, PHONE_AT); } },
+        { P: { lw: 'lap', rw: 'lap', gaze: 'phone', speed: 5 }, dur: 0.9, label: 'Getting up',
+          enter: () => { hold.p.copy(SEAT).addScaledVector(F, -BACK); mg.chairBack = BACK; } },
+        { P: { body: 'stand', lw: null, rw: null, gaze: 'phone', speed: 4 }, dur: 1.2, enter: () => { hold.p.copy(STAND_AT); hold.y = 0; } },
+        turnTo(headingTo(STAND_AT, OUT), 0.5),
+        walkTo(OUT, 'Going to the phone'),
+        { P: { body: 'stand', lw: null, rw: null, gaze: null }, dur: 0.01, enter: () => { hold.yaw = headingTo(OUT, PHONE_AT); } },
         walkTo(PHONE_AT, 'Going to the phone'),
         turnTo(PHONE_YAW, 0.5),
         { P: { body: 'stand', lw: null, rw: 'ear', gaze: 'wall', speed: 5 }, dur: 0.9, label: 'Answering the phone',
           enter: () => {
-            scene.attach(receiver); mg.holdingReceiver = true; marge.toPhone = false;
+            scene.attach(receiver); receiver.scale.setScalar(0.76); mg.holdingReceiver = true; marge.toPhone = false; // a 22 cm handset
             state.ringT0 = 0; phoneBody.rotation.x = 0; $('ring').hidden = true; state.nextRing = now() + rand(45, 90);
             log('Marjorie answered the phone');
           } },
@@ -1238,24 +1351,28 @@
         { P: { body: 'stand', lw: null, rw: 'ear', gaze: 'wall' }, dur: 1.4 },
         { P: { body: 'stand', lw: null, rw: 'ear', gaze: 'wall' }, dur: 1.8, enter: () => say('Hello?', 1.6) },
         { P: { body: 'stand', lw: null, rw: null, gaze: 'wall', speed: 5 }, dur: 0.9, label: 'Hanging up',
-          enter: () => { mg.holdingReceiver = false; phoneBody.attach(receiver); receiver.position.copy(recvRest.p); receiver.quaternion.copy(recvRest.q); log('Nobody was there'); } },
-        turnTo(headingTo(PHONE_AT, MID), 0.5),
-        walkTo(MID, 'Going back to the table'),
-        { P: { body: 'stand', lw: null, rw: null, gaze: null }, dur: 0.01, enter: () => { hold.yaw = headingTo(MID, STAND_AT); } },
+          enter: () => { mg.holdingReceiver = false; phoneBody.attach(receiver); receiver.position.copy(recvRest.p); receiver.quaternion.copy(recvRest.q); receiver.scale.copy(recvRest.s); log('Nobody was there'); } },
+        turnTo(headingTo(PHONE_AT, OUT), 0.5),
+        walkTo(OUT, 'Going back to the table'),
+        { P: { body: 'stand', lw: null, rw: null, gaze: null }, dur: 0.01, enter: () => { hold.yaw = headingTo(OUT, STAND_AT); } },
         walkTo(STAND_AT, 'Going back to the table'),
         turnTo(SEAT_YAW, 0.6),
-        { P: { body: 'sit', gaze: 'crossword', speed: 4 }, dur: 1.3, label: 'Sitting down', enter: () => { hold.p.copy(SEAT); hold.y = seatDY; } },
+        { P: { body: 'sit', lw: 'lap', rw: 'lap', gaze: 'crossword', speed: 4 }, dur: 1.3, label: 'Sitting down',
+          enter: () => { hold.p.copy(SEAT).addScaledVector(F, -BACK); hold.y = seatDY; } },
+        { P: { lw: 'lap', rw: 'lap', speed: 5 }, dur: 0.9, enter: () => { hold.p.copy(SEAT); mg.chairBack = 0; } },
         { dur: 0.4, enter: () => { mg.pencilDown = false; } }
       ], 'Hearing the phone');
     }
     const habits = [
       { w: () => 3, label: 'The crossword', steps: () => [{ dur: rand(4, 9) }] },
-      { w: () => 2, label: 'Thinking about 14 across', steps: () => [{ P: { rw: 'chin', gaze: 'think', speed: 3.5 }, dur: rand(2.4, 3.8) }, { dur: 0.6 }] },
+      // she taps the pencil on the page and looks off, the way people think
+      { w: () => 2, label: 'Thinking about 14 across', steps: () => [{ P: { rw: 'tap', gaze: 'think', speed: 4 }, dur: rand(2.4, 3.8) }, { dur: 0.6 }] },
+      // she takes the mug by its handle, lifts it to her mouth, tips it, and puts it back where it was
       { w: () => 1.5, label: 'Drinking her coffee', steps: () => [
         { P: { lw: 'cup', speed: 5 }, dur: 1.0 },
-        { P: { lw: 'mouth', gaze: 'sip', speed: 4 }, dur: 1.0, enter: () => { marge.cupHeld = true; } },
-        { P: { lw: 'mouth', gaze: 'sip', speed: 4 }, dur: 1.3, enter: () => { mg.tilt = 0.5; log('Coffee sipped. Temperature unchanged'); } },
-        { P: { lw: 'cup', speed: 4 }, dur: 1.0, enter: () => { mg.tilt = 0; } },
+        { P: { lw: 'mouth', gaze: 'sip', speed: 4 }, dur: 1.1, enter: () => { marge.cupHeld = true; mg.turn = 0.95; mg.tilt = 0.3; } },
+        { P: { lw: 'mouth', gaze: 'sip', speed: 4 }, dur: 1.3, enter: () => { mg.tilt = 0.9; log('Coffee sipped. Temperature unchanged'); } },
+        { P: { lw: 'cup', speed: 4 }, dur: 1.1, enter: () => { mg.turn = 0; mg.tilt = 0; } },
         { P: { lw: 'rest', speed: 5 }, dur: 0.7, enter: () => { marge.cupHeld = false; } }
       ] },
       { w: () => 1.3, label: 'Checking the clock', steps: () => [{ P: { gaze: 'clock', rw: 'rest', speed: 4 }, dur: rand(1.5, 2.4) }, { dur: 0.4 }] },
@@ -1276,36 +1393,46 @@
 
     // ---------- pose: build the target, then ease toward it ----------
     const tmp = V();
+    // what a hand does: where its point goes (at), how the hand is held (kind), and which point of it that is (pt)
     function resolve(name, side) {
       const t = performance.now() / 1000;
-      if (name === 'rest') return side === 'Left' ? LREST.clone() : WRITE.clone();
-      if (name === 'write') return WRITE.clone().addScaledVector(Lf, Math.sin(t * 7.5) * 0.012).addScaledVector(F, Math.sin(t * 3.1) * 0.012).add(new THREE.Vector3(0, Math.abs(Math.sin(t * 5.3)) * 0.008, 0));
-      if (name === 'chin') return marge.chin.clone();
-      if (name === 'cup') return cupPt().add(new THREE.Vector3(0, 0.07, 0)).addScaledVector(F, -0.07);
-      if (name === 'mouth') return marge.mouth.clone().addScaledVector(F, 0.05).add(new THREE.Vector3(0, -0.07, 0)).addScaledVector(Lf, 0.03);
-      if (name === 'ear') return marge.ear.clone().add(new THREE.Vector3(0, -0.06, 0));
+      if (name === 'rest') return side === 'Left' ? { at: lrestAt(), kind: 'flat', pt: 'wrist' } : { at: paperAt(), kind: 'pencil', pt: 'tip' };
+      if (name === 'write') return { at: paperAt().addScaledVector(Lf, Math.sin(t * 7.5) * 0.012).addScaledVector(F, Math.sin(t * 3.1) * 0.01).add(new THREE.Vector3(0, Math.abs(Math.sin(t * 5.3)) * 0.006, 0)), kind: 'pencil', pt: 'tip' };
+      if (name === 'tap') return { at: paperAt().add(new THREE.Vector3(0, Math.max(0, Math.sin(t * 6)) * 0.03, 0)), kind: 'pencil', pt: 'tip' };
+      if (name === 'cup') return { at: cupPt().addScaledVector(Lf, HANDLE.x).add(new THREE.Vector3(0, HANDLE.y, 0)), kind: 'mug', pt: 'hook' };
+      if (name === 'mouth') return { at: marge.mouth.clone(), kind: 'mug', pt: 'rim', pole: [0.2, -1, 0.05] }; // elbow down, not out
+      if (name === 'ear') {
+        // the handset runs from her ear toward her mouth; her fist closes around its middle, palm toward her face
+        const A = marge.recvEar.clone().sub(marge.recvMouth).normalize(), C = marge.recvEar.clone().addScaledVector(A, -0.08);
+        const n = marge.headC.clone().sub(C); n.addScaledVector(A, -n.dot(A)).normalize();
+        const fd = n.clone().cross(A);
+        return { at: C.addScaledVector(n, -0.035).addScaledVector(fd, -0.05), kind: 'fist', pt: 'wrist', fdW: fd, palmW: n };
+      }
+      if (name === 'lap') return { at: wp(bones[side + 'UpLeg']).lerp(wp(bones[side + 'Leg']), 0.45).add(new THREE.Vector3(0, 0.08, 0)), kind: 'lap', pt: 'wrist' };
       return null;
     }
     function gazePoint(name) {
       if (name === 'crossword') return crossword.group.position.clone();
       if (name === 'clock') return clockPt;
       if (name === 'think') return THINK_AT;
-      if (name === 'sip') return at(1.5, 0, 1.9);
+      if (name === 'sip') return at(1.5, 0, 1.5);
       if (name === 'phone') return phonePt;
       if (name === 'wall') return holder.position.clone().addScaledVector(toW(0, 0, 1), 1).setY(1.45);
       if (name === 'dale') return daleReal.ready && daleReal.head ? daleReal.head.clone() : DJ.head.getWorldPosition(V());
       return null;
     }
-    marge.chin = V(); marge.mouth = V(); marge.ear = V();
+    marge.mouth = V(); marge.recvEar = V(); marge.recvMouth = V(); marge.headC = V();
     function buildTarget(dt) {
       const P = mg.P;
       rest();
       if (P.body === 'walk') { mixer.update(dt); root.updateMatrixWorld(true); return; }
       if (P.body === 'sit') sitBase();
       const g = gazePoint(P.gaze); if (g) gazeAt(g);
-      const lt = resolve(P.lw, 'Left'), rt = resolve(P.rw, 'Right');
-      if (lt) reach('Left', lt); else if (P.body === 'stand') relaxArm('Left');
-      if (rt) reach('Right', rt); else if (P.body === 'stand') relaxArm('Right');
+      ['Left', 'Right'].forEach((side) => {
+        const r = resolve(side === 'Left' ? P.lw : P.rw, side);
+        if (r) holdAt(side, r);
+        else if (P.body === 'stand') { relaxArm(side); curlFingers(side, CURL.loose); }
+      });
     }
     let lastT = performance.now(), wasVisible = false;
     function tick() {
@@ -1337,6 +1464,11 @@
       let dy = hold.yaw - holder.rotation.y; while (dy > Math.PI) dy -= Math.PI * 2; while (dy < -Math.PI) dy += Math.PI * 2;
       holder.rotation.y += dy * (1 - Math.exp(-dt * 6));
       holder.updateMatrixWorld(true);
+      // her chair slides back with her when she gets up, and in with her when she sits down
+      if (mg.chairBack || mg.chairOff) {
+        mg.chairOff += (mg.chairBack - mg.chairOff) * k; if (!mg.chairBack && mg.chairOff < 0.0005) mg.chairOff = 0;
+        chair.group.position.copy(chair.basePos).addScaledVector(F, -mg.chairOff);
+      }
       // pose
       buildTarget(dt);
       const a = wasVisible ? 1 - Math.exp(-dt * (mg.P.speed || 6)) : 1; wasVisible = true;
@@ -1344,21 +1476,26 @@
       root.updateMatrixWorld(true);
       // points on her head for the next frame's reaches
       const head = wp(bones.Head), fwdW = toW(0, 0, 1), leftW = toW(1, 0, 0);
-      marge.mouth.copy(head).add(new THREE.Vector3(0, 0.06, 0)).addScaledVector(fwdW, 0.085);
-      marge.chin.copy(head).add(new THREE.Vector3(0, 0.0, 0)).addScaledVector(fwdW, 0.1);
-      marge.ear.copy(head).add(new THREE.Vector3(0, 0.09, 0)).addScaledVector(leftW, -0.085);
+      // her lower lip, which moves with her head when she tips it back
+      const upH = wp(bones.HeadTop_End).sub(head).normalize(), fwdH = fwdW.clone().addScaledVector(upH, -fwdW.dot(upH)).normalize();
+      marge.mouth.copy(head).addScaledVector(upH, 0.09).addScaledVector(fwdH, 0.09);
+      const rightH = leftW.clone().addScaledVector(upH, -leftW.dot(upH)).normalize().negate();
+      marge.recvEar.copy(head).addScaledVector(upH, 0.095).addScaledVector(rightH, 0.085);
+      marge.recvMouth.copy(head).addScaledVector(upH, 0.03).addScaledVector(fwdH, 0.075).addScaledVector(rightH, 0.03);
+      marge.headC.copy(head).addScaledVector(upH, 0.08);
       // things in her hands
       const rh = wp(bones.RightHand), rf = wp(bones.RightHandMiddle1).sub(rh).normalize();
-      if (mg.pencilDown) { pencil.position.copy(crossword.group.position).add(new THREE.Vector3(0, 0.012, 0)); pencil.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), Lf); }
-      else { pencil.position.copy(rh).addScaledVector(rf, 0.09).add(new THREE.Vector3(0, -0.03, 0)); pencil.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), rf.clone().multiplyScalar(-0.4).add(new THREE.Vector3(0, 1, 0)).addScaledVector(F, -0.2).normalize()); }
-      if (marge.cupHeld) {
-        const lh = wp(bones.LeftHand), lfo = lh.clone().sub(wp(bones.LeftForeArm)).normalize();
-        cup.group.position.copy(lh).addScaledVector(lfo, 0.05).add(new THREE.Vector3(0, -0.06, 0));
-        cup.group.rotation.z += ((mg.tilt) - cup.group.rotation.z) * 0.1;
+      if (mg.pencilDown) { pencil.position.copy(crossword.group.position).add(new THREE.Vector3(0, 0.012, 0)); pencil.quaternion.setFromUnitVectors(UP, Lf); }
+      else { const pf = pencilFrame(); pencil.position.copy(pf.tip); pencil.quaternion.setFromUnitVectors(UP, pf.dir); }
+      if (marge.cupHeld) { const m = mugFrame(); cup.group.position.copy(m.pos); cup.group.quaternion.copy(m.q); mg.cupEase = 0.6; }
+      else if (state.phase !== 'ending') {
+        // the handle stays toward her left hand; after she puts it down, the mug settles straight
+        if (mg.cupEase > 0) { mg.cupEase -= dt; cup.group.quaternion.slerp(CUP_REST_Q, 1 - Math.exp(-dt * 10)); } else cup.group.quaternion.copy(CUP_REST_Q);
       }
       if (mg.holdingReceiver) {
-        receiver.position.copy(rh).addScaledVector(rf, 0.05);
-        receiver.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), marge.ear.clone().add(new THREE.Vector3(0, 0.05, 0)).sub(rh).normalize());
+        const ph = palmOf('Right');
+        receiver.position.copy(rh).addScaledVector(rf, 0.05).addScaledVector(ph.n, 0.035);
+        receiver.quaternion.setFromUnitVectors(UP, ph.kn);
       }
       // speech
       if (!bubble.hidden) {
@@ -1369,8 +1506,11 @@
     }
     marge.reset = () => {
       mg.steps = []; mg.step = null; mg.P = BASE; mg.wait = 2; marge.activity = 'The crossword'; marge.toPhone = false;
-      if (marge.cupHeld) { marge.cupHeld = false; cup.group.position.copy(cup.basePos); cup.group.rotation.z = 0; }
-      if (mg.holdingReceiver) { mg.holdingReceiver = false; phoneBody.attach(receiver); receiver.position.copy(recvRest.p); receiver.quaternion.copy(recvRest.q); }
+      if (marge.cupHeld) { marge.cupHeld = false; cup.group.position.copy(cup.basePos); }
+      cup.group.rotation.set(0, 0, 0); mg.tilt = 0; mg.turn = 0; mg.cupEase = 0;
+      if (mg.chairOff) chair.group.position.copy(chair.basePos);
+      mg.chairBack = 0; mg.chairOff = 0;
+      if (mg.holdingReceiver) { mg.holdingReceiver = false; phoneBody.attach(receiver); receiver.position.copy(recvRest.p); receiver.quaternion.copy(recvRest.q); receiver.scale.copy(recvRest.s); }
       mg.pencilDown = false; walkClip.stop(); bubble.hidden = true;
       hold.p.copy(SEAT); hold.yaw = SEAT_YAW; hold.y = seatDY; hold.ease = 4; holder.position.copy(SEAT).setY(seatDY); holder.rotation.y = SEAT_YAW;
     };
