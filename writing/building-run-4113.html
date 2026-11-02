@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Bryan Falkowski">
+  <meta name="description" content="How I built Run 4,113, the 3D kitchen for my short story Doctor Bones: a three.js scene written with Claude, and characters made with Meshy from a character reference sheet.">
+  <title>Building a 3D World for a Short Story | Bryan Falkowski</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --text: #2c2c2c;
+      --muted: #666666;
+      --line: #e0e0e0;
+      --alt-bg: #fafafa;
+      --accent: #1d3f72;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: #fff; color: var(--text);
+      font: 17px/1.6 "Source Sans 3", "Source Sans Pro", sans-serif;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .topbar { border-bottom: 1px solid var(--line); padding: 14px 32px; }
+    .topbar .container { display: flex; justify-content: space-between; font-size: 15px; }
+    .topbar a.home { color: var(--text); font-weight: 600; }
+    .container { max-width: 760px; margin: 0 auto; }
+    article { padding: 48px 32px 64px; }
+    h1 { font-size: 36px; font-weight: 600; line-height: 1.2; margin: 0 0 10px; }
+    .byline { color: var(--muted); font-size: 15px; margin: 0 0 36px; }
+    h2 { font-size: 24px; font-weight: 700; margin: 44px 0 14px; }
+    p { margin: 0 0 14px; }
+    ul, ol { margin: 0 0 16px; padding-left: 24px; }
+    li { margin-bottom: 6px; }
+    .table-wrap { overflow-x: auto; margin: 0 0 18px; }
+    table { border-collapse: collapse; width: 100%; font-size: 15px; }
+    th, td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; vertical-align: top; }
+    th { background: var(--alt-bg); font-weight: 600; }
+    code { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 0.9em; }
+    figure { margin: 0 0 22px; text-align: center; }
+    figure img { display: block; width: 100%; height: auto; border-radius: 6px; }
+    figcaption { color: var(--muted); font-size: 15px; margin-top: 6px; }
+    .tldr { background: var(--alt-bg); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 6px 6px 0; }
+    .tldr p:last-child { margin-bottom: 0; }
+    .world iframe { display: block; width: 100%; height: 600px; border: 0; }
+    .refs { border-top: 1px solid var(--line); margin-top: 40px; padding-top: 20px; color: var(--muted); font-size: 15px; }
+    .refs h2 { font-size: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 8px; }
+    .refs p { margin: 0 0 6px; }
+    footer { text-align: center; color: var(--muted); font-size: 14px; padding: 32px; border-top: 1px solid var(--line); }
+    @media (max-width: 720px) {
+      .topbar, article { padding-left: 16px; padding-right: 16px; }
+      h1 { font-size: 30px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="container">
+      <a class="home" href="../">Bryan Falkowski</a>
+      <a href="../#writing">All writing</a>
+    </div>
+  </div>
+
+  <article class="container">
+    <h1>Building a 3D World for a Short Story</h1>
+    <p class="byline">Bryan Falkowski · November 1, 2026 · About the story <a href="doctor-bones.html">Doctor Bones</a></p>
+
+    <div class="tldr">
+      <p><a href="doctor-bones.html">Doctor Bones</a> is a short story about a copy of a man. A young man builds Dale Hubbard out of everything Dale ever posted online, then sits in a room with no windows and waits for the copy to type Dale's bank password. After I wrote it, I wanted to watch that kitchen the way the young man does. So I built it as a 3D world that runs in a browser, first with toy figures and then with characters that look like people.</p>
+      <p>Claude wrote the code. Meshy turned one character reference sheet into rigged 3D models of Dale and his wife, Marjorie. This post covers the tools, how they fit together, and what still looks wrong. It skips most of the wrong turns.</p>
+    </div>
+    <figure>
+      <img src="building-run-4113/modes.jpg" alt="Marjorie and Dale at the kitchen table twice: above as toy figures at a large table, below as realistic characters at a smaller table." loading="lazy">
+      <figcaption>The same table in the toy version (top) and in Experiment mode (bottom).</figcaption>
+    </figure>
+
+    <h2>The story picture was the spec</h2>
+    <p>The story page has one picture: Marjorie at the kitchen table with her crossword, Dale on the floor with the dog, warm late light, sage cabinets, a checkerboard floor and a window of small panes. I told Claude to treat that picture as the design standard. Every change to the room was checked against it.</p>
+    <figure>
+      <img src="doctor-bones/kitchen.jpg" alt="The story picture: Marjorie at the kitchen table with a crossword while Dale sits on the floor with a brown dog, in warm late light." loading="lazy">
+      <figcaption>The story picture, which set the look of the room.</figcaption>
+    </figure>
+
+    <h2>A kitchen built from code</h2>
+    <p>The first version uses no 3D files at all. It is one HTML page with <a href="https://threejs.org/">three.js</a>, and every object is built from boxes, cylinders and spheres: the cabinets, the stove, the fridge, the table and two toy figures. That kept the page small and easy to change. When I asked for the wainscoting in a 1950s cream, or a fall afternoon outside the window, Claude changed the code and I looked at the result.</p>
+    <p>Three things made the room feel alive:</p>
+    <ul>
+      <li><strong>Habits.</strong> Each character has a short weighted list of things to do, such as the crossword, a sip of coffee or a look at the clock. One is picked at random every few seconds, so the room never repeats exactly.</li>
+      <li><strong>A world that builds itself.</strong> Each piece appears as a wireframe and then turns solid. You can click anything to inspect it. The coffee's temperature says "Never changes".</li>
+      <li><strong>A Look menu.</strong> It raises the realism while the scene runs: sunlight and reflections, then textures painted in code (wood grain, floor tiles, plaster), then ambient occlusion, a soft glow and a warm color grade like the story picture.</li>
+    </ul>
+    <p>Claude could not see my screen, so it tested its own work. It ran the page in a headless Chrome browser with Playwright, took screenshots and looked at them before showing me. That browser has no graphics card and runs the kitchen at a few frames a second, so the tests pause the world at the moment they need to photograph.</p>
+
+    <h2>From a reference sheet to rigged characters with Meshy</h2>
+    <p>The toy figures were fun, but I wanted to see how far the realism could go. <a href="https://www.meshy.ai/">Meshy</a> is a web app that makes 3D models from images, and it can rig and animate them too. Each character went through the same four steps.</p>
+    <ol>
+      <li><strong>A character reference sheet.</strong> I generated one image with ChatGPT that shows Marjorie and Dale from the front, the three-quarter view, the side and the back, in the same clothes and light. It became the style guide for both of them.</li>
+      <li><strong>Image to 3D.</strong> I cut the sheet into separate views and gave Meshy the views of one character at a time. The first result is a detailed mesh with no color. Marjorie's has 890,718 triangles.</li>
+      <li><strong>Remesh and texture.</strong> Meshy reduces the mesh to about 10,000 triangles and paints the textures from the reference images.</li>
+      <li><strong>Rig and animate.</strong> Meshy's auto-rigging adds a humanoid skeleton with the usual Mixamo bone names, plus walking and running clips. I downloaded each character as one GLB file with all of its animations.</li>
+    </ol>
+    <figure>
+      <img src="building-run-4113/reference-sheet.jpg" alt="A character reference sheet showing Marjorie and Dale from the front, three-quarter view, side and back, with close-ups of their heads." loading="lazy">
+      <figcaption>The character reference sheet, the style guide for both characters.</figcaption>
+    </figure>
+    <figure>
+      <img src="building-run-4113/pipeline.jpg" alt="Marjorie in four stages: the reference image, an untextured gray mesh, the textured model in an A-pose, and the rigged model walking." loading="lazy">
+      <figcaption>Marjorie through Meshy: the reference, the generated mesh, the textured model and the rigged model walking.</figcaption>
+    </figure>
+    <p>One setting mattered more than the rest. My first Marjorie was generated in the pose from the sheet, with her hands folded in front of her dress. The rig attached her hands to the dress, so the dress stretched every time she moved her arms. Generating her again in an A-pose, with her arms away from her body and her feet apart, fixed it. If you plan to rig a character, make it in that pose from the start.</p>
+
+    <h2>Getting the models into the page</h2>
+    <p>Meshy's files were 28 to 46 MB, mostly because of 4K PNG textures. A short Python script re-encodes the textures as JPEG, 2048 pixels for the color and 1024 for the roughness map, and leaves the geometry alone. Marjorie came down to 2.6 MB and Dale to 1.9 MB. three.js loads them with its GLTFLoader, and only when someone turns on Experiment mode.</p>
+    <p>Meshy's walk clip plays when they walk. Everything else is posed in code. Each frame starts from the rest pose. The code turns the head and spine toward what the person is looking at, and a small two-bone solver puts each hand where it needs to be: the pencil on the crossword, the cup at her mouth, the phone at her ear. Then the bones ease toward that pose, so every move is smooth. Marjorie has her own habits now, and she answers the phone. Dale copies a hidden toy Dale every frame, so he kept all of the habits the toy already had.</p>
+    <p>Real-size people also showed which parts of the room were toy-sized. The room itself was about right, but the table was 1.67 m across and the dog was as tall as a Great Dane. Experiment mode shrinks the table to 1.1 m and makes the cup, the dog and the cat real size.</p>
+    <figure>
+      <img src="building-run-4113/table.jpg" alt="Close-up of Marjorie doing the crossword and Dale typing on his laptop at the kitchen table." loading="lazy">
+      <figcaption>Marjorie at her crossword and Dale at his laptop.</figcaption>
+    </figure>
+    <p>Two fixes are worth knowing if you try this with three.js r128:</p>
+    <ul>
+      <li><strong>Pale faces.</strong> The models took the room's reflected light at full strength, while the room's own materials take about a third of it. Matching that setting fixed the washed-out skin.</li>
+      <li><strong>A halo when they moved.</strong> The ambient occlusion pass drew the people in their rest pose, not their current pose, so the shading lagged behind them. Putting the people on their own layer and drawing them in that pass with a skinned material fixed it.</li>
+    </ul>
+
+    <h2>What still looks wrong</h2>
+    <p>It is a lot closer to the story picture than the toys were, but it is not there yet.</p>
+    <ul>
+      <li><strong>Hands.</strong> When Dale sits on the floor with his arms around his knees, his hands do not cross well. Marjorie cannot hold a pencil or a coffee cup in a way you believe. The code moves the arms, but it does not pose the fingers, so the hands never really close around anything.</li>
+      <li><strong>Sitting down.</strong> They are meant to walk to the chair, turn and sit. Instead they tend to circle it first, the way my dog circles before he lies down.</li>
+      <li><strong>Resolution.</strong> The models are less detailed than what Meshy can make, because I shrank the textures for the web. Next I want to look at better compression, since three.js can load compressed geometry (Draco) and compressed textures (KTX2). I also want to try spending the detail where people look, on the hands and the face.</li>
+    </ul>
+
+    <h2>The tools</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tool</th><th>What it did</th></tr></thead>
+        <tbody>
+          <tr><td>Claude</td><td>Wrote and changed the code from my descriptions, and checked its own screenshots</td></tr>
+          <tr><td>three.js (r128)</td><td>The scene, materials, lighting, shading and the model loader</td></tr>
+          <tr><td>Meshy</td><td>Image to 3D, remeshing, texturing, rigging and the walk clip</td></tr>
+          <tr><td>ChatGPT</td><td>The character reference sheet</td></tr>
+          <tr><td>Python with Pillow</td><td>Shrinking the model textures</td></tr>
+          <tr><td>Playwright and headless Chrome</td><td>Screenshots for testing</td></tr>
+          <tr><td>Web Audio</td><td>The radio's song, made in the page</td></tr>
+          <tr><td>GitHub Pages</td><td>Hosting</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Try it</h2>
+    <p>This is the same world that runs under the story. Tick Experiment mode to swap the toys for Marjorie and Dale. Have Dale log in to the bank, then give him a dog from the Add menu and ask him its name.</p>
+    <div class="world">
+      <iframe src="doctor-bones/world/?embed" title="Run 4,113, the 3D kitchen from Doctor Bones" loading="lazy"></iframe>
+    </div>
+    <p>The kitchen was also the first step toward a 3D office for my Claude Code sessions, which I will write about next.</p>
+
+    <div class="refs">
+      <h2>References</h2>
+      <p><a href="https://threejs.org/">three.js</a>, the JavaScript 3D library the scene is built with (version r128)</p>
+      <p><a href="https://www.meshy.ai/">Meshy</a>, the web app that made the 3D models of Marjorie and Dale</p>
+    </div>
+  </article>
+
+  <footer>&copy; 2026 Bryan Falkowski</footer>
+
+</body>
+</html>
