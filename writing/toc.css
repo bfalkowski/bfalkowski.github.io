@@ -1,0 +1,39 @@
+/* Section tree and reading progress for a writing post. toc.js builds the markup.
+   Wide screens: a fixed column left of the 760px text column.
+   Narrower screens: a sticky bar with a TREE toggle that opens the section list. */
+.toc { font: 12.5px/1.7 "Roboto Mono", ui-monospace, monospace; color: var(--muted); }
+.toc-title { color: var(--text); font-weight: 600; margin: 0 0 10px; line-height: 1.4; }
+.toc-toggle { font: inherit; color: var(--text); letter-spacing: 0.08em; background: none; border: 0; padding: 0; cursor: pointer; }
+.toc ol { list-style: none; margin: 2px 0 12px; padding: 0; }
+.toc li { margin: 0; }
+.toc li a { color: var(--muted); display: block; padding-left: 1.4em; text-indent: -1.4em; }
+.toc li a::before { content: "└ "; color: var(--line); }
+.toc li a:hover { color: var(--accent); text-decoration: none; }
+.toc li a[aria-current="true"] { color: var(--accent); font-weight: 600; }
+.toc li a[aria-current="true"]::before { color: var(--accent); }
+.toc-progress { display: flex; gap: 6px; white-space: nowrap; color: var(--text); }
+.toc-bar { letter-spacing: -0.02em; }
+.toc-time { margin: 2px 0 0; letter-spacing: 0.08em; }
+article h2 { scroll-margin-top: 24px; }
+
+@media (min-width: 1260px) {
+  .toc { position: fixed; top: 112px; left: calc(50% - 380px - 250px); width: 230px; }
+  .toc-toggle { cursor: default; pointer-events: none; }
+  .toc-toggle .caret { display: none; }
+}
+@media (max-width: 1259px) {
+  .toc {
+    position: sticky; top: 0; z-index: 10; background: var(--bg, #fff); border-bottom: 1px solid var(--line);
+    display: flex; flex-wrap: wrap; align-items: center; column-gap: 14px; padding: 6px 32px;
+  }
+  .toc-title, .toc-time { display: none; }
+  .toc ol { display: none; order: 3; flex-basis: 100%; margin: 6px 0 4px; }
+  .toc.open ol { display: block; }
+  article h2 { scroll-margin-top: 56px; }
+}
+@media (max-width: 720px) {
+  .toc { padding-left: 16px; padding-right: 16px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
