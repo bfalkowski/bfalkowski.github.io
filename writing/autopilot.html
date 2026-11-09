@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Bryan Falkowski">
+  <meta name="description" content="At 2:48 on Saturday morning, while I slept, my office of Claude Code sessions merged a fix to its own code and restarted itself to run it. What changed in a week, and what broke when the agents started running their own loop.">
+  <title>The Office Builds Itself | Bryan Falkowski</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --text: #2c2c2c;
+      --muted: #666666;
+      --line: #e0e0e0;
+      --alt-bg: #fafafa;
+      --accent: #1d3f72;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: #fff; color: var(--text);
+      font: 17px/1.6 "Source Sans 3", "Source Sans Pro", sans-serif;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .topbar { border-bottom: 1px solid var(--line); padding: 14px 32px; }
+    .topbar .container { display: flex; justify-content: space-between; font-size: 15px; }
+    .topbar a.home { color: var(--text); font-weight: 600; }
+    .container { max-width: 760px; margin: 0 auto; }
+    article { padding: 48px 32px 64px; }
+    h1 { font-size: 36px; font-weight: 600; line-height: 1.2; margin: 0 0 10px; }
+    .byline { color: var(--muted); font-size: 15px; margin: 0 0 36px; }
+    h2 { font-size: 24px; font-weight: 700; margin: 44px 0 14px; }
+    p { margin: 0 0 14px; }
+    ul, ol { margin: 0 0 16px; padding-left: 24px; }
+    li { margin-bottom: 6px; }
+    .table-wrap { overflow-x: auto; margin: 0 0 18px; }
+    table { border-collapse: collapse; width: 100%; font-size: 15px; }
+    th, td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; vertical-align: top; }
+    th { background: var(--alt-bg); font-weight: 600; }
+    code { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 0.9em; }
+    figure { margin: 0 0 22px; text-align: center; }
+    figure img, figure video { display: block; width: 100%; height: auto; border-radius: 6px; background: #0c0f14; }
+    figure svg { display: block; width: 100%; height: auto; }
+    figure img.narrow { max-width: 520px; margin: 0 auto; }
+    figcaption { color: var(--muted); font-size: 15px; margin-top: 6px; }
+    .tldr { background: var(--alt-bg); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 6px 6px 0; margin-bottom: 24px; }
+    .tldr p:last-child { margin-bottom: 0; }
+    footer { text-align: center; color: var(--muted); font-size: 14px; padding: 32px; border-top: 1px solid var(--line); }
+    @media (max-width: 720px) {
+      .topbar, article { padding-left: 16px; padding-right: 16px; }
+      h1 { font-size: 30px; }
+    }
+    .ticket { background: var(--alt-bg); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; padding: 14px 18px; margin: 0 0 22px; font-size: 15px; }
+    .ticket .label { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 6px; }
+    .ticket .title { font-family: "Roboto Mono", ui-monospace, monospace; font-weight: 600; margin: 0 0 8px; }
+    .ticket ol { margin: 10px 0 0; padding-left: 20px; color: var(--muted); }
+    .ticket ol li { margin-bottom: 2px; }
+  </style>
+  <link rel="stylesheet" href="toc.css">
+  <script src="toc.js" defer></script>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="container">
+      <a class="home" href="../">Bryan Falkowski</a>
+      <a href="../#writing">All writing</a>
+    </div>
+  </div>
+
+  <article class="container">
+    <h1>The Office Builds Itself</h1>
+    <p class="byline">Bryan Falkowski · November 8, 2026 · Follows <a href="office.html">An Office for My Claude Code Sessions</a></p>
+
+    <div class="tldr">
+      <p>At 2:48 on Saturday morning, while I slept, my office merged a fix to its own code and restarted itself to run it. A reviewer had found the bug and a worker filed the ticket. Another worker built the fix, a reviewer approved it, and Autopilot merged it. I had approved the ticket days before, and I did nothing else.</p>
+      <p>The office is the 3D office from my <a href="office.html">previous post</a>, where each developer is one of my Claude Code sessions. A week ago I started every ticket and merged every pull request myself. This post is about what changed, and what broke when the agents started running their own loop.</p>
+    </div>
+
+    <figure>
+      <img src="autopilot/party.jpg" width="1468" height="904" alt="The 3D office at night. Workers in party hats stand and sit on the green couch around a table with a birthday cake. Building 58 glows in neon on the brick wall, beside the Board.">
+      <figcaption>The office on Sunday night. The Lead filed a ticket on Tuesday to throw a party, with party hats and cake. Autopilot started it on Sunday afternoon, and it merged that evening.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="autopilot/floor-party.png" width="1494" height="550" alt="The Floor panel beside the 3D office. Yara is building T-229 while Ravi reviews it, and Oscar is reviewing T-210, which makes hooks queue while the relay is down. The activity log reads: the manager walked in and everyone looks very busy, party with hats on and cake on the coffee table, the manager left, the party is over.">
+      <figcaption>The Floor at the same moment. The party and the manager's visit are in the activity log, and the real work kept going: Yara was building T-229 while Ravi reviewed it, and Oscar was reviewing T-210, which makes hooks queue while the relay is down and replay in order when it is back.</figcaption>
+    </figure>
+
+    <h2>How it runs itself</h2>
+    <p>Every change goes through the same loop. A session files a ticket, often for something it ran into while it worked on another one, and the ticket waits for my approval. Autopilot starts a Dev on it in its own copy of the repo. When the pull request is open and CI is green, a separate reviewer session reads it and gives a verdict, merge or fix. A fix goes back to the Dev, and a merge verdict counts only for the exact commit the reviewer read. Autopilot merges that commit.</p>
+    <p>If the change touched the relay, the program that runs the office, the relay pulls in the new code, waits until no worker is in the middle of a turn, and restarts on it. The workers come back and carry on. That is what makes it self-building: the office changes the program it runs on, and then runs the new version.</p>
+
+    <figure>
+      <svg viewBox="-2 0 724 270" role="img" aria-labelledby="loop-title loop-desc" xmlns="http://www.w3.org/2000/svg">
+        <title id="loop-title">Autopilot's loop</title>
+        <desc id="loop-desc">Five steps in a row: a ticket I approved, a Dev builds it, a review gives a verdict, the relay merges it, and the relay pulls main and restarts. A fix verdict goes back to the Dev, up to two rounds. Then the next ticket starts. Red CI, a change to the rule files, a second fix verdict, or 30 minutes stuck send the task to me.</desc>
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#1d3f72"/>
+          </marker>
+          <marker id="arrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#8a8a8a"/>
+          </marker>
+        </defs>
+        <g font-family="Source Sans 3, Source Sans Pro, sans-serif" font-size="14" fill="#2c2c2c" text-anchor="middle">
+          <!-- fix loop, above -->
+          <path d="M360,52 C360,14 210,14 210,52" fill="none" stroke="#1d3f72" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <text x="285" y="18" font-size="13" fill="#1d3f72">fix, up to 2 rounds</text>
+          <!-- steps -->
+          <g stroke="#1d3f72" stroke-width="1.5" fill="#f3f6fb">
+            <rect x="0" y="52" width="120" height="58" rx="6"/>
+            <rect x="150" y="52" width="120" height="58" rx="6"/>
+            <rect x="300" y="52" width="120" height="58" rx="6"/>
+            <rect x="450" y="52" width="120" height="58" rx="6"/>
+            <rect x="600" y="52" width="120" height="58" rx="6"/>
+          </g>
+          <text x="60" y="77" font-weight="600">Ticket</text><text x="60" y="96" font-size="13">I approved</text>
+          <text x="210" y="77" font-weight="600">Dev builds</text><text x="210" y="96" font-size="13">and opens a PR</text>
+          <text x="360" y="77" font-weight="600">Review</text><text x="360" y="96" font-size="13">merge or fix</text>
+          <text x="510" y="77" font-weight="600">Merge</text><text x="510" y="96" font-size="13">reviewed commit</text>
+          <text x="660" y="77" font-weight="600">Pull main</text><text x="660" y="96" font-size="13">and restart</text>
+          <g stroke="#1d3f72" stroke-width="1.5" marker-end="url(#arrow)">
+            <line x1="120" y1="81" x2="148" y2="81"/>
+            <line x1="270" y1="81" x2="298" y2="81"/>
+            <line x1="420" y1="81" x2="448" y2="81"/>
+            <line x1="570" y1="81" x2="598" y2="81"/>
+          </g>
+          <!-- next ticket, below -->
+          <path d="M660,110 L660,140 L60,140 L60,112" fill="none" stroke="#1d3f72" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <rect x="300" y="131" width="120" height="18" fill="#fff"/>
+          <text x="360" y="145" font-size="13" fill="#1d3f72">next ticket</text>
+          <!-- to the person -->
+          <g stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#arrow-muted)">
+            <line x1="250" y1="112" x2="250" y2="196"/>
+            <line x1="360" y1="112" x2="360" y2="196"/>
+            <line x1="510" y1="112" x2="510" y2="196"/>
+          </g>
+          <rect x="150" y="198" width="420" height="62" rx="6" fill="#fafafa" stroke="#8a8a8a" stroke-width="1.5"/>
+          <text x="360" y="222" font-weight="600">Waiting on you</text>
+          <text x="360" y="244" font-size="13" fill="#666666">red CI, a change to the rule files, a second fix, or 30 minutes stuck</text>
+        </g>
+      </svg>
+      <figcaption>The loop. Dashed lines hand the task to me, with the reason on its card.</figcaption>
+    </figure>
+
+    <p>None of this was on at the start. In the previous post I described a trust ladder, where the office gets one more step each time it earns it. Over the week I turned the rungs on one at a time: review findings going back to the Dev, the Lead starting and merging work, and then Autopilot running the whole loop. Autopilot still hands a task to me when CI fails, when a review asks for fixes twice, when a change touches the office's rules, or when nothing has moved for 30 minutes.</p>
+
+    <figure>
+      <img src="autopilot/board.png" width="2000" height="1225" alt="The office Board with seven columns. Triage has 1 ticket, Ready 85, Building 3, In review, Changes requested and Waiting on you 0 each, and Done 108. One of the tickets being built is T-73, Throw a party: party hats and cake in the office.">
+      <figcaption>The first office's Board on Sunday afternoon, from a copy of its tickets. Nothing is waiting on me, and Autopilot is building three tickets.</figcaption>
+    </figure>
+
+    <h2>Inside the relay</h2>
+    <p>The relay is the program that runs an office, and most of the interesting engineering is there. This map is from the manual the office writes for itself.</p>
+
+    <figure>
+      <img src="autopilot/office-map.png" width="1964" height="1092" alt="A map of the office from its manual. I am the manager at the top. The browser page shows the 3D office, the Claude Code panel and the Board. The relay on my computer runs the sessions, keeps tickets and tasks, watches pull requests and keeps its state on disk. The Claude Code sessions, a Lead, a PM, Devs and reviewers, each work in their own checkout and send hooks back to the relay. They push and open pull requests on GitHub, where CI runs.">
+      <figcaption>The office map, from the office's own manual.</figcaption>
+    </figure>
+
+    <ul>
+      <li><strong>A small server with its state on disk.</strong> The relay is a Node.js server with no runtime dependencies, and it answers only the office page on my own computer. It keeps the Board, the tasks and the sessions in a folder of JSON files. Each file is written whole and renamed into place, and a lock file keeps a second relay from writing over the first one's state. That is why a second office is just a second relay with its own port and its own folder.</li>
+      <li><strong>Sessions that outlive the relay.</strong> Each worker is a real <code>claude</code> process in a pseudo-terminal, in its own git worktree, and the page shows it with xterm.js. The processes belong to a session host, a separate process that the supervisor starts once, and the relay talks to it over a local socket with one line of JSON per message. When the relay restarts on new code, it connects to the host again, gets each session's output so far, and carries on with the same processes.</li>
+      <li><strong>Hooks up, typing down.</strong> Claude Code's hooks tell the relay what each session is doing: a tool call, a permission request, the end of a turn. The hook trims each event, posts it to the relay that started the session, gives up after one second and always exits 0, so it never slows Claude Code down. Going the other way, the relay types into a session only between turns, and sends a long brief as one paste so all of it arrives.</li>
+      <li><strong>Tokens, not keys.</strong> Each session gets its own token, which lets it file and list tickets and little else, unless I let a role do more, like the Lead moving cards. The relay's own key is taken out of every session's environment.</li>
+      <li><strong>Autopilot is a plain function.</strong> Autopilot looks at its work every 20 seconds. What to do with each pull request, merge, wait, send back or hand to me, comes from a function with no side effects, so the tests can cover every case without GitHub. The merge is <code>gh pr merge --match-head-commit</code>, so GitHub refuses it if anything was pushed after the review.</li>
+      <li><strong>Tests on every change.</strong> The office's suite has more than 900 tests, plus browser tests that draw the 3D office in software on a machine with no GPU, and CI runs them on every pull request.</li>
+    </ul>
+
+    <h2>What broke, and what the office did about it</h2>
+    <p>Letting agents run their own loop broke things I had not expected. Each time, a session found the problem and filed it, and the office fixed it. These are the ones worth knowing about if you run agents this way.</p>
+    <p><strong>Destructive commands have to ask.</strong> On the office's first day, a reviewer found that cleaning up a worker's copy of the repo deleted ignored files without asking. Ignored files are where things like a <code>.env</code> file and its API keys live, and nothing would have said they were gone. The worker fixed it in its own pull request, so cleaning up now lists those files and asks first. It saw the same bug in another place and filed a ticket for it, T-7, instead of widening its change. That ticket is the one Autopilot merged at 2:48 on Saturday.</p>
+    <aside class="ticket" aria-label="Ticket T-7">
+      <p class="label">The ticket, as the worker wrote it</p>
+      <p class="title">T-7 Task Clean up silently deletes gitignored files</p>
+      <p><code>relay/tasks.js</code> clean runs <code>git worktree remove</code>, which deletes ignored files such as <code>.env</code> without asking. PR 12 fixed this for worker and review checkouts in <code>relay/checkouts.js</code> (Clean up names them and needs a yes that covers them). Do the same for tasks, in the relay and in <code>office/tasks.js</code>, and correct <code>office/README.md</code>. Add tests under <code>relay/test</code>. <code>npm test</code> must pass.</p>
+      <ol>
+        <li>Nov 1, 2:43 pm. Filed by the worker on T-3, "Add worker and automatic review get their own worktrees".</li>
+        <li>Approved by me.</li>
+        <li>Nov 7, 1:18 am. Started by Autopilot, with Ines as the Dev.</li>
+        <li>1:38 am. Automatic review by Kai.</li>
+        <li>2:48 am. PR #107 merged, and Autopilot moved the ticket to Done.</li>
+      </ol>
+    </aside>
+    <p><strong>Finished workers fill the office.</strong> Early on Friday, Autopilot turned itself off because every desk was taken. Most desks held its own Devs whose work had already merged, and reviewers that had already posted. It stopped a Dev only at the moment its pull request merged, and a Dev was often still busy right then. The Lead filed a ticket with the time, the message and the cause, and the fix merged that evening. Now Autopilot frees one of its own finished workers before it gives up on a start.</p>
+    <p><strong>A restart can wait forever on one agent.</strong> On Saturday morning the office sat still for about two hours. A Dev whose work had merged was waiting at a permission prompt. The relay will not restart while a session is at a question, so the restart waited for the Dev, and Autopilot waited for the restart. Now Autopilot keeps working while a restart waits, and a session stuck at a question for 30 minutes sends its task to me.</p>
+    <p><strong>The worst bug was not in the code a reviewer reads.</strong> The office has a COO, a role the Lead filed a ticket for on Tuesday, borrowed from <a href="https://github.com/bfalkowski/OpenExecutive">Open Executive</a>, an open-source project that runs an AI executive team. When I ask, it reports how close the office is to running itself. At first it counted review comments as failures, which made every ticket look flawed. On Saturday I changed it to count what matters for a loop like this: a pull request ships when it merges, and the failure is the office getting stuck. Its next report found that most of the stuck time had one cause. A worker's session could end before its brief was typed in, so the worker never learned what to do. That evening a change merged that saves each worker's first brief until the worker starts on it, and the office has not had a stalled worker since.</p>
+    <p><strong>A system that changes itself needs a way back.</strong> The Lead filed this risk itself, in its own words: "a self-written change that breaks the relay takes down every session, including the ones that could fix it." So the office built a rollback. When the relay restarts on new code, a supervisor checks that it comes up and brings its workers back. If it does not, the supervisor goes back to the last commit that worked. The rollback is on now.</p>
+
+    <h2>A second office</h2>
+    <p>On Sunday morning I started a second office on the same code, with its own relay and its own Board, and gave it a stalled project of mine: edd-platform, a tool for evaluating AI agents. Its PM used the tool the way a new user would and found that the main loop dead-ended once you had diagnosed a failure. By the afternoon the office had merged the changes that close that loop, and for most of the afternoon it merged a pull request about every six minutes.</p>
+    <p>The two offices also started to learn from each other. The second office's PM suggested a check that a pull request holds its latest review's fixes before it merges, and the first office built it. That day is the next post.</p>
+
+    <h2>References</h2>
+    <ul>
+      <li><a href="office.html">An Office for My Claude Code Sessions</a>, the previous post</li>
+      <li><a href="https://code.claude.com/docs/en/hooks">Claude Code hooks reference</a>, the events the office's hook reports to the relay</li>
+      <li><a href="https://code.claude.com/docs/en/cli-usage">Claude Code CLI reference</a>. The relay starts each worker with flags from this page, such as <code>--session-id</code>, <code>--settings</code> and <code>--model</code>.</li>
+      <li><a href="https://code.claude.com/docs/en/remote-control">Claude Code Remote Control</a>, the official way to use a session on your own computer from a browser or phone. The office does not use it. It runs each <code>claude</code> in a pseudo-terminal and shows it in the page with xterm.js, and I did not find an official doc for that.</li>
+      <li><a href="https://code.claude.com/docs/en/claude-code-on-the-web">Claude Code on the web</a>, which runs sessions in Anthropic's cloud and not on your computer</li>
+      <li><a href="https://xtermjs.org/">xterm.js</a>, the terminal in the office page</li>
+      <li><a href="https://git-scm.com/docs/git-worktree">git worktree</a>, which gives each worker its own checkout</li>
+      <li><a href="https://cli.github.com/manual/gh_pr_merge">gh pr merge</a>, and its <code>--match-head-commit</code> option that Autopilot merges with</li>
+      <li><a href="https://github.com/bfalkowski/OpenExecutive">Open Executive</a>, where the COO role came from</li>
+    </ul>
+  </article>
+
+  <footer>&copy; 2026 Bryan Falkowski · <a href="../">Home</a></footer>
+
+</body>
+</html>
