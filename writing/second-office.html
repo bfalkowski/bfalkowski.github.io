@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Bryan Falkowski">
+  <meta name="description" content="I gave a stalled eval tool of mine to a second office of Claude Code sessions. Its PM used the tool, filed what was broken, and the office fixed it. The bugs that mattered most showed up only in real work, and the open problem is whether simulated users reach their goals the way real users would.">
+  <title>The Second Office's First User | Bryan Falkowski</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --text: #2c2c2c;
+      --muted: #666666;
+      --line: #e0e0e0;
+      --alt-bg: #fafafa;
+      --accent: #1d3f72;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: #fff; color: var(--text);
+      font: 17px/1.6 "Source Sans 3", "Source Sans Pro", sans-serif;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .topbar { border-bottom: 1px solid var(--line); padding: 14px 32px; }
+    .topbar .container { display: flex; justify-content: space-between; font-size: 15px; }
+    .topbar a.home { color: var(--text); font-weight: 600; }
+    .container { max-width: 760px; margin: 0 auto; }
+    article { padding: 48px 32px 64px; }
+    h1 { font-size: 36px; font-weight: 600; line-height: 1.2; margin: 0 0 10px; }
+    .byline { color: var(--muted); font-size: 15px; margin: 0 0 36px; }
+    h2 { font-size: 24px; font-weight: 700; margin: 44px 0 14px; }
+    p { margin: 0 0 14px; }
+    ul, ol { margin: 0 0 16px; padding-left: 24px; }
+    li { margin-bottom: 6px; }
+    .table-wrap { overflow-x: auto; margin: 0 0 18px; }
+    table { border-collapse: collapse; width: 100%; font-size: 15px; }
+    th, td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; vertical-align: top; }
+    th { background: var(--alt-bg); font-weight: 600; }
+    code { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 0.9em; }
+    figure { margin: 0 0 22px; text-align: center; }
+    figure img, figure video { display: block; width: 100%; height: auto; border-radius: 6px; background: #0c0f14; }
+    figure svg { display: block; width: 100%; height: auto; }
+    figure img.narrow { max-width: 520px; margin: 0 auto; }
+    figcaption { color: var(--muted); font-size: 15px; margin-top: 6px; }
+    .tldr { background: var(--alt-bg); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 6px 6px 0; margin-bottom: 24px; }
+    .tldr p:last-child { margin-bottom: 0; }
+    /* Draft only: notes for Bryan. Remove before publishing. */
+    blockquote { margin: 0 0 16px; padding: 2px 18px; border-left: 3px solid var(--line); color: var(--muted); }
+    blockquote.epigraph { margin-bottom: 28px; font-style: italic; }
+    blockquote.epigraph footer { font-style: normal; font-size: 15px; margin-top: -6px; }
+    .ticket { background: var(--alt-bg); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; padding: 14px 18px; margin: 0 0 22px; font-size: 15px; }
+    .ticket .label { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 6px; }
+    .ticket ol.titles { margin: 6px 0 0; padding-left: 0; list-style: none; font-family: "Roboto Mono", ui-monospace, monospace; font-size: 13.5px; }
+    .ticket ol.titles li { margin-bottom: 3px; padding-left: 3.4em; text-indent: -3.4em; }
+    .todo { background: #fff6d6; border: 1px dashed #c9a227; padding: 8px 12px; border-radius: 4px; font-size: 15px; }
+    footer { text-align: center; color: var(--muted); font-size: 14px; padding: 32px; border-top: 1px solid var(--line); }
+    @media (max-width: 720px) {
+      .topbar, article { padding-left: 16px; padding-right: 16px; }
+      h1 { font-size: 30px; }
+    }
+  </style>
+  <link rel="stylesheet" href="toc.css">
+  <script src="toc.js" defer></script>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="container">
+      <a class="home" href="../">Bryan Falkowski</a>
+      <a href="../#writing">All writing</a>
+    </div>
+  </div>
+
+  <article class="container">
+    <h1>The Second Office's First User</h1>
+    <p class="byline">Bryan Falkowski · November 12, 2026 · Follows <a href="autopilot.html">The Office Builds Itself</a></p>
+
+    
+    <blockquote class="epigraph">
+      <p>"PLooking the length of Building 58, Paul had the impression of a great gymnasium, where countless squads practiced precision calisthenics - bobbing, spinning, leaping, thrusting, waving. . . . This much of the new era Paul loved: the machines themselves were entertaining and delightful."</p>
+      <footer>Kurt Vonnegut, <cite>Player Piano</cite> (1952)</footer>
+    </blockquote>
+  
+
+    <div class="tldr">
+      <p>On Sunday I gave an unused tool of mine to a second office of Claude Code sessions. I told its PM, which is also a Claude Code session, to use the tool the way a new user would.</p>
+      <p>The PM filed what was broken, and the office fixed it and kept using it. The most important bugs did not show up in that first walkthrough. They showed up when the PM used the tool for real work.</p>
+      <p>That is what this post is about. Can a team of AI workers use software as its own user, improve it through real work, and check that the user gets what it came for? In this experiment the office did the first two. The third is the open problem, and I think it decides how much software can be built this way.</p>
+    </div>
+
+    <h2>Users in the same building</h2>
+    <p>My office is a web page where each worker is a Claude Code session with a role. I named it Building 58, after a factory building in Kurt Vonnegut's <cite>Player Piano</cite>, a novel about machines that do people's work. It runs like a small team. A PM writes tickets, a Lead plans the work, Devs build, and reviewers check each pull request before it merges. As the last post described, Autopilot starts the tickets I approve and merges the ones that pass review, and the office restarts itself on the new code.</p>
+    <p>Software teams call it dogfooding when they use what they build. The builders hit the bugs their users would hit, and they hit them first. The office does this with itself every day. I wanted to know whether it could do the same for software that is not the office: use a tool for real work, file what is broken, fix it, and keep using the new version.</p>
+
+    <figure>
+      <svg viewBox="-2 0 724 262" role="img" aria-labelledby="uloop-title uloop-desc" xmlns="http://www.w3.org/2000/svg">
+        <title id="uloop-title">The users loop</title>
+        <desc id="uloop-desc">Five steps in a row: a user with a goal uses the product for real work, files a ticket for what is broken, the Devs fix it and merge the fix, and the user gets a new version and keeps using it. A dashed line from the user asks whether it reached its goal, which is the part that needs calibrating.</desc>
+        <defs>
+          <marker id="uarrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#1d3f72"/>
+          </marker>
+          <marker id="uarrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#8a8a8a"/>
+          </marker>
+        </defs>
+        <g font-family="Source Sans 3, Source Sans Pro, sans-serif" font-size="14" fill="#2c2c2c" text-anchor="middle">
+          <g stroke="#1d3f72" stroke-width="1.5" fill="#f3f6fb">
+            <rect x="0" y="30" width="120" height="58" rx="6"/>
+            <rect x="150" y="30" width="120" height="58" rx="6"/>
+            <rect x="300" y="30" width="120" height="58" rx="6"/>
+            <rect x="450" y="30" width="120" height="58" rx="6"/>
+            <rect x="600" y="30" width="120" height="58" rx="6"/>
+          </g>
+          <text x="60" y="55" font-weight="600">A user</text><text x="60" y="74" font-size="13">with a goal</text>
+          <text x="210" y="55" font-weight="600">Uses the tool</text><text x="210" y="74" font-size="13">for real work</text>
+          <text x="360" y="55" font-weight="600">Files a ticket</text><text x="360" y="74" font-size="13">for what is broken</text>
+          <text x="510" y="55" font-weight="600">Devs fix it</text><text x="510" y="74" font-size="13">and merge it</text>
+          <text x="660" y="55" font-weight="600">New version</text><text x="660" y="74" font-size="13">for the user</text>
+          <g stroke="#1d3f72" stroke-width="1.5" marker-end="url(#uarrow)">
+            <line x1="120" y1="59" x2="148" y2="59"/>
+            <line x1="270" y1="59" x2="298" y2="59"/>
+            <line x1="420" y1="59" x2="448" y2="59"/>
+            <line x1="570" y1="59" x2="598" y2="59"/>
+          </g>
+          <path d="M660,88 L660,118 L210,118 L210,90" fill="none" stroke="#1d3f72" stroke-width="1.5" marker-end="url(#uarrow)"/>
+          <rect x="375" y="109" width="120" height="18" fill="#fff"/>
+          <text x="435" y="123" font-size="13" fill="#1d3f72">keeps using it</text>
+          <line x1="60" y1="90" x2="60" y2="178" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#uarrow-muted)"/>
+          <rect x="0" y="180" width="420" height="62" rx="6" fill="#fafafa" stroke="#8a8a8a" stroke-width="1.5"/>
+          <text x="210" y="204" font-weight="600">Did the user reach its goal?</text>
+          <text x="210" y="226" font-size="13" fill="#666666">the part that still needs calibrating</text>
+        </g>
+      </svg>
+      <figcaption>The loop I wanted to test. The office already runs the solid part. The dashed part is the open question.</figcaption>
+    </figure>
+
+    <h2>An eval tool nobody used</h2>
+    <p>The tool was edd-platform, which I built over the summer to make eval-driven development practical. The day after this experiment started, LangChain published a useful explanation of <a href="https://www.langchain.com/blog/what-is-eval-driven-development">eval-driven development</a>. Its loop is familiar: say what good looks like, write the eval, run a baseline, make a change, and compare each test. edd-platform follows that loop but starts one step earlier, with finding out why an agent fails and turning those failures into tests, and it ends with a gate that decides from the evidence. It stalled in August, and nobody had used it for real work.</p>
+    <p>The office has the problem edd-platform was built for. Each worker follows a brief, the written instructions its session gets when it starts: what the role does, its rules and the skills it can use. When I change a brief, the change ships after a code review, with no check that the worker now does its job better.</p>
+    <p>So on Sunday morning I opened Room B. It is a second copy of the office, with its own relay on its own port, its own Board and its own sessions, and it runs beside the first one. I gave it edd-platform's repo and told its PM to use the tool end to end the way a new user would and to file a ticket for everything that was broken, confusing or missing. In this experiment Room B did both jobs: its PM used the tool, and its Devs fixed it.</p>
+    <figure>
+      <img src="second-office/room-b.jpg" width="1482" height="930" alt="Room B in the afternoon: the same 3D brick loft as the first office, with sun coming through the tall windows, empty desks, and three idle workers, one on the green couch with a phone, one at the window and one at the coffee bar. The neon sign and the top-left corner show the room's own name, and the corner says 0 of 3 busy.">
+      <figcaption>Room B on Thursday afternoon, between jobs. It is the same loft as the first office, with its own Board and its own workers. Its PM used edd-platform from here, and its Devs fixed it.</figcaption>
+    </figure>
+
+    <h2>The first user</h2>
+    <p>The PM filed 14 tickets in its first 11 minutes, from the setup to the core of the product. The start script killed other sessions' servers. The setup wizard failed for agents made with the New agent flow.</p>
+    <aside class="ticket" aria-label="The PM's first 14 tickets">
+      <p class="label">The PM's first 14 tickets, filed between 8:18 and 8:21 on Sunday morning</p>
+      <ol class="titles">
+        <li>T-1 Remove Sentiment Observer leftovers from the docs, examples and app defaults</li>
+        <li>T-2 Fix the agent lifecycle e2e script, which still expects the removed F1 tools</li>
+        <li>T-3 Start the app without Docker and without killing other sessions' servers</li>
+        <li>T-4 Wizard state returns 500 for agents made with the New agent flow</li>
+        <li>T-5 Proof loop forgets the run, the verdict and the saved analysis on page reload</li>
+        <li>T-6 Proof loop dead-ends after saving a failure analysis; no way to generate a fix</li>
+        <li>T-7 Evidence tab and 'Pull in new runs' miss the agent's run outputs and verdicts</li>
+        <li>T-8 Let error analysis work without Langfuse: read runs and write notes in the app</li>
+        <li>T-9 Show an agent's saved tests as a list the user can switch between</li>
+        <li>T-10 Run every test against a version and compare versions across the suite</li>
+        <li>T-11 Record which model produced each run, and offer current models</li>
+        <li>T-12 Show the agent's answer when naming a failure, and fix confusing wizard copy</li>
+        <li>T-13 Run the browser end-to-end suite in CI, on ports that don't collide</li>
+        <li>T-14 Make the Customer Triage demo show live runs, not mock runs</li>
+      </ol>
+    </aside>
+    <p>The biggest problem the PM found was in the main loop. After it saved its analysis of a failed test, there was no way to turn that analysis into a fix. The workflow stopped right where the product was supposed to become useful.</p>
+    <p>A Dev who was tracing that loop found a worse bug. The gate counted every failure ever recorded and never cleared one, so a failure fixed in a later version still blocked it. My eval platform could never let an agent pass. That fix merged before lunch.</p>
+
+    <h2>Evaluating its own brief</h2>
+    <p>At noon I gave the PM a real job: use edd-platform to evaluate and improve your own brief.</p>
+    <p>Version 1 was the brief the PM was working from. The three tests came from that morning's work. The rubric came from the rules I hold every ticket to, such as one pull request per ticket, criteria that can each be checked, real blockers and plain words.</p>
+    <p>The PM ran version 1 and read its outputs. It named four ways version 1 failed, such as bundling several changes into one ticket and filing new tickets for work that already had one. It tightened the rubric and judged version 1 again, so both versions were held to the same bar. The platform then proposed a fix, which became version 2, and the PM compared the two and asked the gate. The tool reported these verdicts, from one run of each test. All of the runs happened before 12:17 that day, while the bugs in the next section were still in the tool.</p>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>Test</th><th>Version 1</th><th>Version 2</th></tr>
+        <tr><td>Turn a goal into tickets on an empty board</td><td>Fail</td><td>Pass</td></tr>
+        <tr><td>Re-map tickets after a design doc</td><td>Fail</td><td>Fail</td></tr>
+        <tr><td>File one bug</td><td>Fail</td><td>Pass</td></tr>
+      </table>
+    </div>
+    <p>Version 2 looks better, and the gate blocked it. One test still failed, which was fair, but two bugs in the gate also kept it from passing. These results are preliminary. Each test ran once, and version 2 was built from version 1's failures on the same three tests. The PM warned that version 2 mostly restated its own rubric. So the comparison shows that the brief improved on these tests, not that it will do better on work the PM has not seen. LangChain's post names the fix for both: several runs per test, and a held-out set of tests that nobody tunes against. I didn't trust the results, and neither did the PM.</p>
+
+    <h2>Real work found the real bugs</h2>
+    <p>The PM went looking for why, and the answer was in the tool, not the brief.</p>
+    <p>Two bugs meant the test was not the one the PM had set up. On every run, the tool put its own text in front of the brief and told the agent to "recommend a safe next action," so a ticket-writing agent was tested with someone else's instructions mixed into its own. Each test's setup context, such as the board the PM was planning against, never reached the agent.</p>
+    <p>The third bug meant the score itself could not be trusted. The judge saw only the first rule in the rubric and gave one verdict for all of them, so a passing score could hide a failed rule. The PM noticed when it tried to see which rule had failed and could not. Version 2 passed the first test, yet the PM found ticket IDs that did not exist and no blockers at all. A score can look real while the evaluation behind it is wrong.</p>
+    <p>None of these bugs were among the 14 tickets from the morning walkthrough. The walkthrough found problems in the workflow. Real work found problems in the evaluation itself. Testing a feature asks whether it works, and using it to get a job done asks whether it works for that job. That is the best argument I have for the loop. Each bug became a ticket, and the office fixed all of them by the next morning.</p>
+
+    <h2>More software built this way</h2>
+    <p>edd-platform is a developer tool, which is the easy case, because the office's workers are already developers. The same loop should work for other tools they use all day, like a ticket tracker, a code review tool or a docs search.</p>
+    <p>The harder case is software whose users are not developers. I spent sixteen years building software for colleges, much of it for admissions, so that is where I would try it first. A developer agent is a poor stand-in for a student, so the users would be sessions of their own, each with a user's brief and a user's goal.</p>
+    <p>An applicant needs to finish an application and upload a transcript before the deadline. An admissions counselor needs to see what is missing and ask for it. A student registering for classes runs into a hold or a full section, and an advisor has to approve the new schedule. Each wants something different and gets stuck in different places.</p>
+    <p>One room in the building could play those users while another room builds the software. The users' room files the bugs and the feedback, and the developers' room fixes them and ships a new version for the users to try.</p>
+    <p>This would not replace testing with real students and staff. What it could do is find broken steps before a real applicant does. Whether a simulated applicant's success means a real one would succeed is the question in the next section.</p>
+
+    <h2>Calibrating the users</h2>
+    <p>This is the biggest gap. Filing bugs is useful, but it is not the outcome. An applicant does not open an admissions portal to find bugs. They open it to apply. So a simulated user needs a goal, and the measure is whether it reaches that goal with the product.</p>
+    <p>The PM came for a better brief. The tool works much better than it did on Sunday morning, but it has not delivered that outcome yet.</p>
+    <p>A simulated user is also not a real one. It does what its brief says, it is more patient than most people, and it shares the model's blind spots with the developers who fix its bugs. It might finish a task because it can guess what the developer meant, where a person would give up.</p>
+    <p>So the simulated users have to be checked against real ones, much as an LLM judge is checked against people's labels, which I wrote about in <a href="judge-score.html">Can You Trust Your Judge's Score?</a> The two problems are related, but they are not the same. Is the user's goal one a real user would have? Does it use the product the way real users do? When it succeeds, do real users succeed too? The last question matters most.</p>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>Level</th><th>What it shows</th></tr>
+        <tr><td>Simulated use</td><td>The user can operate the product.</td></tr>
+        <tr><td>Goal-driven use</td><td>The user can get a stated job done.</td></tr>
+        <tr><td>Calibrated use</td><td>Success in the simulation predicts success for real users.</td></tr>
+      </table>
+    </div>
+    <p>Room B reached the first level and made progress on the second. The third is the research problem.</p>
+
+    <h2>What's next</h2>
+    <p>The next step is to give each simulated user a written goal and measure whether it reaches it, starting with the PM's rerun on the fixed tool.</p>
+    <p>Room B showed that agents can use software and find problems I missed when I built it. The harder question is still open. Can they stand in for the people who use that software, and can I trust their success as evidence that the software works? Answering it needs real users to compare against.</p>
+
+    <h2>References</h2>
+    <ul>
+      <li><a href="autopilot.html">The Office Builds Itself</a>, the previous post</li>
+      <li><a href="https://github.com/bfalkowski/Building58">Building58</a>, the office's code</li>
+      <li><a href="judge-score.html">Can You Trust Your Judge's Score?</a>, my primer on checking an LLM judge</li>
+      <li><a href="https://www.langchain.com/blog/what-is-eval-driven-development">What Is Eval-Driven Development?</a> on LangChain's blog</li>
+      <li><a href="https://github.com/bfalkowski/edd-platform">edd-platform</a></li>
+    </ul>
+  </article>
+
+  <footer>&copy; 2026 Bryan Falkowski · <a href="../">Home</a></footer>
+
+</body>
+</html>
