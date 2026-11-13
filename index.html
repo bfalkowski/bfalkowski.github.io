@@ -71,6 +71,7 @@
     }
     .filter-btn:hover { border-color: var(--accent); }
     .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .filter-btn.more { margin-top: 20px; }
 
     /* Items */
     .item-list { display: flex; flex-direction: column; gap: 16px; }
@@ -128,9 +129,19 @@
 
   <section class="alt" id="writing">
     <div class="container">
-      <h2>Writing</h2>
+      <h2>Posts</h2>
+
+      <div class="filters">
+        <span class="filter-label">Topic:</span>
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="building58">Building58</button>
+        <button class="filter-btn" data-filter="agents">Agents</button>
+        <button class="filter-btn" data-filter="evals">Evals</button>
+        <button class="filter-btn" data-filter="judges">LLM-as-a-judge</button>
+        <button class="filter-btn" data-filter="video">Video</button>
+      </div>
       <div class="item-list">
-        <div class="item">
+        <div class="item" data-tags="building58 video">
           <h3 class="item-title"><a href="building58/">Building58 Trailers</a></h3>
           <p class="item-desc">Short films of one room of my Claude Code sessions at work, on a break and at a party, with its own 80s music.</p>
           <p class="item-meta">Video, November 2026</p>
@@ -138,7 +149,7 @@
             <a class="item-link" href="building58/">Watch</a>
           </div>
         </div>
-        <div class="item">
+        <div class="item" data-tags="building58 agents evals">
           <h3 class="item-title"><a href="writing/second-office.html">The Second Office's First User</a></h3>
           <p class="item-desc">I gave a stalled eval tool of mine to a second room of Claude Code sessions. Its PM used the tool, filed what was broken, and the room fixed it. The bugs that mattered most showed up only in real work, and the open question is whether simulated users reach their goals the way real users would.</p>
           <p class="item-meta">Notes, November 2026</p>
@@ -147,7 +158,7 @@
             <a class="item-link" href="https://github.com/bfalkowski/Building58">Code</a>
           </div>
         </div>
-        <div class="item">
+        <div class="item" data-tags="building58 agents">
           <h3 class="item-title"><a href="writing/autopilot.html">The Office Builds Itself</a></h3>
           <p class="item-desc">At 2:48 on Saturday morning, while I slept, my office of Claude Code sessions merged a fix to its own code and restarted itself to run it. What changed in a week, and what broke when the agents started running their own loop.</p>
           <p class="item-meta">Notes, November 2026</p>
@@ -156,7 +167,7 @@
             <a class="item-link" href="https://github.com/bfalkowski/Building58">Code</a>
           </div>
         </div>
-        <div class="item">
+        <div class="item" data-tags="building58 agents">
           <h3 class="item-title"><a href="writing/office.html">An Office for My Claude Code Sessions</a></h3>
           <p class="item-desc">A 3D loft office where each developer is one of my Claude Code sessions. They type while it works, raise a hand when it needs my OK, and get coffee when it is done. By the afternoon its own sessions were filing, building and reviewing its tickets, and nothing moved on the board unless I let it. Then I wrote it a constitution, and a path toward a software factory.</p>
           <p class="item-meta">Notes, November 2026</p>
@@ -165,7 +176,7 @@
             <a class="item-link" href="https://github.com/bfalkowski/Building58">Code</a>
           </div>
         </div>
-        <div class="item">
+        <div class="item" data-tags="agents">
           <h3 class="item-title"><a href="writing/building-run-4113.html">Building a 3D World for a Short Story</a></h3>
           <p class="item-desc">How I built Run 4,113, the 3D kitchen for my short story Doctor Bones: a three.js scene written with Claude, characters made with Meshy from a ChatGPT reference sheet, and what still looks wrong.</p>
           <p class="item-meta">Notes, November 2026</p>
@@ -174,7 +185,7 @@
             <a class="item-link" href="writing/doctor-bones/world/">Try it</a>
           </div>
         </div>
-        <div class="item">
+        <div class="item" data-tags="agents">
           <h3 class="item-title"><a href="writing/who-owns-the-process.html">Who Owns the Process? Spec Frameworks, Skills, and the Trust Ladder for Coding Agents</a></h3>
           <p class="item-desc">Spec frameworks like GitHub Spec Kit establish intent, skill packs like Matt Pocock's capture process, and orchestration coordinates the agents. None of them tells you whether the work is right. Why verification closes the loop, and how Lauren Tan's trust ladder lets agents take on more as the evidence grows.</p>
           <p class="item-meta">Notes, October 2026</p>
@@ -182,7 +193,7 @@
             <a class="item-link" href="writing/who-owns-the-process.html">Read</a>
           </div>
         </div>
-        <div class="item">
+        <div class="item" data-tags="agents">
           <h3 class="item-title"><a href="writing/hands-free.html">Steering Claude Code Without a Keyboard</a></h3>
           <p class="item-desc">A hands-free interface for working with Claude Code, built from speech and an 8BitDo Micro game controller. What it took to get working, what it shows about designing controls for AI work, and why the measure that matters is whether reviewers stay careful, not how fast they approve.</p>
           <p class="item-meta">Notes, October 2026</p>
@@ -192,7 +203,7 @@
             <a class="item-link" href="https://github.com/bfalkowski/micro-tester">Code</a>
           </div>
         </div>
-        <div class="item">
+        <div class="item" data-tags="judges evals">
           <h3 class="item-title"><a href="writing/judge-score.html">Can You Trust Your Judge's Score? A Primer on TPR and TNR for LLM Judges</a></h3>
           <p class="item-desc">What an LLM judge's score really tells you, worked through one small example: is this customer service reply polite? Label a sample, build the confusion matrix, measure TPR and TNR, improve the judge, correct its raw score, and report the result with a range.</p>
           <p class="item-meta">Primer, October 2026</p>
@@ -201,7 +212,7 @@
             <a class="item-link" href="https://github.com/bfalkowski/judge-tpr-tnr/tree/main/primer">Code</a>
           </div>
         </div>
-        <div class="item">
+        <div class="item" data-tags="evals">
           <h3 class="item-title"><a href="writing/run-valid.html">Is This Run Valid? Attributing Pipeline Failures Before Scoring LLM Evaluations</a></h3>
           <p class="item-desc">Checking whether an eval run worked before trusting its score. A failure taxonomy, a run fingerprint, OpenTelemetry traces and a validity gate, tested with injected faults across 235 real runs and a GitHub Actions pipeline that breaks itself.</p>
           <p class="item-meta">Paper, October 2026</p>
@@ -211,7 +222,7 @@
             <a class="item-link" href="https://github.com/bfalkowski/eval-run-validity">Code and data</a>
           </div>
         </div>
-        <div class="item">
+        <div class="item" data-tags="agents evals">
           <h3 class="item-title"><a href="writing/cant-tell.html">Can a Browser Test Agent Tell When It Can't Tell? Ambiguity and Calibration in Element Selection</a></h3>
           <p class="item-desc">An empirical study of whether LLM test agents refuse when the element they are asked to act on is missing or cannot be told apart from look-alikes. Jev, Claude Haiku 4.5, Claude Opus 5.5 and a playwright-mcp agent, on recorded and live pages.</p>
           <p class="item-meta">Paper, September 2026</p>
@@ -220,7 +231,7 @@
             <a class="item-link" href="https://github.com/bfalkowski/browser-agent-abstention">Code and data</a>
           </div>
         </div>
-        <div class="item">
+        <div class="item" data-tags="agents evals">
           <h3 class="item-title"><a href="writing/trace-replay.html">Agent Simulation via Trace Replay: Raindrop Approach + OpenAI Paper</a></h3>
           <p class="item-desc">How replaying real production traces against a change to an agent works in practice, using Raindrop's approach and evidence from OpenAI's deployment simulation paper.</p>
           <p class="item-meta">Notes, September 2026</p>
@@ -228,7 +239,7 @@
             <a class="item-link" href="writing/trace-replay.html">Read</a>
           </div>
         </div>
-        <div class="item">
+        <div class="item" data-tags="judges evals">
           <h3 class="item-title"><a href="https://github.com/bfalkowski/dsci-799-llm-judge-repeat-stability/blob/main/DSCI799_Repeat_Stability_Submission.pdf">LLM-as-a-Judge Repeat Stability with MT-Bench</a></h3>
           <p class="item-desc">How consistently LLM judges reproduce the same score on the same response. Seven frontier judge models, three prompting conditions, and five repeats per item on an MT-Bench subset.</p>
           <p class="item-meta">M.S. capstone, Rochester Institute of Technology</p>
@@ -238,6 +249,7 @@
           </div>
         </div>
       </div>
+      <button class="filter-btn more" type="button" hidden></button>
     </div>
   </section>
 
@@ -332,15 +344,31 @@
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
-    const buttons = document.querySelectorAll('.filter-btn');
-    const items = document.querySelectorAll('#projects .item');
-    buttons.forEach(btn => btn.addEventListener('click', () => {
-      buttons.forEach(b => b.classList.toggle('active', b === btn));
-      const f = btn.dataset.filter;
-      items.forEach(it => {
-        it.hidden = f !== 'all' && !it.dataset.tags.split(' ').includes(f);
-      });
-    }));
+    // Each section with filters: a topic button shows only its items. Posts also shows only the
+    // newest few under All, with a button to show the rest.
+    const SHOW = 5;
+    document.querySelectorAll('section').forEach(sec => {
+      const buttons = sec.querySelectorAll('.filter-btn[data-filter]');
+      if (!buttons.length) return;
+      const items = sec.querySelectorAll('.item');
+      const more = sec.querySelector('.more');
+      let all = false;
+      function show(f) {
+        let n = 0;
+        items.forEach(it => {
+          const match = f === 'all' || it.dataset.tags.split(' ').includes(f);
+          it.hidden = !match || (more && f === 'all' && !all && n >= SHOW);
+          if (match) n++;
+        });
+        if (more) { more.hidden = f !== 'all' || all || n <= SHOW; more.textContent = 'Show all ' + n; }
+      }
+      buttons.forEach(btn => btn.addEventListener('click', () => {
+        buttons.forEach(b => b.classList.toggle('active', b === btn));
+        show(btn.dataset.filter);
+      }));
+      if (more) more.addEventListener('click', () => { all = true; show('all'); });
+      show('all');
+    });
   </script>
 </body>
 </html>
