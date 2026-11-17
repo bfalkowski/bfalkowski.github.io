@@ -89,7 +89,7 @@
   }
   var end = readingEnd(article);
 
-  // Count the words a reader reads, leaving out tables, diagrams and scripts.
+  // Count the words a reader reads, leaving out tables, diagrams, scripts and prompt boxes.
   var copy = article.cloneNode(true);
   var copyEnd = readingEnd(copy);
   if (copyEnd && copy.lastChild) {
@@ -99,7 +99,7 @@
     cut.setEndAfter(copy.lastChild);
     cut.deleteContents();
   }
-  Array.prototype.forEach.call(copy.querySelectorAll('table, svg, script, style'), function (el) { el.remove(); });
+  Array.prototype.forEach.call(copy.querySelectorAll('table, svg, script, style, details.prompt'), function (el) { el.remove(); });
   var words = copy.textContent.trim().split(/\s+/).length;
   var time = document.createElement('p');
   time.className = 'toc-time';

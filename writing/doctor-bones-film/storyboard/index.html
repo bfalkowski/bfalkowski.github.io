@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Bryan Falkowski">
+<title>Doctor Bones Storyboard | Bryan Falkowski</title>
+<style>html,body{margin:0;padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a film strip read top to bottom, one row per shot, grouped by act; home shots warm, room shots green. */
+:root {
+  --bg: #f3f2ee;
+  --panel: #ffffff;
+  --fg: #1d1f1c;
+  --muted: #5d625a;
+  --line: #d9d9d2;
+  --home: #a5591f;
+  --home-soft: #f4e3d4;
+  --room: #2f7a5b;
+  --room-soft: #dcefe6;
+  --new: #b23a2e;
+  --new-soft: #f7dedb;
+  --have: #3c5c8a;
+  --have-soft: #dde6f3;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #141613; --panel: #1d201c; --fg: #e9e9e3; --muted: #a2a79d; --line: #31352f;
+  --home: #e09a5f; --home-soft: #3a2a1d; --room: #6cc79f; --room-soft: #19332a;
+  --new: #f08a7d; --new-soft: #3d2220; --have: #93b2e0; --have-soft: #1f2a3b; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #141613; --panel: #1d201c; --fg: #e9e9e3; --muted: #a2a79d; --line: #31352f;
+  --home: #e09a5f; --home-soft: #3a2a1d; --room: #6cc79f; --room-soft: #19332a;
+  --new: #f08a7d; --new-soft: #3d2220; --have: #93b2e0; --have-soft: #1f2a3b; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1 { font-family: var(--display); font-weight: 800; font-size: 2.2rem; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.lede { color: var(--muted); max-width: 62ch; margin: 6px 0 20px; }
+.totals { display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 14px 0; border-block: 1px solid var(--line); margin-bottom: 8px; }
+.totals div { display: flex; flex-direction: column; }
+.totals b { font-family: var(--mono); font-weight: 500; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.totals span { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px; }
+.act { margin-top: 36px; }
+.act h2 { font-family: var(--display); font-weight: 700; font-size: 1.1rem; margin: 0 0 2px; text-transform: uppercase; letter-spacing: 0.08em; }
+.act p { margin: 0 0 14px; color: var(--muted); }
+.shot { display: grid; grid-template-columns: 300px 1fr; gap: 20px; padding: 14px; background: var(--panel);
+  border: 1px solid var(--line); border-left: 4px solid var(--world); border-radius: 6px; margin-bottom: 12px; }
+.shot.home { --world: var(--home); }
+.shot.room { --world: var(--room); }
+.frame { position: relative; aspect-ratio: 16 / 9; max-width: 100%; overflow: hidden; border-radius: 3px; background: #000; }
+.frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.frame .note { position: absolute; inset: auto 0 0 0; padding: 4px 8px; font-size: 0.72rem; color: #fff;
+  background: rgba(0,0,0,0.62); }
+.info { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.num { font-family: var(--display); font-weight: 800; font-size: 1.5rem; line-height: 1; }
+.name { font-family: var(--display); font-weight: 700; font-size: 1.05rem; }
+.tc { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; margin-left: auto; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; }
+.chip.home { background: var(--home-soft); color: var(--home); }
+.chip.room { background: var(--room-soft); color: var(--room); }
+.chip.new { background: var(--new-soft); color: var(--new); }
+.chip.have { background: var(--have-soft); color: var(--have); }
+.chip.len { background: transparent; color: var(--fg); border: 1px solid var(--line); font-family: var(--mono); text-transform: none; letter-spacing: 0; }
+.what { margin: 0; }
+.sound { margin: 0; font-size: 0.88rem; color: var(--muted); }
+.sound b { color: var(--fg); font-weight: 600; }
+.houses-sec { margin-top: 28px; }
+.houses-sec h2 { font-family: var(--display); font-weight: 700; font-size: 1.1rem; margin: 0 0 2px; text-transform: uppercase; letter-spacing: 0.08em; }
+.houses-sec p { margin: 0 0 14px; color: var(--muted); max-width: 70ch; }
+.houses { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.houses figure { margin: 0; min-width: 0; }
+.houses img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 3px; display: block; }
+.houses figcaption { font-size: 0.82rem; color: var(--muted); margin-top: 6px; }
+.houses figcaption b { color: var(--fg); font-family: var(--display); margin-right: 4px; }
+.prompt summary { cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--have); }
+.prompt summary:focus-visible { outline: 2px solid var(--have); outline-offset: 2px; }
+.prompt pre { margin: 8px 0 0; padding: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px;
+  font-family: var(--mono); font-size: 0.78rem; line-height: 1.5; white-space: pre-wrap; overflow-x: auto; max-height: 420px; overflow-y: auto; }
+.open { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); }
+.open h2 { font-family: var(--display); font-size: 1.1rem; margin: 0 0 8px; }
+.open ol { margin: 0; padding-left: 20px; max-width: 70ch; }
+.open li { margin-bottom: 6px; }
+@media (max-width: 680px) {
+  .shot { grid-template-columns: 1fr; }
+  .tc { margin-left: 0; width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1>Doctor Bones</h1>
+  <p class="lede">Version 13 plan, three minutes. Same story, more room: Marge talks more, the hacker talks to himself, and each beat gets time to land. Act 2’s kitchen is remade to match Act 1’s, so the house never changes. The hacker’s scenes are three long takes from one master frame, cut together with the Hubbards.</p>
+
+  <div class="totals" id="totals"></div>
+  <div class="legend">
+    <span class="chip home">Home (the copy)</span>
+    <span class="chip room">His room (real)</span>
+    <span class="chip new">New shot</span>
+    <span class="chip have">Already have</span>
+  </div>
+
+  <div id="board"></div>
+
+  <section class="open">
+    <h2>Notes</h2>
+    <ol>
+      <li>Act 2’s kitchen shots (18, 19, 21, 23) are remade in shot 2’s kitchen, using the dog-less try of shot 9 as the continuity reference. The old Kitchen Close, Kitchen Wide and the first Doctor Bones shot retire.</li>
+      <li>The hacker’s 13 beats are three long takes (about 25, 35 and 21 seconds) from the master frame. Each take starts on the last frame of the one before.</li>
+      <li>Two different banks on purpose: Dale’s copy-world site is old-fashioned and only exists to catch the password he would type. The hacker uses it on the real, modern Larkfield site, where the account page is quiet, with several accounts and ordinary-sized numbers.</li>
+      <li>New lines: Marge (pot roast, the dog at the door, sitting on the floor), Dale (“Sounds good, Marge.” “In a minute.”), and the hacker talking to himself throughout.</li>
+      <li>Next step before spending: rebuild the animatic at three minutes with all the new lines, and watch it.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+const ACTS = [
+  { title: "Act 1 \u00b7 Run 4,113", text: "An ordinary evening. Dale comes home, half listens to Marge, logs in to his bank. The hacker watches the password land and tries it himself. The bank asks about a dog." },
+  { title: "Act 2 \u00b7 Run 4,114", text: "He gives Dale a dog and runs the evening again. The dog meets Dale at the door. Dale cannot remember its name. The hacker waits." },
+  { title: "Act 3 \u00b7 Shutdown", text: "The name works. He takes the money, turns the Hubbards off on his monitor, and goes home." },
+];
+const SHOTS = [
+  { act:0, n:1,  name:"5:40, the walk up", world:"home", len:8, src:"have", img:"v_walk", note:"Made",
+    what:"Dale walks up the porch steps and in the front door.", sound:"Footsteps, the screen door, the radio through the window." },
+  { act:0, n:2,  name:"Home, no dog", world:"home", len:10, src:"have", img:"v_kitchen", note:"Made \u00b7 lips synced",
+    what:"No dog, no bowl. Marge at the crossword. Dale kisses her head and heads for the den.", sound:"<b>Marge:</b> \u201cEighty-four across\u2026 Erie.\u201d \u201cThey used that one last week.\u201d" },
+  { act:0, n:3,  name:"Through the house", world:"home", len:6, src:"have", img:"v_hall", note:"Made \u00b7 new lines over it",
+    what:"Dale walks slowly down the hall, loosening his tie.", sound:"<b>Marge</b> (behind him): \u201cPot roast at six-thirty!\u201d <b>Dale:</b> \u201cSounds good, Marge.\u201d <b>Marge:</b> \u201cSame clues every week\u2026\u201d" },
+  { act:0, n:4,  name:"The den", world:"home", len:11, src:"have", img:"v_den", note:"Made",
+    what:"He sits, switches on the lamp, listens, slumps, stares at the ceiling. Then he sits up and starts to type.", sound:"<b>Marge</b> (other room): the Hendersons\u2019 pool, Doris, the whole thing." },
+  { act:0, n:5,  name:"His password", world:"home", len:2.5, src:"have", img:"a_crt_a", note:"Free \u00b7 plain text",
+    what:"Close on his CRT. The password appears as he types: marg\u2026", sound:"Slow keys on an old keyboard." },
+  { act:0, n:6,  name:"The keylog", world:"room", len:3, src:"take", take:1, img:"a_H01_keylog_typing", note:"Take 1",
+    what:"Over the hacker\u2019s shoulder. Left screen: Dale typing. Right screen: the same letters arriving. marge&da\u2026", sound:"<b>Hacker</b> (under his breath): \u201cCome on, Dale. Come on.\u201d" },
+  { act:0, n:7,  name:"His password", world:"home", len:1.5, src:"have", img:"a_crt_b", note:"Free",
+    what:"marge&dale1988. Sign In.", sound:"Two last keys." },
+  { act:0, n:8,  name:"Match", world:"room", len:4, src:"take", take:1, img:"a_H02_keylog_match", note:"Take 1",
+    what:"The full password, then a green MATCH. He grins.", sound:"<b>Hacker:</b> \u201cThere it is. Marge and Dale, nineteen eighty-eight. Sweet.\u201d" },
+  { act:0, n:9,  name:"Dale leans back", world:"home", len:3, src:"have", img:"v_den", note:"Made",
+    what:"Dale hits Enter and leans back, satisfied.", sound:"<b>Marge</b>, far off: \u201c\u2026I said, Doris\u2026\u201d" },
+  { act:0, n:10, name:"He tries it", world:"room", len:5, src:"take", take:1, img:"a_H03_bank_signin", note:"Take 1",
+    what:"Right screen: Larkfield Savings & Trust, sign in. He pastes the password. Sign in.", sound:"<b>Hacker:</b> \u201cOkay, Larkfield. Let\u2019s see what Dale’s got.\u201d" },
+  { act:0, n:11, name:"One more step", world:"room", len:6, src:"take", take:1, img:"a_H04_bank_question", note:"Take 1",
+    what:"The page changes: What was the name of your first dog? The grin drains. He reads it again.", sound:"<b>Hacker</b> (slowly, reading): \u201cWhat was the name\u2026 of your first dog.\u201d" },
+  { act:0, n:12, name:"Dammit", world:"room", len:7, src:"take", take:1, img:"a_H06_nails", note:"Take 1",
+    what:"\u201cDammit.\u201d He sinks back, bites his nails, stares at Dale on the left screen. Then he talks himself into it.", sound:"<b>Hacker:</b> \u201cDammit.\u201d \u2026 \u201cHe doesn\u2019t have a dog. He\u2019s never had a dog.\u201d" },
+  { act:1, n:13, name:"You get a dog", world:"room", len:6, src:"take", take:2, img:"a_H07_editor", note:"Take 2",
+    what:"Right screen: the editor. He types dog. A list of breeds. He doesn\u2019t look. Canis familiaris / default.", sound:"<b>Hacker:</b> \u201cFine. You want a dog? You get a dog.\u201d \u2026 \u201cDefault\u2019s fine.\u201d" },
+  { act:1, n:14, name:"Insert", world:"room", len:3, src:"take", take:2, img:"a_H08_dog_in", note:"Take 2",
+    what:"Insert. The viewport flickers. A brown dog with a red collar stands in the kitchen.", sound:"A click, a soft digital blip." },
+  { act:1, n:15, name:"Let\u2019s go again", world:"room", len:6, src:"take", take:2, img:"a_H09_new_run", note:"Take 2",
+    what:"Reset. RUN 4114, rewinding to 17:40.", sound:"<b>Hacker</b>, half to himself: \u201cOkay, Dale. You\u2019ve always had a dog. Let\u2019s go again.\u201d" },
+  { act:1, n:16, name:"Rewind", world:"home", len:3.6, src:"have", img:"v_rewind", note:"Made",
+    what:"The evening plays backward, fast: den, hall, kitchen, porch.", sound:"A tape rewind whir." },
+  { act:1, n:17, name:"5:40, again", world:"home", len:8, src:"reuse", img:"v_walk", note:"Same clip as shot 1",
+    what:"The exact same walk up the steps.", sound:"The same footsteps. The song starts over." },
+  { act:1, n:18, name:"Home, with a dog", world:"home", len:12, src:"new", img:"k_try1", note:"NEW \u00b7 shot 2\u2019s kitchen",
+    what:"Same framing as shot 2. The brown dog bolts to the door to meet him. Water bowl by the fridge. Marge does not look up.", sound:"<b>Marge</b>, the same words: \u201cEighty-four across\u2026\u201d Then: \u201cDid you walk the dog this morning?\u201d <b>Dale:</b> \u201cOf course I did.\u201d <b>Marge:</b> \u201cHe\u2019s been at that door since four.\u201d" },
+  { act:1, n:19, name:"No name", world:"home", len:8, src:"new", img:"k_try1b", note:"NEW \u00b7 shot 2\u2019s kitchen",
+    what:"Dale gets down on one knee and scratches the dog behind the ears. He opens his mouth to say its name. Nothing. He tries again. Nothing.", sound:"<b>Marge:</b> \u201cThey used that one last week.\u201d" },
+  { act:1, n:20, name:"Say it", world:"room", len:6, src:"take", take:2, img:"a_H10_watching", note:"Take 2",
+    what:"The hacker leans toward the left screen: Dale on the floor with the dog.", sound:"<b>Hacker</b>, quietly: \u201cCome on. Say it.\u201d" },
+  { act:1, n:21, name:"A long time", world:"home", len:9, src:"new", img:"k_try1b", note:"NEW \u00b7 shot 2\u2019s kitchen",
+    what:"Dale sits on the kitchen floor with the dog for a long time. The light gets lower.", sound:"<b>Marge:</b> \u201cAre you going to sit on the floor all night? Your pot roast\u2019s getting cold.\u201d <b>Dale:</b> \u201cIn a minute.\u201d" },
+  { act:1, n:22, name:"Cold noodles", world:"room", len:6, src:"take", take:2, img:"a_H11_noodles", note:"Take 2",
+    what:"He eats cold noodles out of the carton and waits. Marge, small, through his speakers.", sound:"<b>Marge</b>, tinny: \u201cA pool. In Dayton.\u201d" },
+  { act:1, n:23, name:"Doctor Bones", world:"home", len:8, src:"new", img:"v_bones", note:"NEW \u00b7 shot 2\u2019s kitchen",
+    what:"Dale says it quietly. The dog lifts its head as if it knows the name.", sound:"<b>Dale:</b> \u201cDoctor Bones.\u201d <b>Marge:</b> \u201cDoctor Bones? That\u2019s a silly name for a dog.\u201d" },
+  { act:2, n:24, name:"Of course it is", world:"room", len:6, src:"take", take:3, img:"a_H12_verified", note:"Take 3",
+    what:"He almost laughs. Types DOCTOR BONES, one key at a time. Verified.", sound:"<b>Hacker:</b> \u201cDoctor Bones. Of course it is.\u201d" },
+  { act:2, n:25, name:"He\u2019s in", world:"room", len:5, src:"take", take:3, img:"b4b_accounts", note:"Take 3 \u00b7 the real, modern bank",
+    what:"Good evening, Dale. Four accounts: checking, savings, an IRA, a home equity line. Quiet numbers. His cursor drifts down the list, then to Transfer.", sound:"<b>Hacker:</b> \u201cThank you, Dale.\u201d" },
+  { act:2, n:26, name:"End run", world:"room", len:4, src:"take", take:3, img:"a_H14_end_run", note:"Take 3",
+    what:"End RUN 4114? He looks at the Hubbards on the left screen for one beat. Then End run.", sound:"One click." },
+  { act:2, n:27, name:"Shutdown", world:"room", len:6, src:"take", take:3, img:"a_H15a_wire", note:"Take 3",
+    what:"On his left screen the kitchen drops to wireframe, Marge mid-word, then dark. Then the right screen too. He sits in the dim light for a moment.", sound:"The radio stops. A computer fan spins down. Nothing dramatic." },
+  { act:2, n:28, name:"He leaves", world:"room", len:8, src:"have", img:"v_leave", note:"Made",
+    what:"He stands, picks up the carton and the cup, and walks out. He glitches once. Lights off.", sound:"A chair, footsteps, one burst of noise, the light switch. Silence." },
+];
+const PROMPTS = {};
+const PER_SEC = 7; // 720p credits per second
+const fmt = s => `${Math.floor(s/60)}:${String(Math.round(s%60)).padStart(2,"0")}`;
+let t = 0, credits = 0, newCount = 0;
+const board = document.getElementById("board");
+ACTS.forEach((a, ai) => {
+  const sec = document.createElement("section");
+  sec.className = "act";
+  sec.innerHTML = `<h2>${a.title}</h2><p>${a.text}</p>`;
+  SHOTS.filter(s => s.act === ai).forEach(s => {
+    const cost = (s.src === "new" || s.src === "take") ? s.len * PER_SEC : 0;
+    credits += cost; if (s.src === "new") newCount++;
+    const srcChip = s.src === "new" ? `<span class="chip new">New · ${cost} credits</span>`
+      : s.src === "reuse" ? `<span class="chip have">Reuse shot 1</span>`
+      : s.src === "comp" ? `<span class="chip have">Reuse + screen · free</span>` : `<span class="chip have">Have</span>`;
+    const el = document.createElement("article");
+    el.className = `shot ${s.world}`;
+    el.innerHTML = `
+      <div class="frame"><img src="img/${s.img}.jpg" alt="${s.name}"><div class="note">${s.note}</div></div>
+      <div class="info">
+        <div class="top"><span class="num">${s.n}</span><span class="name">${s.name}</span>
+          <span class="tc">${fmt(t)}–${fmt(t + s.len)}</span></div>
+        <div class="chips"><span class="chip ${s.world}">${s.world === "home" ? "Home" : "His room"}</span>
+          ${srcChip}<span class="chip len">${s.len}s</span></div>
+        <p class="what">${s.what}</p>
+        <p class="sound">${s.sound}</p>
+        ${PROMPTS[s.n] ? `<details class="prompt"><summary>Read the prompt</summary><pre data-p="${PROMPTS[s.n]}">Loading…</pre></details>` : ""}
+      </div>`;
+    sec.appendChild(el);
+    t += s.len;
+  });
+  board.appendChild(sec);
+});
+document.querySelectorAll("pre[data-p]").forEach(pre => {
+  fetch(`prompts/${pre.dataset.p}.md`).then(r => r.ok ? r.text() : Promise.reject())
+    .then(t => { pre.textContent = t; })
+    .catch(() => { pre.textContent = "Could not load this prompt."; });
+});
+document.getElementById("totals").innerHTML = `
+  <div><b>${fmt(t)}</b><span>Running time</span></div>
+  <div><b>${SHOTS.length}</b><span>Shots</span></div>
+  <div><b>${newCount} + 3</b><span>New shots + hacker takes</span></div>
+  <div><b>${credits}</b><span>Credits</span></div>`;
+</script>
+</body>
+</html>
