@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Bryan Falkowski">
+  <meta name="description" content="How I remade the 3D Building58 trailer as a realistic AI video for about 250 Higgsfield credits, with two plans priced before anything was made and Claude running Higgsfield and doing the editing.">
+  <title>Making a Realistic Trailer From a 3D One | Bryan Falkowski</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+  <style>
+
+    :root {
+      --bg: #ffffff;
+      --text: #2c2c2c;
+      --muted: #666666;
+      --line: #e0e0e0;
+      --alt-bg: #fafafa;
+      --accent: #1d3f72;
+    }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+      --bg: #16181c; --text: #e6e6e3; --muted: #a3a6ad; --line: #34373e; --alt-bg: #1e2126; --accent: #8fb3ea; color-scheme: dark } }
+    :root[data-theme="dark"] {
+      --bg: #16181c; --text: #e6e6e3; --muted: #a3a6ad; --line: #34373e; --alt-bg: #1e2126; --accent: #8fb3ea; color-scheme: dark }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font: 17px/1.6 "Source Sans 3", "Source Sans Pro", sans-serif;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .topbar { border-bottom: 1px solid var(--line); padding: 14px 32px; }
+    .topbar .container { display: flex; justify-content: space-between; font-size: 15px; }
+    .topbar a.home { color: var(--text); font-weight: 600; }
+    .container { max-width: 760px; margin: 0 auto; }
+    article { padding: 48px 32px 64px; }
+    h1 { font-size: 36px; font-weight: 600; line-height: 1.2; margin: 0 0 10px; }
+    .byline { color: var(--muted); font-size: 15px; margin: 0 0 36px; }
+    h2 { font-size: 24px; font-weight: 700; margin: 44px 0 14px; }
+    p { margin: 0 0 14px; }
+    ul, ol { margin: 0 0 16px; padding-left: 24px; }
+    li { margin-bottom: 6px; }
+    .table-wrap { overflow-x: auto; margin: 0 0 18px; }
+    table { border-collapse: collapse; width: 100%; font-size: 15px; }
+    th, td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; vertical-align: top; }
+    th { background: var(--alt-bg); font-weight: 600; }
+    code { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 0.9em; }
+    figure { margin: 0 0 22px; text-align: center; }
+    figure img { display: block; width: 100%; height: auto; border-radius: 6px; }
+    figcaption { color: var(--muted); font-size: 15px; margin-top: 6px; }
+    .tldr { background: var(--alt-bg); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 6px 6px 0; margin-bottom: 24px; }
+    .tldr p:last-child { margin-bottom: 0; }
+    .video-caption { color: var(--muted); font-size: 15px; text-align: center; }
+    blockquote { margin: 0 0 16px; padding: 2px 18px; border-left: 3px solid var(--line); color: var(--muted); }
+    details.prompt { background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; margin: 0 0 18px; }
+    details.prompt summary { cursor: pointer; padding: 10px 14px; font-weight: 600; font-size: 15px; }
+    details.prompt pre { margin: 0; padding: 4px 14px 14px; white-space: pre-wrap; word-wrap: break-word; font: 13.5px/1.55 "Roboto Mono", ui-monospace, monospace; }
+    .refs { border-top: 1px solid var(--line); margin-top: 40px; padding-top: 20px; color: var(--muted); font-size: 15px; }
+    .refs h2 { font-size: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 8px; }
+    .refs p { margin: 0 0 6px; }
+    footer { text-align: center; color: var(--muted); font-size: 14px; padding: 32px; border-top: 1px solid var(--line); }
+    @media (max-width: 720px) {
+      .topbar, article { padding-left: 16px; padding-right: 16px; }
+      h1 { font-size: 30px; }
+    }
+
+    .watch { display: block; position: relative; border-radius: 6px; overflow: hidden; }
+    .watch img { display: block; width: 100%; height: auto; }
+    .watch span { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.72); color: #fff;
+      font-weight: 600; padding: 10px 18px; border-radius: 6px; }
+    .watch:hover span { background: rgba(0,0,0,0.85); }
+  </style>
+  <link rel="stylesheet" href="toc.css">
+  <script src="toc.js" defer></script>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="container">
+      <a class="home" href="../">Bryan Falkowski</a>
+      <a href="../#writing">All writing</a>
+    </div>
+  </div>
+
+  <article class="container">
+    <h1>Making a Realistic Trailer From a 3D One</h1>
+    <p class="byline">Bryan Falkowski · November 18, 2026 · About the <a href="../building58/">Building58 trailers</a> · Follows <a href="doctor-bones-film.html">Making a Short Film From a Short Story</a></p>
+
+    <div class="tldr">
+      <p>Building58 is a building of 3D rooms where my Claude Code sessions work. Its <a href="../building58/">first trailer</a> is 79 seconds of one room at work, on a break and at a party, with its own 80s music. Everything in it is 3D. I wanted the same trailer with real-looking people in a real loft.</p>
+      <p>Three days earlier I made <a href="doctor-bones-film.html">a short film of Doctor Bones</a>, and it used almost all of the 3,000 credits in my Higgsfield subscription. So this time the first question was cost. Claude priced two plans before anything was made, and the cheaper plan made the trailer for about 250 credits. It took one morning and six cuts. This post explains the plan, the cast, the takes, my rounds of notes and the numbers. Every cast prompt is in a box you can open, and so are the prompts for the room and the main shots.</p>
+    </div>
+
+    <a class="watch" href="../building58/"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3M7Vw5eP4nHIbv3YT6Ctb60QJkV/1bf2c673-a236-48d0-8035-ebaa19c872aa.jpg" alt="The realistic Building58 loft at night from a high corner: brick walls, a pink Building58 neon sign, desks with monitors, a ping-pong table and a green couch."><span>&#9654; Watch the trailer</span></a>
+    <p class="video-caption">Building58, the realistic version, 1:19. <a href="../building58/">Watch it on the trailers page</a>, next to the 3D original.</p>
+
+    <h2>What changed in the tools</h2>
+    <p>The work split the same way as in the short film. Higgsfield made the material. Claude planned the shots, wrote the prompts, spent the credits and did the editing. I directed. Two things were different.</p>
+    <p>First, I did not use the Higgsfield CLI. I added Higgsfield as a connector in the Claude app. A connector lets Claude call a service's tools directly, so Claude could make an image, start a video, wait for it and check my credit balance without a terminal.</p>
+    <p>Second, the editing ran on Higgsfield's computer, not on Claude's. The connector comes with a sandbox, which is a Linux machine in Higgsfield's cloud with ffmpeg and Python. Claude's own workspace could not download files from Higgsfield, so every take, frame and sound stayed in the sandbox, and Claude did all of the cutting and mixing there. That is also why the finished video plays from a Higgsfield link and not from my site.</p>
+    <p>Claude still cannot watch a video. It checks a cut with still frames, a scan for sudden jumps between frames, sound levels and speech-to-text. I watched every cut and wrote the notes.</p>
+
+    <h2>Two plans, priced first</h2>
+    <p>The first trailer was made in the 3D office, so it already worked as a storyboard. Claude broke it into 24 shots and built a storyboard page in the same format as the Doctor Bones one. It also made an animatic: the 3D frames as stills, timed to the cut, with the trailer's own music. Then I asked about cost. My note, typos fixed:</p>
+    <blockquote><p>The lesson from Higgsfield is that it was expensive. What can we do to make sure the cost is lowered substantially?</p></blockquote>
+    <p>I wanted to keep the details of the expensive plan in case we went back to it, so the storyboard has two versions that you can switch between:</p>
+    <ul>
+      <li><strong>v1, full video.</strong> Every shot with a camera move is a generated video on Seedance 2.0. That is 71 seconds of video, about 320 credits for one try.</li>
+      <li><strong>v2, lower cost.</strong> Only shots where people move are generated. That is 41 seconds of video, about 130 credits for one try.</li>
+    </ul>
+    <p>I picked v2. These rules kept its cost down:</p>
+    <ul>
+      <li><strong>Generate only what moves.</strong> The window, the neon sign, the two computer screens, the day passing and the pull-back at the end were planned as still images, with a slow camera move added in the edit. The title cards and the end card are cut from the 3D trailer itself.</li>
+      <li><strong>Make long takes and cut them in the edit.</strong> This was the lesson from the short film. One take over the desks gives the room at work and, later, the manager walking through. One 13-second orbit around the party gives four shots and three photos.</li>
+      <li><strong>Use a cheaper model where it is enough.</strong> Seedance 2.0 at 720p costs 4.5 credits a second, and it can take the cast sheets as references. Kling 3.0 costs 1.75 credits a second. Seedance made only the two crowd takes. Kling made the shots with one or two people.</li>
+      <li><strong>Keep the music.</strong> The trailer's music is written to this cut, so it is used as it is. Nothing was generated for music.</li>
+      <li><strong>No lip sync.</strong> The plan had one line of dialog, heard off-camera.</li>
+      <li><strong>Set a cap.</strong> Each take gets two tries at most. After that, Claude stops and asks before it spends more.</li>
+    </ul>
+    <p>Here is <a href="building58-realistic/storyboard/">the storyboard</a> as it stood after the first cut. The buttons at the top switch between v1 and v2. Some of it changed later. For example, the party still celebrates a merged pull request, and the day passing is still a set of stills.</p>
+
+    <h2>The cast</h2>
+    <p>The 3D office already has a roster of workers, each with a name, a job and a look. For the real people, this is all the direction I gave, typos fixed:</p>
+    <blockquote><p>We could use the hacker as a minor character, since we have the sheet for that already. The rest of the office are just regular awkward nerdy types trying to act cool. You know, software developers.</p></blockquote>
+    <p>The hacker is the young man from Doctor Bones. He sits on the couch at the party. Claude wrote one prompt for each of the other nine people, using the roster's names, jobs and looks. Each prompt follows the short format of the young man's prompt from the short film: who the person is, one line about how they try to look, the clothes, and then the same block for the layout and the look of the sheet. GPT Image made each sheet for 1 credit, so the whole cast cost 9 credits.</p>
+    <figure>
+      <img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3M7Vw5eP4nHIbv3YT6Ctb60QJkV/d5848b67-5791-43c1-9941-d41950f01e7a.jpg" alt="A character reference sheet on gray: a man in a charcoal hoodie, black t-shirt and dark jeans with headphones around his neck, shown from the front, the back and in a close-up." loading="lazy">
+      <figcaption>One reference sheet: the front, the back and a close-up. This is Paul, the team lead.</figcaption>
+    </figure>
+    <figure>
+      <img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3M7Vw5eP4nHIbv3YT6Ctb60QJkV/69b744eb-af78-44a9-a583-53f8cc277fee.jpg" alt="Ten close-up portraits with names: Paul, Priya, Marcus, Theo, Ines, June, Sam, Noor, the manager and the young man." loading="lazy">
+      <figcaption>The cast, from the close-up on each sheet. The young man's sheet is the one from the Doctor Bones film.</figcaption>
+    </figure>
+    <p>These are the prompts, exactly as sent.</p>
+
+    <details class="prompt">
+      <summary>Paul, the team lead</summary>
+<pre>Create a photorealistic character reference sheet for a short film.
+Character: The Team Lead
+A man in his mid-thirties, ordinary-looking, with medium-tan skin, short dark-brown hair with a little too much product in it, light stubble, and an average build with a slight desk slouch. He is a software team lead who wants to look relaxed and in charge, and mostly looks like he has had four coffees.
+He wears a charcoal grey zip hoodie over a plain black t-shirt, dark slim jeans, clean off-white sneakers, and large over-ear headphones resting around his neck.
+Layout: A clean three-panel character reference sheet:
+Full-body front view, standing neutrally.
+Full-body rear view.
+Close-up portrait, looking directly toward the camera.
+Keep his facial features, hairstyle, clothing, and proportions identical across all three views. Neutral expression. Arms relaxed at his sides.
+Plain neutral studio background, consistent soft lighting, realistic skin texture, natural proportions.
+Photographic realism. No illustration, no stylization, no text, no labels, no logos, no props.</pre>
+    </details>
+    <details class="prompt">
+      <summary>Priya, the debugger</summary>
+<pre>Create a photorealistic character reference sheet for a short film.
+Character: The Debugger
+A South Asian American woman in her late twenties, ordinary-looking, with brown skin, black hair pulled up in a slightly messy bun, rectangular black-framed glasses, and a slim build. She is a software developer who wants to look effortlessly cool and mostly looks like she has been staring at the same bug for three hours.
+She wears an oversized rust-red crewneck sweater, dark blue-grey jeans, and black sneakers.
+Layout: A clean three-panel character reference sheet:
+Full-body front view, standing neutrally.
+Full-body rear view.
+Close-up portrait, looking directly toward the camera.
+Keep her facial features, hairstyle, glasses, clothing, and proportions identical across all three views. Neutral expression. Arms relaxed at her sides.
+Plain neutral studio background, consistent soft lighting, realistic skin texture, natural proportions.
+Photographic realism. No illustration, no stylization, no text, no labels, no logos, no props.</pre>
+    </details>
+    <details class="prompt">
+      <summary>Marcus, the tester</summary>
+<pre>Create a photorealistic character reference sheet for a short film.
+Character: The Tester
+A Black American man in his early thirties, ordinary-looking, with dark-brown skin, a black buzz cut, a full but neatly kept beard, and a tall, broad build with a soft middle. He is a software developer who writes the tests, and he thinks his shirt is a bold fashion choice.
+He wears a forest-green short-sleeve button-up shirt with a small subtle pattern, khaki chinos, and very clean white sneakers.
+Layout: A clean three-panel character reference sheet:
+Full-body front view, standing neutrally.
+Full-body rear view.
+Close-up portrait, looking directly toward the camera.
+Keep his facial features, hairstyle, beard, clothing, and proportions identical across all three views. Neutral expression. Arms relaxed at his sides.
+Plain neutral studio background, consistent soft lighting, realistic skin texture, natural proportions.
+Photographic realism. No illustration, no stylization, no text, no labels, no logos, no props.</pre>
+    </details>
+    <details class="prompt">
+      <summary>Theo, the issue triager</summary>
+<pre>Create a photorealistic character reference sheet for a short film.
+Character: The Issue Triager
+A white American man in his late twenties, ordinary-looking, with light skin, curly medium-brown hair that is a little too big, a clean-shaven face, and a thin, lanky build with slightly hunched shoulders. He is a software developer who tries to look put-together and never quite manages it.
+He wears a mid-blue oxford button-down shirt, half tucked in on one side, dark grey trousers, and beige canvas sneakers.
+Layout: A clean three-panel character reference sheet:
+Full-body front view, standing neutrally.
+Full-body rear view.
+Close-up portrait, looking directly toward the camera.
+Keep his facial features, hairstyle, clothing, and proportions identical across all three views. Neutral expression. Arms relaxed at his sides.
+Plain neutral studio background, consistent soft lighting, realistic skin texture, natural proportions.
+Photographic realism. No illustration, no stylization, no text, no labels, no logos, no props.</pre>
+    </details>
+    <details class="prompt">
+      <summary>Ines, the architect</summary>
+<pre>Create a photorealistic character reference sheet for a short film.
+Character: The Architect
+A Latina woman in her late thirties, ordinary-looking, with light-tan skin, a dark-brown chin-length bob, round tortoiseshell glasses, and an average build. She is the senior software architect who has seen every trend come and go, and she tries quietly to look minimalist and cool.
+She wears a dark navy fitted crewneck sweater, brown wide-leg trousers, and black loafers.
+Layout: A clean three-panel character reference sheet:
+Full-body front view, standing neutrally.
+Full-body rear view.
+Close-up portrait, looking directly toward the camera.
+Keep her facial features, hairstyle, glasses, clothing, and proportions identical across all three views. Neutral expression. Arms relaxed at her sides.
+Plain neutral studio background, consistent soft lighting, realistic skin texture, natural proportions.
+Photographic realism. No illustration, no stylization, no text, no labels, no logos, no props.</pre>
+    </details>
+    <details class="prompt">
+      <summary>June, the product manager</summary>
+<pre>Create a photorealistic character reference sheet for a short film.
+Character: The Product Manager
+A white American woman in her early thirties, ordinary-looking, with fair skin, long straight honey-blonde hair, and a slim build. She is the product manager of a software team, a little too upbeat, trying to look casual and creative.
+She wears a cream knit top, navy straight-leg trousers, and tan leather ankle boots.
+Layout: A clean three-panel character reference sheet:
+Full-body front view, standing neutrally.
+Full-body rear view.
+Close-up portrait, looking directly toward the camera.
+Keep her facial features, hairstyle, clothing, and proportions identical across all three views. Neutral expression. Arms relaxed at her sides.
+Plain neutral studio background, consistent soft lighting, realistic skin texture, natural proportions.
+Photographic realism. No illustration, no stylization, no text, no labels, no logos, no props.</pre>
+    </details>
+    <details class="prompt">
+      <summary>Sam, the tooling guy</summary>
+<pre>Create a photorealistic character reference sheet for a short film.
+Character: The Tooling Guy
+A white American man in his early thirties, ordinary-looking, with fair skin, a full ginger beard, ginger hair mostly hidden under an orange knit beanie that he wears indoors, and an average, slightly soft build. He is the software developer who customises every tool he uses, and his look too.
+He wears a plain grey t-shirt, dark navy jeans, and bright red sneakers, with the orange beanie.
+Layout: A clean three-panel character reference sheet:
+Full-body front view, standing neutrally.
+Full-body rear view.
+Close-up portrait, looking directly toward the camera.
+Keep his facial features, beard, beanie, clothing, and proportions identical across all three views. Neutral expression. Arms relaxed at his sides.
+Plain neutral studio background, consistent soft lighting, realistic skin texture, natural proportions.
+Photographic realism. No illustration, no stylization, no text, no labels, no logos, no props.</pre>
+    </details>
+    <details class="prompt">
+      <summary>Noor, the new hire</summary>
+<pre>Create a photorealistic character reference sheet for a short film.
+Character: The New Hire
+An Arab American woman in her mid-twenties, ordinary-looking, with medium-brown skin, long straight black hair worn down, and a slim build. She is the newest software developer on the team and is trying hard to look like she has always been there.
+She wears an oversized plum-colored sweatshirt, black joggers, and off-white sneakers.
+Layout: A clean three-panel character reference sheet:
+Full-body front view, standing neutrally.
+Full-body rear view.
+Close-up portrait, looking directly toward the camera.
+Keep her facial features, hairstyle, clothing, and proportions identical across all three views. Neutral expression. Arms relaxed at her sides.
+Plain neutral studio background, consistent soft lighting, realistic skin texture, natural proportions.
+Photographic realism. No illustration, no stylization, no text, no labels, no logos, no props.</pre>
+    </details>
+    <details class="prompt">
+      <summary>The manager</summary>
+<pre>Create a photorealistic character reference sheet for a short film.
+Character: The Manager
+A white American man in his late fifties, ordinary-looking, with light skin, neat short grey hair, a clean-shaven face, and an average build with a small belly. He is the manager of a software team, a little out of place among the developers, trying to look approachable.
+He wears a dark charcoal two-piece suit, a white shirt, a dark red tie, and black leather shoes.
+Layout: A clean three-panel character reference sheet:
+Full-body front view, standing neutrally.
+Full-body rear view.
+Close-up portrait, looking directly toward the camera.
+Keep his facial features, hairstyle, clothing, and proportions identical across all three views. Neutral expression. Arms relaxed at his sides.
+Plain neutral studio background, consistent soft lighting, realistic skin texture, natural proportions.
+Photographic realism. No illustration, no stylization, no text, no labels, no logos, no props.</pre>
+    </details>
+    <details class="prompt">
+      <summary>The young man, from Doctor Bones (reused, not made again)</summary>
+<pre>Create a photorealistic character reference sheet for a short film.
+Character: The Young Man
+A man in his late twenties, ordinary-looking, with short brown hair, a slightly tired face, and an unremarkable build. He should look intelligent but not particularly imposing. No distinctive scars, tattoos, or dramatic features.
+He wears a plain, slightly rumpled gray sweatshirt, casual dark trousers, and ordinary socks. His appearance should suggest someone who spends long hours working alone at a computer.
+Layout: A clean three-panel character reference sheet:
+Full-body front view, standing neutrally.
+Full-body rear view.
+Close-up portrait, looking directly toward the camera.
+Keep his facial features, hairstyle, clothing, and proportions identical across all three views. Neutral expression. Arms relaxed at his sides.
+Plain neutral studio background, consistent soft lighting, realistic skin texture, natural proportions.
+Photographic realism. No illustration, no stylization, no text, no labels, no props.</pre>
+    </details>
+
+    <h2>The room and the first frames</h2>
+    <p>Every take starts from a still picture, its first frame. GPT Image made the first frames from three kinds of reference: the 3D frame for the camera angle, the cast sheets for the people, and one master image of the room. The master image is the whole loft at night from a high corner. Every other frame uses it, so the rug, the couch, the espresso machine and the sign stay the same in every shot.</p>
+    <p>The first frames also cost 1 credit each, 15 in all with one retry. The retry was the party, because the first try left out Marcus. The second prompt says where each person stands. I looked at the frames before any video was made.</p>
+    <figure>
+      <img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3M7Vw5eP4nHIbv3YT6Ctb60QJkV/f5a90d3e-dc3e-4c85-81b7-f83e561f49e9.jpg" alt="Three pairs of frames. Left, the 3D trailer: a toy figure with headphones, toy figures in party hats around a couch, and the 3D loft from above. Right, the realistic version of each: Paul with headphones at his desk, the team in party hats around a cake, and the real loft from above." loading="lazy">
+      <figcaption>The same three moments in the 3D trailer and in the realistic version.</figcaption>
+    </figure>
+    <details class="prompt">
+      <summary>The master image of the room (GPT Image, with the 3D frame attached)</summary>
+<pre>Photorealistic film still, 16:9. A real converted industrial loft office in New York at night, seen from high up in one corner near the ceiling, looking down across the whole room. Use the reference image only for the layout and the camera angle: where the windows, columns, desks, ping-pong table, sofa, rug, kitchen counter and sign are. Make everything real, not a 3D model or a toy.
+The room: old red brick walls; a row of tall black steel-frame factory windows on the left wall, with the lit windows of office towers outside; white painted cast-iron columns; worn honey-colored wooden floorboards; an exposed silver ventilation duct along the ceiling. Long light-wood desks in rows with black office chairs and monitors glowing softly. A blue ping-pong table in the front left. In the front right, a red patterned rug, a green sofa, a brown leather armchair, a low coffee table and a black arc floor lamp. Along the back wall: a whiteboard covered in colored sticky notes, a round wall clock, a dark green door, and a kitchen counter with a red espresso machine, open shelves and a pale mint fridge. A pink-white neon sign on the brick above the whiteboard that reads "Building58". Warm bulbs hang over the desks. A few people work at the desks, small in the frame.
+Night lighting: warm tungsten light inside, cool blue city light through the windows, a little haze. 24mm lens, natural colors, real textures, slight film grain. No other text, no watermark.</pre>
+    </details>
+    <details class="prompt">
+      <summary>The party's first frame, second try (GPT Image, with eleven references)</summary>
+<pre>Photorealistic film still, 16:9, from a short film. Reference images in order: the first is a 3D layout frame, use it only for the camera angle; the second is the master image of the real room, match its green sofa, brown leather armchair, red patterned rug, coffee table, floor lamp and night lighting; images three to eleven are character sheets, in this order: the team lead, the debugger, the tester, the issue triager, the architect, the product manager, the tooling guy, the new hire, and the man in the grey sweatshirt. All nine people must be in the shot, each matching their sheet's face, hair, build and clothes.
+Shot: a small office party at night. Everyone wears a colorful cone paper party hat. On the low coffee table, a pink frosted cake with three lit candles. The camera is behind and slightly above the standing group, looking past them toward the sofa. Where everyone is: on the sofa, the team lead in his charcoal hoodie with headphones around his neck, and next to him the man in the grey sweatshirt. Standing behind the coffee table, left to right: the new hire in the plum sweatshirt, the debugger with the bun and glasses, the product manager with long honey-blonde hair in the cream top (seen from behind, near the middle), the tall bearded tester in the green patterned short-sleeve shirt holding a paper cup, the architect with the bob and glasses, and the tooling guy with the party hat over his orange beanie. The lanky curly-haired triager in the blue shirt stands closest to the camera at the right, seen from behind. Awkward, happy, a little self-conscious.
+Warm lamp light, 28mm lens, real textures, slight film grain. Not a 3D render. No text, no banners, no watermark.</pre>
+    </details>
+
+    <h2>One test before spending</h2>
+    <p>Before the takes, Claude made the same shot twice from the same first frame: Paul at his desk for 4 seconds, once with Kling 3.0 and once with Seedance 2.0. They looked the same. Kling cost 7 credits and came out at 1080p. Seedance cost 18 credits at 720p. So the four small takes went to Kling.</p>
+
+    <h2>The takes</h2>
+    <p>The first cut used seven takes, which cost 147.5 credits with the test:</p>
+    <ul>
+      <li><strong>Take A</strong>, 8 seconds on Seedance 2.0. The camera drifts over the desk rows, and the manager walks in partway through. It gives the room at work and, later, the manager's walk.</li>
+      <li><strong>Takes C to F</strong>, 4 seconds each on Kling 3.0. Marcus at his desk, Noor at the espresso machine, Sam at the window and the ping-pong game.</li>
+      <li><strong>Take G</strong>, 13 seconds on Seedance 2.0. One slow orbit around the party that ends close on the cake. The edit cuts it into four shots, and three times the frame freezes into a tilted photo with a white border, a caption and a camera shutter sound.</li>
+      <li><strong>Take B</strong>, the Kling test of Paul.</li>
+    </ul>
+    <p>The models did not always follow the prompt. In take A the manager walked in at about 1.5 seconds instead of 4. The edit slows down the first part and crops it to keep him out of the room at work, and it uses the later part for his walk. Take G starts wider than its first frame, and the cake ends up with more candles than it started with. Higgsfield also refused take G once with an out-of-credits message while I still had credits. The same request went through on the second try.</p>
+    <details class="prompt">
+      <summary>Take G: the party (Seedance 2.0, 13 seconds, first frame and cast sheets attached)</summary>
+<pre>A small office party at night in a real loft. One slow, continuous camera move: the camera orbits around the group and the low coffee table, moving to the right, for about ten seconds, then slowly pushes in and settles close on the pink frosted cake with three lit candles for the last three seconds. Everyone keeps their paper party hats on. People laugh, sip from paper cups, one person claps, two on the sofa lean in toward the cake; small natural movements, a little awkward and happy. Nobody blows out the candles. Every person keeps the face, hair and clothes from the first frame and the reference sheets. No one speaks clearly. No music, no text, no banners, no new people.</pre>
+    </details>
+    <details class="prompt">
+      <summary>Take A: the room at work and the manager (Seedance 2.0, 8 seconds)</summary>
+<pre>Night in a real loft office. The camera drifts slowly forward over the desk rows the whole time. The developers at their desks keep working: typing, small natural movements, eyes on their screens. At about four seconds, the older manager from the first reference sheet (grey hair, dark charcoal suit, white shirt, dark red tie) walks in from the left edge of the frame. He walks slowly between the desks, glancing at the screens, and stops near the kitchen counter at the right, looking over the room with a pleased, slightly out-of-place smile. Nobody looks up at him. The people at the desks match the other reference sheets. No one speaks. No music, no text, no new people.</pre>
+    </details>
+
+    <h2>The screens</h2>
+    <p>Priya's and Theo's monitors are still images of a real monitor, with the text added in the edit. In my notes on the early cuts I asked for random terminal output. Claude wrote a script that types out a real-looking session line by line. On Priya's screen, Claude Code reads files, shows a diff and runs the tests, and the run ends with 84 passing tests. Theo's screen runs git, pushes a branch and opens a pull request. The script draws the text flat, then bends it in perspective to sit on the monitor glass, with a blinking cursor and a soft glow. Because it is made in the edit, the text costs no credits and is exactly what Claude wrote.</p>
+    <figure>
+      <img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3M7Vw5eP4nHIbv3YT6Ctb60QJkV/b44448f0-3776-4fa7-8bd4-1e47a3878a02.jpg" alt="A monitor at an angle in the loft at night, showing green test output: ok 69 to ok 84, with subtests for terminal, roster and reviews." loading="lazy">
+      <figcaption>Priya's screen near the end of her test run. The text is added in the edit.</figcaption>
+    </figure>
+
+    <h2>Rounds of notes</h2>
+    <p>The trailer went through six cuts. The first cut put the takes and the stills together, and the second added the sound. I liked both. After that, each round started with me watching the new cut and writing notes. My notes, typos fixed, and what changed:</p>
+    <ol>
+      <li><p><strong>Cut 2 to cut 3.</strong></p>
+        <blockquote><p>There are some editing issues where it seems the storyboards flicker. The "Let's ship it" doesn't really work, and the text on the screens should be random terminal output.</p></blockquote>
+        <p>The flicker came from the title cards. They are cut from the 3D trailer, and at each fade a frame or two of the 3D office showed through. The edit now holds black on those frames. Paul's line had been an off-camera voice over Priya's screen. Claude made a new 4-second Kling take with sound, where Paul looks up and says it, for 10 credits. The screens got the terminal script.</p></li>
+      <li><p><strong>Cut 3 to cut 4.</strong></p>
+        <blockquote><p>When she says "Cake!" it sounds strange. Remove that. Also, the text on the second scene with the city backdrop is too small. Then the last scenes, where we originally had time-lapse video. Let's generate that. I liked it more.</p></blockquote>
+        <p>June's line is gone, and the text over the window is bigger. The day passing and the pull-back became generated takes on Kling, 5 and 7 seconds, for 21 credits. Kling can take both a first frame and a last frame, so the day passing starts on the loft by day and ends on the master image at night.</p></li>
+      <li><p><strong>Cut 4 to cut 5.</strong></p>
+        <blockquote><p>The celebration at 0:47 has "PR #16 merged." Can we have a better reason for celebration? At 1:03 to 1:04 a person at their desk glitches, and I would have liked to see more movement in the office. The office sounds between 0:22 and 0:30 are too loud. And finally, the manager's movement between 1:01 and 1:02 seems to jump a little. That can be smoother.</p></blockquote>
+        <p>Claude gave me four reasons to choose from, and I picked one about Autopilot, which is how my office <a href="autopilot.html">fixes and ships its own code</a>. The photos now say "Autopilot shipped it overnight," "Nobody touched a keyboard" and "Friday cake." The manager's two shots became one continuous piece of take A, so he no longer jumps. The typing is 9 dB quieter. The day passing became a new 9-second Kling take with a lot of movement, sped up about two times in the edit.</p></li>
+      <li><p><strong>Cut 5 to cut 6.</strong></p>
+        <blockquote><p>The time-lapse started great, but then had way too many people.</p></blockquote>
+        <p>I asked for more movement, and the prompt for the second try asked for many people walking the whole time. Kling took it literally and filled the room. The third prompt gives a number: about eight people, never more than ten. That take is in the final cut.</p></li>
+    </ol>
+    <figure>
+      <img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3M7Vw5eP4nHIbv3YT6Ctb60QJkV/4046abd4-1db6-47af-928c-db5f0d12c1dc.jpg" alt="A frozen frame as a tilted photo with a white border: the team in party hats around a cake, with the caption Autopilot shipped it overnight." loading="lazy">
+      <figcaption>The new reason for the party.</figcaption>
+    </figure>
+    <figure>
+      <img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3M7Vw5eP4nHIbv3YT6Ctb60QJkV/075ac749-2536-408f-8fc6-9a4185156d99.jpg" alt="Three frames of the loft at sunset from the same high corner. The first is quiet. The second is full of blurred people. The third has a few people at the whiteboard and the kitchen." loading="lazy">
+      <figcaption>The three tries at the day passing, at about the same moment in each.</figcaption>
+    </figure>
+    <details class="prompt">
+      <summary>Paul's line (Kling 3.0 with sound, 4 seconds, first frame attached)</summary>
+<pre>Night, a real loft office. The man at the desk with headphones on reads his monitor, then looks up across the room with a small, confident half-smile and says, clearly and casually: "Let's ship it." Then he looks back at his screen. A slow, subtle push in on his face. Behind him, out of focus, the coworker keeps typing. Sound: only his voice and quiet office room tone, soft keyboard typing. No music, no other voices, no text.</pre>
+    </details>
+    <details class="prompt">
+      <summary>The day passing, third try (Kling 3.0, 9 seconds, first and last frame attached)</summary>
+<pre>A real loft office seen from a fixed high camera, from afternoon into night. The same small team of about eight people works there the whole time; never a crowd, never more than ten people in the room. Most of them stay at their desks; two or three at a time get up and walk to the kitchen counter, the whiteboard or the ping-pong table, then come back and sit down. Two of them play ping-pong for a while. Steady, light movement the whole time. The sunlight on the wooden floor slides and turns gold, then fades; outside the tall windows the sky goes from day to orange to night and the city lights come on; the hanging bulbs and the pink neon sign switch on. The camera stays still. Every person keeps a normal human shape. No text.</pre>
+    </details>
+
+    <h2>Sound</h2>
+    <p>The music is the 3D trailer's own track. Claude made nine sound effects with a sound effects model on Higgsfield, such as city noise through the window, the neon hum, typing, the espresso machine, ping-pong, the party, a camera shutter and the room tone. Together they cost about 16 credits. ElevenLabs made four test lines for about a quarter of a credit each. None of them is in the final cut, because Paul's line comes from his own take.</p>
+    <p>Claude mixed everything in Python. Each sound has its own level, the music and effects drop under Paul's line, and the loudest peaks are limited. It checked each mix with loudness measurements and with speech-to-text, which showed that Paul's line is clear.</p>
+
+    <h2>By the numbers</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>What</th><th>How much</th></tr></thead>
+        <tbody>
+          <tr><td>Time</td><td>One morning, November 18</td></tr>
+          <tr><td>Cuts</td><td>Six, plus the animatic of 3D stills</td></tr>
+          <tr><td>Images</td><td>9 cast sheets and 15 first frames, 1 credit each, 24 credits</td></tr>
+          <tr><td>Video</td><td>13 jobs, 79 seconds in all, 210 credits: 25 for the model test, 122.5 for the first takes, 10 for Paul's line, 21 for the day passing and the pull-back, and 31.5 for two more tries at the day passing</td></tr>
+          <tr><td>Sound</td><td>About 17 credits</td></tr>
+          <tr><td>Total</td><td>About 251 Higgsfield credits</td></tr>
+          <tr><td>The Doctor Bones film, for comparison</td><td>About 2,975 credits for 3:26. Per second of film, the trailer cost less than a quarter as much.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>What I learned</h2>
+    <ul>
+      <li><strong>Price the plan before you make anything.</strong> Two versions side by side made the trade clear, and the storyboard kept the expensive version in case I wanted it later.</li>
+      <li><strong>A still with a slow move is enough when nothing moves.</strong> The window, the sign and the screens are stills, and none of my notes asked for them to move. The day passing is the opposite. Its whole point is movement, and I liked it better as video. It became video, and it took three tries.</li>
+      <li><strong>Use the expensive model only where it does something the cheap one cannot.</strong> Seedance made the two crowd takes, where the cast sheets kept everyone the same. Kling made the rest for less than half the price a second.</li>
+      <li><strong>Most fixes are free.</strong> The flicker, the screens, the photo captions, the manager's jump and the sound levels were all changes to the edit. Only the new generations cost credits, and they came to 62.5, a quarter of the total.</li>
+      <li><strong>Give the model a number.</strong> "Lots of movement" made a crowd. "About eight people, never more than ten" made an office.</li>
+    </ul>
+
+    <div class="refs">
+      <h2>References</h2>
+      <p><a href="../building58/">Building58 trailers</a>, the 3D original and the realistic version</p>
+      <p><a href="building58-realistic/storyboard/">The storyboard</a>, with the v1 and v2 plans, as it stood after the first cut</p>
+      <p><a href="doctor-bones-film.html">Making a Short Film From a Short Story</a>, the Doctor Bones film and its lessons</p>
+      <p><a href="autopilot.html">The Office Builds Itself</a>, where Autopilot comes from</p>
+      <p><a href="https://github.com/bfalkowski/Building58">Building58</a> on GitHub</p>
+      <p><a href="https://higgsfield.ai/">Higgsfield</a>, the service behind Seedance, Kling, GPT Image, ElevenLabs and the sound effects here</p>
+      <p><a href="https://claude.ai/">Claude</a>, which ran Higgsfield through its connector and did the editing</p>
+    </div>
+  </article>
+
+  <footer>&copy; 2026 Bryan Falkowski</footer>
+
+</body>
+</html>

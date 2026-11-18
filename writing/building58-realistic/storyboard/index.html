@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Bryan Falkowski">
+<title>Building58 Trailer Storyboard | Bryan Falkowski</title>
+<style>html,body{margin:0;padding:0}img,video{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Same film-strip layout as the Doctor Bones storyboard: one row per shot, grouped by act.
+   The left edge of each shot says how it gets made: generated video, made in the edit, or a title card. */
+:root {
+  --bg: #f3f2ee;
+  --panel: #ffffff;
+  --fg: #1d1f1c;
+  --muted: #5d625a;
+  --line: #d9d9d2;
+  --gen: #b23a2e;
+  --gen-soft: #f7dedb;
+  --edit: #3c5c8a;
+  --edit-soft: #dde6f3;
+  --card: #6b6f68;
+  --card-soft: #e7e7e2;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #141613; --panel: #1d201c; --fg: #e9e9e3; --muted: #a2a79d; --line: #31352f;
+  --gen: #f08a7d; --gen-soft: #3d2220; --edit: #93b2e0; --edit-soft: #1f2a3b;
+  --card: #b4b8b0; --card-soft: #2a2d29; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #141613; --panel: #1d201c; --fg: #e9e9e3; --muted: #a2a79d; --line: #31352f;
+  --gen: #f08a7d; --gen-soft: #3d2220; --edit: #93b2e0; --edit-soft: #1f2a3b;
+  --card: #b4b8b0; --card-soft: #2a2d29; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1 { font-family: var(--display); font-weight: 800; font-size: 2.2rem; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.lede { color: var(--muted); max-width: 64ch; margin: 6px 0 20px; }
+.totals { display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 14px 0; border-block: 1px solid var(--line); margin-bottom: 8px; }
+.totals div { display: flex; flex-direction: column; }
+.totals b { font-family: var(--mono); font-weight: 500; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.totals span { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px; }
+.animatic { margin: 20px 0 8px; }
+.animatic video { width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 6px; display: block; }
+.animatic p { margin: 6px 0 0; font-size: 0.85rem; color: var(--muted); }
+.act { margin-top: 36px; }
+.act h2 { font-family: var(--display); font-weight: 700; font-size: 1.1rem; margin: 0 0 2px; text-transform: uppercase; letter-spacing: 0.08em; }
+.act p { margin: 0 0 14px; color: var(--muted); }
+.shot { display: grid; grid-template-columns: 300px 1fr; gap: 20px; padding: 14px; background: var(--panel);
+  border: 1px solid var(--line); border-left: 4px solid var(--kind); border-radius: 6px; margin-bottom: 12px; }
+.shot.gen { --kind: var(--gen); }
+.shot.edit { --kind: var(--edit); }
+.shot.card { --kind: var(--card); }
+.frame { position: relative; aspect-ratio: 16 / 9; max-width: 100%; overflow: hidden; border-radius: 3px; background: #000; }
+.frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.frame .note { position: absolute; inset: auto 0 0 0; padding: 4px 8px; font-size: 0.72rem; color: #fff;
+  background: rgba(0,0,0,0.62); }
+.info { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.num { font-family: var(--display); font-weight: 800; font-size: 1.5rem; line-height: 1; }
+.name { font-family: var(--display); font-weight: 700; font-size: 1.05rem; }
+.tc { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; margin-left: auto; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; }
+.chip.gen { background: var(--gen-soft); color: var(--gen); }
+.chip.edit { background: var(--edit-soft); color: var(--edit); }
+.chip.card { background: var(--card-soft); color: var(--card); }
+.chip.len, .chip.place { background: transparent; color: var(--fg); border: 1px solid var(--line); }
+.chip.len { font-family: var(--mono); text-transform: none; letter-spacing: 0; }
+.what { margin: 0; }
+.now { margin: 0; font-size: 0.85rem; color: var(--muted); }
+.sound { margin: 0; font-size: 0.88rem; color: var(--muted); }
+.sound b, .now b { color: var(--fg); font-weight: 600; }
+.sec { margin-top: 36px; }
+.sec h2 { font-family: var(--display); font-weight: 700; font-size: 1.1rem; margin: 0 0 2px; text-transform: uppercase; letter-spacing: 0.08em; }
+.sec > p { margin: 0 0 14px; color: var(--muted); max-width: 70ch; }
+.cast { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.person { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--c); border-radius: 6px; padding: 10px 12px; }
+.person b { font-family: var(--display); font-size: 1rem; }
+.person .role { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-left: 6px; }
+.person p { margin: 4px 0 0; font-size: 0.88rem; }
+.person .in { color: var(--muted); font-size: 0.8rem; }
+.frames { width: 100%; border-collapse: collapse; font-size: 0.88rem; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.frames th, .frames td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.frames th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+.frames td:first-child { font-family: var(--mono); white-space: nowrap; }
+.frames tr:last-child td { border-bottom: 0; }
+.open { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); }
+.open h2 { font-family: var(--display); font-size: 1.1rem; margin: 0 0 8px; }
+.open ol { margin: 0; padding-left: 20px; max-width: 70ch; }
+.open li { margin-bottom: 6px; }
+.vers { display: inline-flex; gap: 3px; padding: 3px; margin: 2px 0 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 99px; }
+.vers a { padding: 5px 14px; border-radius: 99px; text-decoration: none; color: var(--muted); font-weight: 600; font-size: 0.85rem; }
+.vers a[aria-current="page"] { background: var(--fg); color: var(--bg); }
+.vers a:focus-visible { outline: 2px solid var(--edit); outline-offset: 2px; }
+.chip.model { background: transparent; color: var(--gen); border: 1px solid var(--gen); }
+.open h3 { font-family: var(--display); font-size: 0.95rem; margin: 18px 0 6px; }
+.open p { margin: 0 0 8px; max-width: 70ch; color: var(--muted); }
+@media (max-width: 680px) {
+  .shot { grid-template-columns: 1fr; }
+  .tc { margin-left: 0; width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1>Building58: the first trailer, for real</h1>
+  <nav class="vers" aria-label="Plan version">
+    <a href="#v2" data-v="v2">v2 · Lower cost</a>
+    <a href="#v1" data-v="v1">v1 · Full video</a>
+  </nav>
+  <p class="lede" id="lede"></p>
+
+  <div class="totals" id="totals"></div>
+  <div class="legend">
+    <span class="chip gen">Generate</span>
+    <span class="chip edit">Made in the edit</span>
+    <span class="chip card">Title card</span>
+  </div>
+
+  <section class="animatic">
+    <video src="animatic.mp4" controls playsinline preload="metadata" poster="img/s09_wide_work.jpg"></video>
+    <p>Animatic: the 3D frames as stills, timed to the cut, with the trailer's music, the title cards and the photo snaps. Both plans use the same cut, so one animatic covers both. The corner label gives the shot number and name.</p>
+  </section>
+
+  <div id="board"></div>
+
+  <section class="sec">
+    <h2>Cast</h2>
+    <p>Ten people, the same in both plans. Make one cast sheet of real faces before any video, and give it to every shot that has people in it. The looks come from the office's roster. Ages and faces are still open.</p>
+    <div class="cast" id="cast"></div>
+  </section>
+
+  <section class="sec">
+    <h2>First frames</h2>
+    <p id="frames-intro"></p>
+    <table class="frames" id="frames"></table>
+  </section>
+
+  <section class="open">
+    <h2 id="notes-title">Notes</h2>
+    <ol id="notes"></ol>
+  </section>
+</div>
+
+<script>
+const ACTS = [
+  { title: "Act 1 · Work hard", text: "Night in the city. The sign. The people at their desks, and what is on their screens." },
+  { title: "Act 2 · Take breaks", text: "Coffee, the window, ping-pong." },
+  { title: "Act 3 · Ship it", text: "PR #16 merges. Party hats, cake, three photos." },
+  { title: "Act 4 · Look busy", text: "The manager walks through. A day passes. The camera pulls back from the room." },
+];
+
+// v1: every shot with a camera move is generated video, all on Seedance 2.0.
+// kind: gen = generated video, edit = made in the edit from stills, card = title card on black.
+const SHOTS = [
+  { act:0, n:1,  name:"A city that never logs off", kind:"card", len:3.2, img:"s01_card",
+    what:"Black. White text fades in and out: <i>In a city that never logs off</i>.", sound:"Music starts: choir and bells." },
+  { act:0, n:2,  name:"The window", kind:"gen", take:"T1", place:"Window", len:6, img:"s02_window",
+    what:"A real loft window at night: black steel frames, old brick at the right edge, hundreds of lit office windows across the street. The camera moves slowly toward the glass. The second card fades in over it: <i>one room runs on Claude Code</i>.",
+    sound:"Music. Faint city sound through the glass." },
+  { act:0, n:3,  name:"The sign", kind:"gen", take:"T2", place:"Brick wall", len:4, img:"s03_sign",
+    what:"The Building58 neon sign on the brick wall, pink-white glow. A small flicker. The camera drifts to the right.", sound:"A low neon hum under the music." },
+  { act:0, n:4,  name:"Work hard.", kind:"card", len:1.8, img:"s04_card",
+    what:"Black. <i>Work hard.</i>", sound:"Drums and bass come in." },
+  { act:0, n:5,  name:"Paul", kind:"gen", take:"T3", place:"Desks", len:3.4, img:"s05_paul",
+    what:"Paul, the lead, close, at his desk with headphones on. He looks up from his screen and says it. People work at the desks behind him.",
+    sound:"<b>Paul:</b> “Let’s ship it.” Keys." },
+  { act:0, n:6,  name:"Priya’s screen", kind:"edit", take:"P1", place:"Desks", len:2.6, img:"s06_priya_screen",
+    what:"Priya’s monitor, close, at an angle. A real terminal: start PR, Read relay/server.js, Edit relay/server.js, npm test: 84 passed, then All tests pass. The text goes on in the edit.",
+    sound:"Keys." },
+  { act:0, n:7,  name:"Marcus", kind:"gen", take:"T4", place:"Desks", len:2.8, img:"s07_marcus",
+    what:"Marcus, close: beard, buzz cut, green shirt. He reads his screen and gives a small nod. The room and the night windows soft behind him.", sound:"Music." },
+  { act:0, n:8,  name:"Theo’s screen", kind:"edit", take:"P2", place:"Desks", len:2.6, img:"s08_theo_screen",
+    what:"Theo’s monitor: gh pr create, then PR #16 opened. Same way as shot 6.", sound:"One key, Enter." },
+  { act:0, n:9,  name:"The room at work", kind:"gen", take:"T5", place:"Desks", len:3.4, img:"s09_wide_work",
+    what:"Over the desk rows: long wood desks, black chairs, lit monitors, a few people working. The camera drifts in over the desks.", sound:"Music. Soft room sound." },
+
+  { act:1, n:10, name:"Take breaks.", kind:"card", len:1.8, img:"s10_card",
+    what:"Black. <i>Take breaks.</i>", sound:"The tune starts, softly." },
+  { act:1, n:11, name:"Coffee", kind:"gen", take:"T6", place:"Coffee bar", len:3.2, img:"s11_noor_coffee",
+    what:"Noor at the red espresso machine. She puts a pink mug under it. Steam comes up. Brick wall, a plant.", sound:"The machine hisses." },
+  { act:1, n:12, name:"The window", kind:"gen", take:"T7", place:"Window", len:4, img:"s12_sam_window",
+    what:"Sam from behind at the big window: orange beanie, a coffee in his hand, the city at night. He hardly moves.", sound:"Music." },
+  { act:1, n:13, name:"Ping-pong", kind:"gen", take:"T8", place:"Ping-pong", len:4, img:"s13_pingpong",
+    what:"Kai and a teammate play ping-pong on the blue table, the desks behind them. Keep the ball soft or out of frame.", sound:"Paddle clicks." },
+
+  { act:2, n:14, name:"Ship it.", kind:"card", len:1.8, img:"s14_card",
+    what:"Black. <i>Ship it.</i>", sound:"Music." },
+  { act:2, n:15, name:"The party", kind:"gen", take:"T9", place:"Lounge", len:3.4, img:"s15_party_a",
+    what:"Everyone in party hats around the green couch and the red rug. The start of one slow orbit around the cake table. At 0:46.6 the frame freezes into a tilted photo with a white border: <i>PR #16 merged!</i>",
+    sound:"Full lead and handclaps. Chatter. A camera shutter on the photo." },
+  { act:2, n:16, name:"Cake!", kind:"gen", take:"T9", place:"Lounge", len:3.2, img:"s16_party_b",
+    what:"The orbit goes on. The cake on the low table, people laughing. June calls out. Photo: <i>84 tests green</i>.",
+    sound:"<b>June:</b> “Cake!” A shutter." },
+  { act:2, n:17, name:"Friday cake", kind:"gen", take:"T9", place:"Lounge", len:3.2, img:"s17_party_c",
+    what:"The end of the orbit, from the far side, past the floor lamp. Photo: <i>Friday cake</i>.", sound:"A shutter." },
+  { act:2, n:18, name:"The cake", kind:"gen", take:"T10", place:"Lounge", len:2.6, img:"s18_cake",
+    what:"Close on the cake: pink frosting, three lit candles, a blue mug beside it. The candles flicker.", sound:"Music." },
+
+  { act:3, n:19, name:"Look busy.", kind:"card", len:3.6, img:"s19_card_b",
+    what:"Black. <i>And whatever happens...</i> then <i>look busy.</i>", sound:"Only the choir, then one hit on “look busy.”" },
+  { act:3, n:20, name:"The manager", kind:"gen", take:"T11", place:"Desks", len:1.1, img:"s20_manager_walk",
+    what:"The manager walks between the desks: grey hair, dark suit, red tie. Everyone faces their screens.", sound:"The full band, the tune again." },
+  { act:3, n:21, name:"He looks around", kind:"gen", take:"T11", place:"Coffee bar", len:1.4, img:"s21_manager_bar",
+    what:"Same take, a moment later: he stops by the coffee bar and looks over the room.", sound:"Music." },
+  { act:3, n:22, name:"A day passes", kind:"edit", take:"P3", place:"Whole loft", len:4.6, img:"s22_day",
+    what:"High and wide on the whole loft. Daylight comes in, turns gold, then it is evening. Stills of the same frame, crossfaded, with a slow push.", sound:"Music." },
+  { act:3, n:23, name:"The pull-back", kind:"gen", take:"T12", place:"Whole loft", len:6.6, img:"s23_pull",
+    what:"Night. The camera pulls back and up until the loft is a lit box in the dark, like a model of itself. The last real frame should line up with the 3D one.", sound:"Music." },
+  { act:3, n:24, name:"Building58", kind:"card", len:4.4, img:"s24_end",
+    what:"Black. <i>BUILDING58</i>. Every Claude Code session gets a desk. github.com/bfalkowski/Building58", sound:"The last chord." },
+];
+
+// v2 changes only these fields; everything else comes from v1.
+const V2 = {
+  2:  { kind:"edit", take:"S1", what:"The same window, as one high-resolution still. In the edit: a slow push toward the glass, with a little depth so the window frames and the far buildings move apart. A few windows across the street go on or off. The second card fades in over it: <i>one room runs on Claude Code</i>." },
+  3:  { kind:"edit", take:"S2", what:"The neon sign on brick, as a still. In the edit: a slow drift to the right, and a small flicker made by changing the glow on the still." },
+  5:  { take:"B", model:"kling", what:"Paul, close, at his desk with headphones on. He looks up from his screen and gives a small nod. People work at the desks behind him. No speaking on camera.",
+        sound:"Keys. His line moves to shot 6." },
+  6:  { sound:"<b>Paul</b> (off-camera): “Let’s ship it.” Keys." },
+  7:  { take:"C", model:"kling" },
+  9:  { take:"A", what:"Over the desk rows: long wood desks, black chairs, lit monitors, people working, the coffee bar in view at the right. The camera drifts in. This is the first 3.4 seconds of take A, before the manager comes in." },
+  11: { take:"D", model:"kling" },
+  12: { take:"E", model:"kling" },
+  13: { take:"F", model:"kling" },
+  15: { take:"G", what:"Everyone in party hats around the green couch and the red rug. The start of take G: one slow orbit around the party that ends close on the cake. At 0:46.6 the frame freezes into a tilted photo with a white border: <i>PR #16 merged!</i>" },
+  16: { take:"G", sound:"<b>June</b> (off-camera, somewhere in the crowd): “Cake!” A shutter." },
+  17: { take:"G" },
+  18: { take:"G", what:"The end of take G: the camera settles close on the cake. Pink frosting, three lit candles, a blue mug beside it." },
+  20: { take:"A", what:"Later in take A: the manager comes in from the left and walks between the desks: grey hair, dark suit, red tie. Everyone faces their screens." },
+  21: { take:"A", what:"Further on in take A: he stops by the coffee bar and looks over the room. The cut skips part of his walk." },
+  23: { kind:"edit", take:"S3", what:"Night. One high-resolution still of the whole loft from high up. In the edit: a slow pull back and up, with depth, until the loft is a lit box in the dark. If it looks flat, this is the first shot to turn into a take." },
+};
+
+const MODELS = { seedance:"Seedance 2.0", kling:"Kling 3.0 pro" };
+// Credits per generated second, silent, from Higgsfield's own quotes on Nov 18, 2026:
+// Seedance 2.0 at 720p is 18 credits for 4 seconds; Kling 3.0 pro (1080p) is 7 credits for 4 seconds.
+const RATE = { seedance:4.5, kling:1.75 };
+
+const PLANS = {
+  v1: {
+    lede:"Version 1 plan, full video. The same 79 seconds, shot for shot, with real people in a real loft. Every shot with a camera move is generated on Seedance 2.0. The music stays as it is, because it is written to this cut. Each frame below is from the 3D trailer and shows the layout to match. The text under it says what the real shot should be.",
+    shots: SHOTS.map(s => Object.assign({ model: s.kind === "gen" ? "seedance" : undefined }, s)),
+    takes: { T1:7, T2:5, T3:5, T4:5, T5:5, T6:5, T7:5, T8:5, T9:11, T10:5, T11:5, T12:8 },
+    frames: [
+      ["T1",  "2",     "The loft window at night, close to the glass. City lights across the street."],
+      ["T2",  "3",     "The neon sign on brick, lit."],
+      ["T3",  "5",     "Paul at his desk, close, headphones on, eyes on his screen."],
+      ["T4",  "7",     "Marcus at his desk, close."],
+      ["T5",  "9",     "High over the desk rows at night, people working."],
+      ["T6",  "11",    "Noor at the espresso machine, mug in her hand."],
+      ["T7",  "12",    "Sam from behind at the window."],
+      ["T8",  "13",    "Kai and a teammate at the ping-pong table, mid-rally."],
+      ["T9",  "15–17", "The party around the couch, hats on, cake on the table."],
+      ["T10", "18",    "The cake and the blue mug, candles lit."],
+      ["T11", "20–21", "The manager among the desks."],
+      ["T12", "23",    "The loft at night from inside, high, just before the pull-back."],
+      ["P1",  "6",     "Priya’s monitor, close, screen dark (text added in the edit)."],
+      ["P2",  "8",     "Theo’s monitor, close, screen dark (text added in the edit)."],
+      ["P3",  "22",    "The whole loft, high and wide: one by day, one in the gold hour, one at evening."],
+    ],
+    framesIntro:"Each take starts from a still. Make the stills with an image model, using the 3D frame for the layout, the cast sheet for the people, and one master image of the loft at night so the room never changes. These are cheap, so make them all and check them in the animatic before any video.",
+    notes: [
+      "Same cut, same music. The music is written in 2.2-second bars to fit this cut, so every shot keeps its length and the music is used as it is.",
+      "Long takes, cut in the edit. The party is one slow orbit around the cake, cut into shots 15 to 17. The manager is one take, cut into shots 20 and 21.",
+      "The screens (6 and 8) are a still of a real monitor with the real terminal text put on in the edit, so the text is exact and costs no video.",
+      "Title cards, the photo snaps and the day passing (22) are made in the edit from stills. If the day passing looks too still, it can become a take later.",
+      "Ping-pong: video models are bad at a small fast ball. Keep the ball soft or out of frame, and let the players sell it.",
+      "Credits use Higgsfield’s quote on Nov 18, 2026: Seedance 2.0 at 720p, silent, 4.5 credits a second. Each take has a second of handles at its ends. The first frames are not counted.",
+      "Next step before spending: make the cast sheet and the first frames, rebuild the animatic with them, and watch it.",
+    ],
+  },
+  v2: {
+    lede:"Version 2 plan, lower cost. The same cut, the same music and the same cast as v1. Only shots where people move are generated. Shots where nothing moves are stills with a slow move, made in the edit. Two pairs of takes are merged into long takes, the one-person shots use a cheaper model, and nobody speaks on camera. Each frame below is from the 3D trailer and shows the layout to match.",
+    shots: SHOTS.map(s => {
+      const o = Object.assign({}, s, V2[s.n] || {});
+      if (o.kind === "gen" && !o.model) o.model = "seedance";
+      if (o.kind !== "gen") delete o.model;
+      return o;
+    }),
+    takes: { A:8, B:4, C:4, D:4, E:4, F:4, G:13 },
+    frames: [
+      ["A",  "9, 20–21", "High over the desk rows at night, people working, the coffee bar in view at the right. The manager comes in partway through the take."],
+      ["B",  "5",       "Paul at his desk, close, headphones on, eyes on his screen."],
+      ["C",  "7",       "Marcus at his desk, close."],
+      ["D",  "11",      "Noor at the espresso machine, mug in her hand."],
+      ["E",  "12",      "Sam from behind at the window."],
+      ["F",  "13",      "Kai and a teammate at the ping-pong table, mid-rally."],
+      ["G",  "15–18", "The party around the couch, hats on, cake on the table."],
+      ["S1", "2",       "The loft window at night, close to the glass. High resolution, for the push."],
+      ["S2", "3",       "The neon sign on brick, lit."],
+      ["P1", "6",       "Priya’s monitor, close, screen dark (text added in the edit)."],
+      ["P2", "8",       "Theo’s monitor, close, screen dark (text added in the edit)."],
+      ["P3", "22",      "The whole loft, high and wide: one by day, one in the gold hour, one at evening."],
+      ["S3", "23",      "The whole loft at night from high up. High resolution, for the pull-back."],
+    ],
+    framesIntro:"The same as v1: each take, and each shot made from a still, starts from an image made with an image model, using the 3D frame for the layout, the cast sheet for the people, and one master image of the loft at night. v2 needs 13 of them, and they are cheap. Check them in the animatic before any video.",
+    notes: [
+      "Same cut and music as v1. Every shot keeps its length.",
+      "Fewer seconds of video: 41 in v2, 71 in v1. Shots where nothing moves (2, 3, 6, 8, 22, 23) are stills with a slow move and a little depth, made in the edit. If one looks flat, it can become a take later.",
+      "Merged takes. Take A is one camera over the desks: the first part is shot 9, and later the manager walks in for shots 20 and 21. Take G is one orbit around the party that ends close on the cake, for shots 15 to 18.",
+      "No extra seconds at the ends of a take. Each take is generated at the length it needs, and never under 4 seconds, the shortest Seedance 2.0 makes.",
+      "Seedance 2.0 only for the two crowd takes, A and G, because it can take the cast sheets as references. The one-person and two-person takes (B to F) use Kling 3.0 pro. Tested on take B: from the same first frame, Kling and Seedance look the same. Kling cost 7 credits and came out at 1080p; Seedance cost 18 at 720p.",
+      "No lip sync. Paul’s line is heard off-camera over Priya’s screen (shot 6). June’s “Cake!” comes from somewhere in the crowd.",
+      "Test a new prompt at 480p, which costs much less. Keep takes at 720p. A 720p re-run gives a different take, so a 480p test checks the prompt, not the take.",
+      "Budget: two tries for each take, and a cap for the whole film (the cap in the totals above). When a take has used its two tries, the work stops and asks before it spends more.",
+      "Credits: Higgsfield’s own quotes on Nov 18, 2026, all silent. Seedance 2.0 at 720p is 4.5 credits a second. Kling 3.0 pro is 1.75 credits a second. Prices change, so check again before each round.",
+      "Next step before spending: make the cast sheet and the 13 first frames, rebuild the animatic with them, and watch it.",
+      "First cut, Nov 18: all seven takes made for 147.5 credits of video (take B is the Kling test). In take A the manager walked in at about 1.5 seconds instead of 4, so shot 9 uses the first 1.6 seconds, slowed down and cropped to keep him out of frame. Shots 20 and 21 use the later part, where he stops in front of the whiteboard instead of at the coffee bar. Take G starts from a wider angle than its first frame and ends with more candles on the cake.",
+    ],
+  },
+};
+
+const CAST = [
+  { name:"Paul", role:"Lead", c:"#e3b26a", look:"Medium-tan skin, short dark-brown hair, charcoal hoodie, headphones.", in:"5, party" },
+  { name:"Priya", role:"Debugging", c:"#f08c7e", look:"Brown skin, black hair in a bun, glasses, rust-red top.", in:"6 (screen), party" },
+  { name:"Marcus", role:"Tests", c:"#8fd19e", look:"Dark-brown skin, black buzz cut, beard, forest-green shirt, khaki trousers.", in:"7, party" },
+  { name:"Theo", role:"Issues", c:"#8fb0e3", look:"Light skin, curly brown hair, mid-blue shirt.", in:"8 (screen), party" },
+  { name:"Ines", role:"Architecture", c:"#7fd8d0", look:"Light-tan skin, dark-brown bob, glasses, dark navy top.", in:"Desks, party" },
+  { name:"June", role:"Product", c:"#c79be0", look:"Fair skin, long honey-blonde hair, cream top, navy trousers.", in:"16, party" },
+  { name:"Sam", role:"Tooling", c:"#f0c25e", look:"Fair skin, ginger beard, orange beanie, grey shirt, red sneakers.", in:"12, party" },
+  { name:"Kai", role:"Hot desk", c:"#9fd3ff", look:"Light-tan skin, short black hair, stone-colored shirt.", in:"13, party" },
+  { name:"Noor", role:"Hot desk", c:"#ffa8c5", look:"Brown skin, long black hair, plum top.", in:"11, party" },
+  { name:"The manager", role:"Manager", c:"#8c2f39", look:"Grey hair, dark suit, dark red tie. Older than the team.", in:"20, 21" },
+];
+
+const fmt = s => `${Math.floor(s/60)}:${(s%60).toFixed(1).padStart(4,"0")}`;
+const KIND = { gen:"Generate", edit:"Made in the edit", card:"Title card" };
+
+function render(v) {
+  const plan = PLANS[v];
+  document.querySelectorAll(".vers a").forEach(a => {
+    if (a.dataset.v === v) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+  });
+  document.getElementById("lede").textContent = plan.lede;
+  const board = document.getElementById("board");
+  board.innerHTML = "";
+  let t = 0;
+  ACTS.forEach((a, ai) => {
+    const sec = document.createElement("section");
+    sec.className = "act";
+    sec.innerHTML = `<h2>${a.title}</h2><p>${a.text}</p>`;
+    plan.shots.filter(s => s.act === ai).forEach(s => {
+      const shared = s.take && plan.shots.filter(x => x.take === s.take).length > 1;
+      const takeChip = s.kind === "gen" ? `<span class="chip gen">Take ${s.take}${shared ? " · shared" : ""}</span><span class="chip model">${MODELS[s.model]}</span>`
+        : s.kind === "edit" ? `<span class="chip edit">Still ${s.take}</span>` : "";
+      const el = document.createElement("article");
+      el.className = `shot ${s.kind}`;
+      el.innerHTML = `
+        <div class="frame"><img src="img/${s.img}.jpg" alt="${s.name}, 3D trailer frame" loading="lazy"><div class="note">3D trailer, ${fmt(t)}</div></div>
+        <div class="info">
+          <div class="top"><span class="num">${s.n}</span><span class="name">${s.name}</span>
+            <span class="tc">${fmt(t)}–${fmt(t + s.len)}</span></div>
+          <div class="chips"><span class="chip ${s.kind}">${KIND[s.kind]}</span>${takeChip}
+            ${s.place ? `<span class="chip place">${s.place}</span>` : ""}<span class="chip len">${s.len}s</span></div>
+          <p class="what">${s.what}</p>
+          <p class="sound">${s.sound}</p>
+        </div>`;
+      sec.appendChild(el);
+      t += s.len;
+    });
+    board.appendChild(sec);
+  });
+  // A take's model is the model of its shots.
+  const modelOf = id => (plan.shots.find(s => s.take === id) || {}).model || "seedance";
+  const ids = Object.keys(plan.takes);
+  const genSec = ids.reduce((a, id) => a + plan.takes[id], 0);
+  const credits = ids.reduce((a, id) => a + plan.takes[id] * RATE[modelOf(id)], 0);
+  const editShots = plan.shots.filter(s => s.kind !== "gen").length;
+  document.getElementById("totals").innerHTML = `
+    <div><b>${fmt(t)}</b><span>Running time</span></div>
+    <div><b>${plan.shots.length}</b><span>Shots</span></div>
+    <div><b>${ids.length}</b><span>Takes to generate</span></div>
+    <div><b>${genSec}s</b><span>Generated video</span></div>
+    <div><b>~${Math.round(credits)}</b><span>Credits, one try</span></div>
+    <div><b>~${Math.round(credits * 2)}</b><span>Cap, two tries</span></div>
+    <div><b>${editShots}</b><span>Shots made in the edit</span></div>`;
+  document.getElementById("frames-intro").textContent = plan.framesIntro;
+  document.getElementById("frames").innerHTML = `<tr><th>Still</th><th>Shots</th><th>What it shows</th><th>Video</th></tr>` +
+    plan.frames.map(([id, shots, text]) => {
+      const sec = plan.takes[id];
+      return `<tr><td>${id}</td><td>${shots}</td><td>${text}</td><td>${sec ? `${sec}s, ${MODELS[modelOf(id)]}` : "none"}</td></tr>`;
+    }).join("");
+  document.getElementById("notes-title").textContent = `Notes for ${v}`;
+  document.getElementById("notes").innerHTML = plan.notes.map(n => `<li>${n}</li>`).join("");
+}
+
+document.getElementById("cast").innerHTML = CAST.map(p => `
+  <div class="person" style="--c:${p.c}"><b>${p.name}</b><span class="role">${p.role}</span>
+    <p>${p.look}</p><p class="in">In: ${p.in}</p></div>`).join("");
+const current = () => (location.hash === "#v1" ? "v1" : "v2");
+window.addEventListener("hashchange", () => render(current()));
+render(current());
+</script>
+</body>
+</html>
