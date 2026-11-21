@@ -7,35 +7,55 @@
   <title>Building58 trailers</title>
   <meta property="og:title" content="Building58 trailers">
   <meta property="og:image" content="https://bfalkowski.github.io/building58/2026-11-13/poster.jpg">
-  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --text: #2c2c2c;
+      --muted: #666666;
+      --line: #e0e0e0;
+      --alt-bg: #fafafa;
+      --accent: #1d3f72;
+    }
     * { box-sizing: border-box; }
-    body { margin: 0; background: #0b0b0d; color: #e8e6e3; font: 17px/1.6 "Source Sans 3", sans-serif; }
-    main { max-width: 1200px; margin: 0 auto; padding: 32px 20px 56px; }
-    h1 { font-weight: 600; letter-spacing: .08em; margin: 0 0 4px; font-size: 22px; }
-    .intro { color: #a9a6a1; margin: 0; max-width: 70ch; }
-    a { color: #f0a0b8; }
+    body { margin: 0; background: #ffffff; color: var(--text); font: 17px/1.6 "Source Sans 3", "Source Sans Pro", sans-serif; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .topbar { border-bottom: 1px solid var(--line); padding: 14px 32px; }
+    .topbar .container { display: flex; justify-content: space-between; font-size: 15px; }
+    .topbar a.home { color: var(--text); font-weight: 600; }
+    main { padding: 48px 32px 64px; }
+    h1 { font-size: 36px; font-weight: 600; line-height: 1.2; margin: 0 0 10px; }
+    .intro { color: var(--muted); margin: 0; max-width: 70ch; }
     .editions { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
-    .editions a { display: inline-block; padding: 4px 14px; border: 1px solid #33333a; border-radius: 99px; color: #e8e6e3; text-decoration: none; font-size: 15px; }
-    .editions a:hover, .editions a:focus-visible { border-color: #f0a0b8; color: #f0a0b8; }
-    .edition { margin-top: 40px; padding-top: 28px; border-top: 1px solid #26262a; scroll-margin-top: 16px; }
-    .edition h2 { font-weight: 600; font-size: 20px; margin: 0; }
-    .about { color: #a9a6a1; margin: 2px 0 18px; max-width: 70ch; }
+    .editions a { display: inline-block; padding: 3px 12px; border: 1px solid var(--line); border-radius: 20px; color: var(--text); font-size: 14.5px; }
+    .editions a:hover, .editions a:focus-visible { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+    .edition { margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--line); scroll-margin-top: 16px; }
+    .edition h2 { font-size: 24px; font-weight: 700; margin: 0; }
+    .about { color: var(--muted); margin: 4px 0 18px; max-width: 70ch; }
     .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
     .film { margin: 0; min-width: 0; }
-    video { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; background: #000; border-radius: 4px; }
+    video { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; background: #000; border-radius: 6px; }
     .film h3 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 10px 0 0; font-size: 16px; font-weight: 600; }
-    .kind { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: 0 9px; border: 1px solid #3a3a40; border-radius: 99px; color: #d6d3ce; }
-    .film time, .len { color: #a9a6a1; font-weight: 400; font-size: 15px; }
-    .film p { color: #a9a6a1; margin: 4px 0 0; font-size: 15px; }
+    .kind { font-size: 12.8px; font-weight: 600; padding: 0 9px; border: 1px solid var(--accent); border-radius: 3px; color: var(--accent); }
+    .film time, .len { color: var(--muted); font-weight: 400; font-size: 15px; }
+    .film p { color: var(--muted); margin: 4px 0 0; font-size: 15px; }
     @media (max-width: 760px) {
+      .topbar { padding: 14px 16px; }
+      main { padding: 32px 16px 48px; }
       .pair { grid-template-columns: 1fr; gap: 24px; }
     }
   </style>
 </head>
 <body>
-  <main>
-    <h1>BUILDING58 TRAILERS</h1>
+  <div class="topbar">
+    <div class="container">
+      <a class="home" href="../">Bryan Falkowski</a>
+      <a href="https://github.com/bfalkowski/Building58">Building58 on GitHub</a>
+    </div>
+  </div>
+  <main class="container">
+    <h1>Building58 Trailers</h1>
     <p class="intro">Films of <a href="https://github.com/bfalkowski/Building58">Building58</a>, a building of 3D rooms where Claude Code sessions work. Each edition has two films: the 3D trailer the room records itself, and a realistic version made from it with AI video. The newest edition is first.</p>
     <ul class="editions">
       <li><a href="#robots">The robot edition</a></li>
