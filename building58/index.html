@@ -11,39 +11,70 @@
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; background: #0b0b0d; color: #e8e6e3; font: 17px/1.6 "Source Sans 3", sans-serif; }
-    main { max-width: 1100px; margin: 0 auto; padding: 32px 16px 48px; }
+    main { max-width: 1200px; margin: 0 auto; padding: 32px 20px 56px; }
     h1 { font-weight: 600; letter-spacing: .08em; margin: 0 0 4px; font-size: 22px; }
-    .intro { color: #a9a6a1; margin: 0 0 24px; }
-    article + article { margin-top: 48px; padding-top: 32px; border-top: 1px solid #26262a; }
-    h2 { font-weight: 600; font-size: 18px; margin: 0 0 12px; }
-    h2 time { color: #a9a6a1; font-weight: 400; }
-    video { display: block; width: 100%; height: auto; background: #000; border-radius: 4px; }
-    p { color: #a9a6a1; margin: 12px 0 0; }
+    .intro { color: #a9a6a1; margin: 0; max-width: 70ch; }
     a { color: #f0a0b8; }
+    .editions { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
+    .editions a { display: inline-block; padding: 4px 14px; border: 1px solid #33333a; border-radius: 99px; color: #e8e6e3; text-decoration: none; font-size: 15px; }
+    .editions a:hover, .editions a:focus-visible { border-color: #f0a0b8; color: #f0a0b8; }
+    .edition { margin-top: 40px; padding-top: 28px; border-top: 1px solid #26262a; scroll-margin-top: 16px; }
+    .edition h2 { font-weight: 600; font-size: 20px; margin: 0; }
+    .about { color: #a9a6a1; margin: 2px 0 18px; max-width: 70ch; }
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+    .film { margin: 0; min-width: 0; }
+    video { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; background: #000; border-radius: 4px; }
+    .film h3 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 10px 0 0; font-size: 16px; font-weight: 600; }
+    .kind { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: 0 9px; border: 1px solid #3a3a40; border-radius: 99px; color: #d6d3ce; }
+    .film time, .len { color: #a9a6a1; font-weight: 400; font-size: 15px; }
+    .film p { color: #a9a6a1; margin: 4px 0 0; font-size: 15px; }
+    @media (max-width: 760px) {
+      .pair { grid-template-columns: 1fr; gap: 24px; }
+    }
   </style>
 </head>
 <body>
   <main>
     <h1>BUILDING58 TRAILERS</h1>
-    <p class="intro">Films of <a href="https://github.com/bfalkowski/Building58">Building58</a>, a building of 3D rooms where Claude Code sessions work. The newest is first.</p>
+    <p class="intro">Films of <a href="https://github.com/bfalkowski/Building58">Building58</a>, a building of 3D rooms where Claude Code sessions work. Each edition has two films: the 3D trailer the room records itself, and a realistic version made from it with AI video. The newest edition is first.</p>
+    <ul class="editions">
+      <li><a href="#robots">The robot edition</a></li>
+      <li><a href="#people">The people edition</a></li>
+    </ul>
 
-    <article>
-      <h2>The robot edition · <time datetime="2026-11-21">November 21, 2026</time></h2>
-      <video src="2026-11-21/trailer.mp4" poster="2026-11-21/poster.jpg" controls playsinline preload="metadata"></video>
-      <p>The first trailer again, with robots in the office. 83 seconds.</p>
-    </article>
+    <section class="edition" id="robots">
+      <h2>The robot edition</h2>
+      <p class="about">Robots at the desks, named by role and number. The manager is still a person, in a 1950s suit.</p>
+      <div class="pair">
+        <figure class="film">
+          <video src="2026-11-21/trailer.mp4" poster="2026-11-21/poster.jpg" controls playsinline preload="metadata"></video>
+          <h3><span class="kind">3D</span> <time datetime="2026-11-21">November 21, 2026</time> <span class="len">83 seconds</span></h3>
+          <p>The first trailer again, with robots in the office.</p>
+        </figure>
+        <figure class="film">
+          <video src="https://d2ol7oe51mr4n9.cloudfront.net/user_3M7Vw5eP4nHIbv3YT6Ctb60QJkV/7a4eafa7-75ca-491d-8056-e3be64b3489c.mp4" poster="https://d2ol7oe51mr4n9.cloudfront.net/user_3M7Vw5eP4nHIbv3YT6Ctb60QJkV/30e11aa8-2954-42cc-9664-7f67aba03175.jpg" controls playsinline preload="metadata"></video>
+          <h3><span class="kind">Realistic</span> <time datetime="2026-11-21">November 21, 2026</time> <span class="len">79 seconds</span></h3>
+          <p>The robot edition made again as a realistic AI video, with the same 80s music. The robots chatter in beeps. Made with Higgsfield.</p>
+        </figure>
+      </div>
+    </section>
 
-    <article>
-      <h2>The realistic version · <time datetime="2026-11-18">November 18, 2026</time></h2>
-      <video src="https://d2ol7oe51mr4n9.cloudfront.net/user_3M7Vw5eP4nHIbv3YT6Ctb60QJkV/4dad6d42-9e8a-4049-8f25-90316522e2ba.mp4" poster="https://d2ol7oe51mr4n9.cloudfront.net/user_3M7Vw5eP4nHIbv3YT6Ctb60QJkV/1bf2c673-a236-48d0-8035-ebaa19c872aa.jpg" controls playsinline preload="metadata"></video>
-      <p>The first trailer made again as a realistic AI video, with the same 80s music. Made with Higgsfield. <a href="../writing/building58-realistic.html">How it was made</a>.</p>
-    </article>
-
-    <article>
-      <h2>The first trailer · <time datetime="2026-11-13">November 13, 2026</time></h2>
-      <video src="2026-11-13/trailer.mp4" poster="2026-11-13/poster.jpg" controls playsinline preload="metadata"></video>
-      <p>79 seconds, with its own 80s music. One room at work, on a break, at a party, with the manager walking through, and a day going by.</p>
-    </article>
+    <section class="edition" id="people">
+      <h2>The people edition</h2>
+      <p class="about">The first trailer. One room at work, on a break, at a party, with the manager walking through, and a day going by.</p>
+      <div class="pair">
+        <figure class="film">
+          <video src="2026-11-13/trailer.mp4" poster="2026-11-13/poster.jpg" controls playsinline preload="metadata"></video>
+          <h3><span class="kind">3D</span> <time datetime="2026-11-13">November 13, 2026</time> <span class="len">79 seconds</span></h3>
+          <p>The first trailer, with its own 80s music.</p>
+        </figure>
+        <figure class="film">
+          <video src="https://d2ol7oe51mr4n9.cloudfront.net/user_3M7Vw5eP4nHIbv3YT6Ctb60QJkV/4dad6d42-9e8a-4049-8f25-90316522e2ba.mp4" poster="https://d2ol7oe51mr4n9.cloudfront.net/user_3M7Vw5eP4nHIbv3YT6Ctb60QJkV/1bf2c673-a236-48d0-8035-ebaa19c872aa.jpg" controls playsinline preload="metadata"></video>
+          <h3><span class="kind">Realistic</span> <time datetime="2026-11-18">November 18, 2026</time> <span class="len">79 seconds</span></h3>
+          <p>The first trailer made again as a realistic AI video, with the same 80s music. Made with Higgsfield. <a href="../writing/building58-realistic.html">How it was made</a>.</p>
+        </figure>
+      </div>
+    </section>
   </main>
 </body>
 </html>
