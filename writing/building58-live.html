@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Bryan Falkowski">
+  <meta name="description" content="Building 58 has its own site at building58.ai. What the site holds, what the building mark and the tower stand for, and this week's plan: move my room off my laptop to a machine that stays on, then sign in at building58.ai and see my office.">
+  <title>Building 58 Has a Front Door | Bryan Falkowski</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Roboto+Mono&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --text: #2c2c2c;
+      --muted: #666666;
+      --line: #e0e0e0;
+      --alt-bg: #fafafa;
+      --accent: #1d3f72;
+      --b58-ink: #1c1f24;
+      --b58-amber: #e8a45c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: #fff; color: var(--text);
+      font: 17px/1.6 "Source Sans 3", "Source Sans Pro", sans-serif;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .topbar { border-bottom: 1px solid var(--line); padding: 14px 32px; }
+    .topbar .container { display: flex; justify-content: space-between; font-size: 15px; }
+    .topbar a.home { color: var(--text); font-weight: 600; }
+    .container { max-width: 760px; margin: 0 auto; }
+    article { padding: 48px 32px 64px; }
+    h1 { font-size: 36px; font-weight: 600; line-height: 1.2; margin: 0 0 10px; }
+    .byline { color: var(--muted); font-size: 15px; margin: 0 0 36px; }
+    h2 { font-size: 24px; font-weight: 700; margin: 44px 0 14px; }
+    p { margin: 0 0 14px; }
+    ul, ol { margin: 0 0 16px; padding-left: 24px; }
+    li { margin-bottom: 6px; }
+    .table-wrap { overflow-x: auto; margin: 0 0 18px; }
+    table { border-collapse: collapse; width: 100%; font-size: 15px; }
+    th, td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; vertical-align: top; }
+    th { background: var(--alt-bg); font-weight: 600; }
+    code { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 0.9em; }
+    figure { margin: 0 0 22px; text-align: center; }
+    figure img { display: block; width: 100%; height: auto; border-radius: 6px; }
+    figure svg { display: block; width: 100%; height: auto; }
+    figcaption { color: var(--muted); font-size: 15px; margin-top: 6px; }
+    .tldr { background: var(--alt-bg); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 6px 6px 0; margin-bottom: 24px; }
+    .tldr p:last-child { margin-bottom: 0; }
+    .marks { display: flex; justify-content: center; align-items: flex-end; gap: 48px; flex-wrap: wrap; padding: 28px 16px; background: var(--alt-bg); border: 1px solid var(--line); border-radius: 6px; }
+    .marks .mark { text-align: center; color: var(--b58-ink); }
+    .marks .mark svg { width: auto; margin: 0 auto 10px; }
+    .marks .mark span { display: block; font-size: 14px; color: var(--muted); }
+    .wordmark { display: flex; align-items: center; gap: 12px; color: var(--b58-ink); font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 30px; letter-spacing: -0.01em; }
+    .status { display: inline-block; font-size: 13px; padding: 1px 8px; border: 1px solid var(--text); border-radius: 4px; vertical-align: 2px; margin-left: 6px; font-weight: 600; }
+    .status.planned { border-style: dashed; }
+    .status.idea { border-style: dotted; color: var(--muted); border-color: var(--muted); }
+    footer { text-align: center; color: var(--muted); font-size: 14px; padding: 32px; border-top: 1px solid var(--line); }
+    @media (max-width: 720px) {
+      .topbar, article { padding-left: 16px; padding-right: 16px; }
+      h1 { font-size: 30px; }
+    }
+  </style>
+  <link rel="stylesheet" href="toc.css">
+  <script src="toc.js" defer></script>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="container">
+      <a class="home" href="../">Bryan Falkowski</a>
+      <a href="../#writing">All writing</a>
+    </div>
+  </div>
+
+  <article class="container">
+    <h1>Building 58 Has a Front Door</h1>
+    <p class="byline">Bryan Falkowski · November 23, 2026 · Follows <a href="exhibit.html">Earning the Next Rung</a></p>
+
+    <div class="tldr">
+      <p>Building 58 has its own site at <a href="https://building58.ai">building58.ai</a>. I put it up last week and never wrote about it here. It shows how the office works, the 3D building you can walk into, the parts under the hood, the docs and the trailers.</p>
+      <p>This post explains the building mark and the tower on the site, and what each part stands for. Then it covers the next step. Today the office runs only on my laptop. This week I want to move my room to a machine that stays on, so it keeps working when I close the lid. Then I want to go to building58.ai, sign in, and see my office: every room I run, its state, and one click to open it.</p>
+    </div>
+
+    <h2>What is on the site</h2>
+    <p>Building 58 is a set of rooms where Claude Code sessions work as a team. Each room has a Lead, a PM, Devs and reviewers, and I am the manager. The posts on this blog have followed it from <a href="office.html">the first office</a> to <a href="autopilot.html">the office that builds itself</a>. Until now those posts were the only place to read about it. The site puts it all in one place:</p>
+    <ul>
+      <li><a href="https://building58.ai/walk-in/">Walk in</a>: a tour of a room, with the Board, the desks and the workers.</li>
+      <li><a href="https://building58.ai/building/">The building</a>: the 3D tower, with one floor for each room.</li>
+      <li><a href="https://building58.ai/engineering/">Under the hood</a>: the parts that make it work, such as sessions that survive a restart, per-task checkouts, Autopilot and the evals.</li>
+      <li><a href="https://building58.ai/roadmap/">Roadmap</a>: what is built, what is in development, and what is only an idea.</li>
+      <li><a href="https://docs.building58.ai">Docs</a> and <a href="https://building58.ai/start/">Run it</a>: how to start a room of your own.</li>
+    </ul>
+    <p>The home page states what the project is trying to do: build a building where agents earn the right to work on their own. Each new power, such as letting the Lead merge a reviewed pull request, is a rung on the trust ladder that I turn on only when the evidence supports it.</p>
+
+    <h2>The mark is an old machine works</h2>
+    <p>The name comes from Kurt Vonnegut's <cite>Player Piano</cite>. In the novel, Building 58 is the oldest building at the Ilium Works. It is an old machine shop, where machines now do the work that people used to do. So the mark is a factory, not a robot or a face.</p>
+
+    <figure>
+      <div class="marks">
+        <div class="mark">
+          <svg viewBox="0 0 60 64" height="140" aria-hidden="true"><rect x="4" y="4" width="6" height="28" fill="currentColor"/><path d="M2 60 V30 L16 16 V30 L30 16 V30 L44 16 V30 L58 16 V60 Z" fill="currentColor"/><rect x="4" y="9" width="6" height="4" fill="#e8a45c"/></svg>
+          <span>The mark</span>
+        </div>
+        <div class="mark">
+          <img src="building58-live/mark-58.svg" alt="" width="140" height="140" style="width:140px;height:140px;margin:0 auto 10px;border-radius:0">
+          <span>The favicon</span>
+        </div>
+        <div class="mark">
+          <div class="wordmark"><svg viewBox="0 0 60 64" height="36" aria-hidden="true" style="margin:0"><rect x="4" y="4" width="6" height="28" fill="currentColor"/><path d="M2 60 V30 L16 16 V30 L30 16 V30 L44 16 V30 L58 16 V60 Z" fill="currentColor"/><rect x="4" y="9" width="6" height="4" fill="#e8a45c"/></svg>Building 58</div>
+          <span style="margin-top:10px">The header</span>
+        </div>
+      </div>
+      <figcaption>The Building 58 mark, the favicon with the number cut into the wall, and the header as it appears on building58.ai.</figcaption>
+    </figure>
+
+    <p>Each part of the mark has a meaning:</p>
+    <ul>
+      <li><strong>The sawtooth roof.</strong> Old factories used this roof to light a long shop floor from above. Each tooth is one bay of the floor. In Building 58, each bay is a desk where a session works.</li>
+      <li><strong>The smokestack.</strong> A stack shows that the works is running. The amber band on the stack is the one color in the mark. It is the same amber as the "Run it" button on the site, because running a room is the thing the site asks you to do.</li>
+      <li><strong>No windows.</strong> Windows on a small building look like eyes, and the building turns into a face. The workers in Building 58 are Claude Code sessions with roles, not characters, so the building has no face.</li>
+      <li><strong>The number in the wall.</strong> On the favicon, "58" is cut out of the wall, the way old mills painted a building number on the brick. At the size of a browser tab, the number is what you read.</li>
+    </ul>
+
+    <h2>The tower: one room is a team, a building is a company</h2>
+    <p>The mark is one building seen from the street. The <a href="https://building58.ai/building/">3D tower</a> on the site is the same building seen from inside. Each floor is a full office suite on its own repo, with its own Board, its own chat and up to nine desks. Every suite follows the same house rules and the same trust ladder, and each one has a person as its manager.</p>
+
+    <figure>
+      <svg viewBox="0 0 720 470" role="img" aria-labelledby="tower-title tower-desc" xmlns="http://www.w3.org/2000/svg">
+        <title id="tower-title">The Building 58 directory</title>
+        <desc id="tower-desc">A tower of floors from the lobby up. Floor 1 is the lobby, building58.ai. Floor 2 is the first room, which builds itself. Floors 3 and 4 are Room B and Room C, each on its own repo. Floors 5 to 8 are open suites. The top floor is a planned executive floor. Beside the tower, other buildings in a city are an idea.</desc>
+        <g font-family="Source Sans 3, Source Sans Pro, sans-serif" font-size="14" fill="#2c2c2c">
+          <!-- smokestack and roof -->
+          <rect x="92" y="18" width="20" height="74" fill="#1c1f24"/>
+          <rect x="92" y="32" width="20" height="10" fill="#e8a45c"/>
+          <path d="M80 92 L140 62 V92 L200 62 V92 L260 62 V92 L320 62 V92 Z" fill="#1c1f24"/>
+          <!-- floors -->
+          <g stroke="#1c1f24" stroke-width="1.5">
+            <rect x="80" y="92" width="240" height="44" fill="#fff" stroke-dasharray="6 4"/>
+            <rect x="80" y="136" width="240" height="132" fill="#f3f4f6"/>
+            <rect x="80" y="268" width="240" height="44" fill="#fff"/>
+            <rect x="80" y="312" width="240" height="44" fill="#fff"/>
+            <rect x="80" y="356" width="240" height="44" fill="#fdf1e3"/>
+            <rect x="80" y="400" width="240" height="44" fill="#fff"/>
+          </g>
+          <line x1="80" y1="169" x2="320" y2="169" stroke="#c9ced6"/>
+          <line x1="80" y1="202" x2="320" y2="202" stroke="#c9ced6"/>
+          <line x1="80" y1="235" x2="320" y2="235" stroke="#c9ced6"/>
+          <g font-weight="600" text-anchor="middle">
+            <text x="200" y="119">Exec</text>
+            <text x="200" y="157">8</text><text x="200" y="190">7</text><text x="200" y="223">6</text><text x="200" y="256">5</text>
+            <text x="200" y="295">4</text>
+            <text x="200" y="339">3</text>
+            <text x="200" y="383">2</text>
+            <text x="200" y="427">1</text>
+          </g>
+          <!-- labels -->
+          <g>
+            <line x1="320" y1="114" x2="350" y2="114" stroke="#8a8a8a"/>
+            <text x="358" y="110" font-weight="600">Executive floor</text><text x="358" y="128" font-size="13" fill="#666">Planned. Sets goals for the suites below.</text>
+            <line x1="320" y1="202" x2="350" y2="202" stroke="#8a8a8a"/>
+            <text x="358" y="198" font-weight="600">Open suites, floors 5 to 8</text><text x="358" y="216" font-size="13" fill="#666">Waiting for the next projects, 9 desks each.</text>
+            <line x1="320" y1="290" x2="350" y2="290" stroke="#8a8a8a"/>
+            <text x="358" y="286" font-weight="600">Room C</text><text x="358" y="304" font-size="13" fill="#666">A room on its own repo.</text>
+            <line x1="320" y1="334" x2="350" y2="334" stroke="#8a8a8a"/>
+            <text x="358" y="330" font-weight="600">Room B</text><text x="358" y="348" font-size="13" fill="#666">A room on its own repo.</text>
+            <line x1="320" y1="378" x2="350" y2="378" stroke="#8a8a8a"/>
+            <text x="358" y="374" font-weight="600">The first room</text><text x="358" y="392" font-size="13" fill="#666">The room that builds itself.</text>
+            <line x1="320" y1="422" x2="350" y2="422" stroke="#8a8a8a"/>
+            <text x="358" y="418" font-weight="600">Lobby, building58.ai</text><text x="358" y="436" font-size="13" fill="#666">The site. You start here.</text>
+          </g>
+          <line x1="20" y1="444" x2="700" y2="444" stroke="#1c1f24" stroke-width="1.5"/>
+          <text x="20" y="464" font-size="13" fill="#666">City: Buildings 56 to 61, other buildings beside this one, are an idea.</text>
+        </g>
+      </svg>
+      <figcaption>The directory on the site's building page. Solid floors are at work or open. The dashed floor is planned. The amber floor is the first room, the one that builds the next version of itself.</figcaption>
+    </figure>
+
+    <p>The first floor is the lobby, which is the site. The second floor is the first room, which works on Building 58's own repo and restarts itself on each version it merges. Room B and Room C each work on a repo of their own. One of them is testing an old project of mine, as <a href="second-office.html">The Second Office's First User</a> described. Four floors are empty and wait for the next projects. The top floor is planned for an executive office, which would set goals for the suites below it.</p>
+    <p>A building is more than one team. The tower shows where the project is going: from one room for one repo, to a set of rooms that each run on their own and a floor that coordinates them.</p>
+
+    <h2>Where it runs today</h2>
+    <p>All of this runs on my laptop. A room is one container, built from a published image, and I start it with one command. The browser opens the room on localhost. The sessions inside it reach out to GitHub and Anthropic, and nothing reaches in.</p>
+    <p>That setup works, but it has two problems:</p>
+    <ul>
+      <li>When the laptop sleeps, the room stops. Autopilot cannot start a ticket while my lid is closed.</li>
+      <li>A busy room slows the laptop, and I can only open the room from that laptop.</li>
+    </ul>
+    <p>The building page lists what has to be true before more floors open. The first item is that a suite recovers on its own, from a restart or from a closed laptop. A room that lives on my laptop cannot meet that.</p>
+
+    <h2>Next: my room on a machine that stays on</h2>
+    <p>The next step is my own office on a rented machine that stays on <span class="status planned">In development</span>. It runs the same image and the same setup command as my laptop. I open it at a private building58.ai address from my laptop or my phone. It is for me only, with my own Claude and GitHub sign-ins. There is no portal and no other user in this step.</p>
+
+    <figure>
+      <svg viewBox="0 0 720 250" role="img" aria-labelledby="move-title move-desc" xmlns="http://www.w3.org/2000/svg">
+        <title id="move-title">From my laptop to a machine that stays on</title>
+        <desc id="move-desc">On the left, today: a room container runs on my laptop and the browser opens it on localhost. On the right, next: the same room container runs on a rented machine, and my laptop or phone opens it at a private building58.ai address. Both containers call GitHub and Anthropic.</desc>
+        <defs>
+          <marker id="marr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1d3f72"/></marker>
+        </defs>
+        <g font-family="Source Sans 3, Source Sans Pro, sans-serif" font-size="14" fill="#2c2c2c" text-anchor="middle">
+          <text x="170" y="22" font-weight="700">Today <tspan font-weight="400" fill="#666">(built)</tspan></text>
+          <text x="530" y="22" font-weight="700">Next <tspan font-weight="400" fill="#666">(planned)</tspan></text>
+          <rect x="20" y="36" width="300" height="140" rx="6" fill="none" stroke="#1d3f72" stroke-width="1.5"/>
+          <text x="40" y="58" text-anchor="start" font-weight="600">My laptop</text>
+          <rect x="40" y="82" width="90" height="56" rx="6" fill="#fff" stroke="#1d3f72" stroke-width="1.5"/>
+          <text x="85" y="106" font-weight="600">Browser</text><text x="85" y="124" font-size="12" fill="#666">localhost</text>
+          <rect x="160" y="72" width="140" height="76" rx="6" fill="#f3f6fb" stroke="#1d3f72" stroke-width="1.5"/>
+          <text x="230" y="104" font-weight="600">Room</text><text x="230" y="122" font-size="12" fill="#666">one container</text>
+          <line x1="130" y1="110" x2="158" y2="110" stroke="#1d3f72" stroke-width="1.5" marker-end="url(#marr)"/>
+          <rect x="380" y="36" width="140" height="56" rx="6" fill="#fff" stroke="#1d3f72" stroke-width="1.5"/>
+          <text x="450" y="60" font-weight="600">Laptop or phone</text><text x="450" y="78" font-size="12" fill="#666">a private address</text>
+          <rect x="540" y="36" width="160" height="140" rx="6" fill="none" stroke="#1d3f72" stroke-width="1.5" stroke-dasharray="7 5"/>
+          <text x="620" y="58" font-weight="600">Rented machine</text>
+          <rect x="560" y="72" width="120" height="76" rx="6" fill="#f3f6fb" stroke="#1d3f72" stroke-width="1.5"/>
+          <text x="620" y="104" font-weight="600">Room</text><text x="620" y="122" font-size="12" fill="#666">same image</text>
+          <path d="M450 92 L450 110 L558 110" fill="none" stroke="#1d3f72" stroke-width="1.5" stroke-dasharray="7 5" marker-end="url(#marr)"/>
+          <rect x="160" y="200" width="140" height="36" rx="6" fill="#fff" stroke="#8a8a8a"/>
+          <text x="230" y="223">GitHub, Anthropic</text>
+          <line x1="230" y1="148" x2="230" y2="198" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#marr)"/>
+          <rect x="560" y="200" width="120" height="36" rx="6" fill="#fff" stroke="#8a8a8a"/>
+          <text x="620" y="223">GitHub, Anthropic</text>
+          <line x1="620" y1="148" x2="620" y2="198" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#marr)"/>
+        </g>
+      </svg>
+      <figcaption>The room does not change. Only the machine under it does. Solid lines are built, dashed lines are planned.</figcaption>
+    </figure>
+
+    <p>The plan has three parts:</p>
+    <ol>
+      <li><strong>Rent the machine.</strong> A plain Linux server, with Docker and the Building 58 repo. I run the same setup command on it that I run on my laptop.</li>
+      <li><strong>Give it a private address.</strong> The room gets its own address under building58.ai. The public site stays as it is, and the room is not linked from it.</li>
+      <li><strong>Run real work for a week.</strong> The room takes real tickets, and I write down its CPU, memory and disk once a day, so I know what size of machine a room needs.</li>
+    </ol>
+    <p>The step is done when three things are true:</p>
+    <ul>
+      <li>I open the room from my phone and see the same Board I see on my laptop.</li>
+      <li>It runs for seven days with no restart by hand, and it comes back by itself after a reboot.</li>
+      <li>At least ten tickets go from start to a merged pull request on that machine.</li>
+    </ul>
+    <p>Most of the parts are already built. The image is published for both arm64 and amd64, and the release workflow smoke-tests it. The container has a health check, restarts after a reboot, and has limits on CPU and memory. Its volumes keep the room's state and repos through a new image. The one-command setup is merged.</p>
+
+    <h2>Then: sign in and see my office</h2>
+    <p>A room on a rented machine solves the closed laptop. It does not give me one place to go. Each room has its own address, and I would have to remember which room runs where. So the second part of this week's plan is a front door for my rooms <span class="status planned">Planned</span>. I go to building58.ai, sign in, and see my office.</p>
+    <p>My office is the page that lists every room I run. It is the directory from the tower, but for live rooms. It needs three screens:</p>
+
+    <figure>
+      <svg viewBox="0 0 720 300" role="img" aria-labelledby="office-title office-desc" xmlns="http://www.w3.org/2000/svg">
+        <title id="office-title">Three screens: sign in, my office, the room</title>
+        <desc id="office-desc">Screen 1 is the sign-in page. Screen 2 is my office, with one row per room and its state: the first room running, Room B waiting on me, Room C stopped. Screen 3 is the room page that exists today, with a new thin bar on top to switch rooms. Screens 1 and 2 and the top bar are planned. The room page is built.</desc>
+        <defs>
+          <marker id="oarr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1d3f72"/></marker>
+        </defs>
+        <g font-family="Source Sans 3, Source Sans Pro, sans-serif" font-size="14" fill="#2c2c2c">
+          <!-- screen 1 -->
+          <rect x="10" y="20" width="180" height="210" rx="8" fill="#fff" stroke="#1d3f72" stroke-width="1.5" stroke-dasharray="7 5"/>
+          <svg x="82" y="48" width="36" height="38" viewBox="0 0 60 64"><rect x="4" y="4" width="6" height="28" fill="#1c1f24"/><path d="M2 60 V30 L16 16 V30 L30 16 V30 L44 16 V30 L58 16 V60 Z" fill="#1c1f24"/><rect x="4" y="9" width="6" height="4" fill="#e8a45c"/></svg>
+          <text x="100" y="110" text-anchor="middle" font-weight="600">Building 58</text>
+          <rect x="40" y="128" width="120" height="22" rx="4" fill="#f3f4f6" stroke="#c9ced6"/>
+          <rect x="60" y="164" width="80" height="28" rx="6" fill="#e8a45c"/>
+          <text x="100" y="183" text-anchor="middle" font-size="13" font-weight="600" fill="#1a1206">Sign in</text>
+          <!-- screen 2 -->
+          <rect x="270" y="20" width="180" height="210" rx="8" fill="#fff" stroke="#1d3f72" stroke-width="1.5" stroke-dasharray="7 5"/>
+          <text x="286" y="46" font-weight="700">My office</text>
+          <g font-size="12">
+            <rect x="286" y="60" width="148" height="40" rx="4" fill="#f3f4f6"/>
+            <circle cx="298" cy="80" r="5" fill="#2e8b57"/><text x="310" y="77" font-weight="600">The first room</text><text x="310" y="92" fill="#666">running</text>
+            <rect x="286" y="106" width="148" height="40" rx="4" fill="#fdf1e3"/>
+            <circle cx="298" cy="126" r="5" fill="#e8a45c"/><text x="310" y="123" font-weight="600">Room B</text><text x="310" y="138" fill="#666">2 wait on me</text>
+            <rect x="286" y="152" width="148" height="40" rx="4" fill="#f3f4f6"/>
+            <circle cx="298" cy="172" r="5" fill="none" stroke="#8a8a8a" stroke-width="1.5"/><text x="310" y="169" font-weight="600">Room C</text><text x="310" y="184" fill="#666">stopped</text>
+          </g>
+          <!-- screen 3 -->
+          <rect x="530" y="20" width="180" height="210" rx="8" fill="#f3f6fb" stroke="#1d3f72" stroke-width="1.5"/>
+          <path d="M530 28 Q530 20 538 20 H702 Q710 20 710 28 V46 H530 Z" fill="#fff" stroke="#1d3f72" stroke-width="1.5" stroke-dasharray="7 5"/>
+          <text x="544" y="38" font-size="12" font-weight="600">Room B ▾</text><text x="696" y="38" font-size="12" text-anchor="end" fill="#666">My office</text>
+          <g fill="#fff" stroke="#c9ced6">
+            <rect x="548" y="62" width="44" height="34" rx="3"/><rect x="598" y="62" width="44" height="34" rx="3"/><rect x="648" y="62" width="44" height="34" rx="3"/>
+            <rect x="548" y="104" width="44" height="34" rx="3"/><rect x="598" y="104" width="44" height="34" rx="3"/><rect x="648" y="104" width="44" height="34" rx="3"/>
+            <rect x="548" y="150" width="144" height="56" rx="3"/>
+          </g>
+          <!-- arrows -->
+          <g stroke="#1d3f72" stroke-width="1.5" marker-end="url(#oarr)">
+            <line x1="190" y1="125" x2="266" y2="125"/>
+            <line x1="450" y1="125" x2="526" y2="125"/>
+          </g>
+          <g text-anchor="middle">
+            <text x="100" y="256" font-weight="600">1 Sign in</text><text x="100" y="276" font-size="13" fill="#666">planned</text>
+            <text x="360" y="256" font-weight="600">2 My office</text><text x="360" y="276" font-size="13" fill="#666">planned</text>
+            <text x="620" y="256" font-weight="600">3 The room</text><text x="620" y="276" font-size="13" fill="#666">built, top bar planned</text>
+          </g>
+        </g>
+      </svg>
+      <figcaption>From the front door to a room in two clicks. Dashed parts are planned. The room page is the one I use today. The room names and states here are an example.</figcaption>
+    </figure>
+
+    <ol>
+      <li><strong>Sign in.</strong> The first thing at the front door, and the only thing a person sees before it.</li>
+      <li><strong>My office.</strong> One row for each room: its name, its repo, where it runs, and its state, such as running, starting, stopped or offline. The row also shows how many items wait on me, which version the room runs, and when it was last active. Each row has Open, and Stop or Start. The page gets each room's state from the health check that every room already has.</li>
+      <li><strong>The room.</strong> The room page I use today, at the room's own address, with one new thing: a thin bar on top. The bar switches to another room, goes back to my office, and signs out.</li>
+    </ol>
+    <p>The office page only links to rooms. When I open a room, the browser goes to that room's own address. The work, the chat and the sign-ins stay in the room, and the office page holds none of them. Each room keeps one owner and one repo, like the floors in the tower.</p>
+    <p>This part is done when I can do this from my phone: go to building58.ai, sign in, see each room with its correct state, open one, and switch to another without typing an address.</p>
+    <p>The first version has one room in it, the one on the rented machine. Then the other floors can follow it off my laptop, one room per floor <span class="status idea">An idea</span>. A new room screen, where I pick a repo and a machine size and the room starts by itself, comes after that <span class="status idea">An idea</span>. When those are done, the building on the site will match a building that actually runs somewhere, with the lights on while I am away from my desk.</p>
+    <p>I will write about what the first week shows.</p>
+
+    <h2>References</h2>
+    <ul>
+      <li><a href="https://building58.ai">building58.ai</a>, the site</li>
+      <li><a href="https://building58.ai/building/">The building</a>, the 3D tower and the directory</li>
+      <li><a href="https://docs.building58.ai">Building 58 docs</a></li>
+      <li><a href="https://github.com/bfalkowski/Building58">Building58</a>, the code</li>
+      <li><a href="exhibit.html">Earning the Next Rung</a>, the previous post</li>
+    </ul>
+  </article>
+
+  <footer>&copy; 2026 Bryan Falkowski · <a href="../">Home</a></footer>
+
+</body>
+</html>
