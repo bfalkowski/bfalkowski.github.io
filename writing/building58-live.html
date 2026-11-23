@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="author" content="Bryan Falkowski">
-  <meta name="description" content="Building 58 has its own site at building58.ai. What the site holds, what the building mark and the tower stand for, and this week's plan: move my room off my laptop to a machine that stays on, then sign in at building58.ai and see my office.">
+  <meta name="description" content="Building 58 has its own site at building58.ai. What the site holds, what the building mark and the tower stand for, and this week's plan: move my room off my laptop to a machine that stays on, then sign in at the lobby and go up to my office.">
   <title>Building 58 Has a Front Door | Bryan Falkowski</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -80,7 +80,7 @@
 
     <div class="tldr">
       <p>Building 58 has its own site at <a href="https://building58.ai">building58.ai</a>. I put it up last week and never wrote about it here. It shows how the office works, the 3D building you can walk into, the parts under the hood, the docs and the trailers.</p>
-      <p>This post explains the building mark and the tower on the site, and what each part stands for. Then it covers the next step. Today the office runs only on my laptop. This week I want to move my room to a machine that stays on, so it keeps working when I close the lid. Then I want to go to building58.ai, sign in, and see my office: every room I run, its state, and one click to open it.</p>
+      <p>This post explains the building mark and the tower on the site, and what each part stands for. Then it covers the next step. Today the office runs only on my laptop. This week I want to move my room to a machine that stays on, so it keeps working when I close the lid. Then I want to walk into the lobby at building58.ai, sign in, and go up to my office: every room I run, its state, and one click to open it.</p>
     </div>
 
     <h2>What is on the site</h2>
@@ -241,14 +241,14 @@
     </ul>
     <p>Most of the parts are already built. The image is published for both arm64 and amd64, and the release workflow smoke-tests it. The container has a health check, restarts after a reboot, and has limits on CPU and memory. Its volumes keep the room's state and repos through a new image. The one-command setup is merged.</p>
 
-    <h2>Then: sign in and see my office</h2>
-    <p>A room on a rented machine solves the closed laptop. It does not give me one place to go. Each room has its own address, and I would have to remember which room runs where. So the second part of this week's plan is a front door for my rooms <span class="status planned">Planned</span>. I go to building58.ai, sign in, and see my office.</p>
-    <p>My office is the page that lists every room I run. It is the directory from the tower, but for live rooms. It needs three screens:</p>
+    <h2>Then: the lobby</h2>
+    <p>A room on a rented machine solves the closed laptop. It does not give me one place to go. Each room has its own address, and I would have to remember which room runs where. So the second part of this week's plan is a front door for my rooms <span class="status planned">Planned</span>. I go to building58.ai, sign in, and go up to my office.</p>
+    <p>I did not plan it this way, but the tower already had a name for that front door. Floor 1 in the directory is the lobby, and the lobby is building58.ai. A real lobby has a sign-in desk and a directory board that shows who is on each floor. That is the page I need: you sign in at the lobby, read the board, and go up to a room. The rooms I own are my office, and each one is a floor. It needs three screens:</p>
 
     <figure>
       <svg viewBox="0 0 720 300" role="img" aria-labelledby="office-title office-desc" xmlns="http://www.w3.org/2000/svg">
-        <title id="office-title">Three screens: sign in, my office, the room</title>
-        <desc id="office-desc">Screen 1 is the sign-in page. Screen 2 is my office, with one row per room and its state: the first room running, Room B waiting on me, Room C stopped. Screen 3 is the room page that exists today, with a new thin bar on top to switch rooms. Screens 1 and 2 and the top bar are planned. The room page is built.</desc>
+        <title id="office-title">Three screens: sign in, the lobby, the room</title>
+        <desc id="office-desc">Screen 1 is the sign-in page. Screen 2 is the lobby directory, with one row per room in my office and its state: the first room running, Room B waiting on me, Room C stopped. Screen 3 is the room page that exists today, with a new thin bar on top to switch rooms. Screens 1 and 2 and the top bar are planned. The room page is built.</desc>
         <defs>
           <marker id="oarr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1d3f72"/></marker>
         </defs>
@@ -262,7 +262,7 @@
           <text x="100" y="183" text-anchor="middle" font-size="13" font-weight="600" fill="#1a1206">Sign in</text>
           <!-- screen 2 -->
           <rect x="270" y="20" width="180" height="210" rx="8" fill="#fff" stroke="#1d3f72" stroke-width="1.5" stroke-dasharray="7 5"/>
-          <text x="286" y="46" font-weight="700">My office</text>
+          <text x="286" y="46" font-weight="700">Lobby</text>
           <g font-size="12">
             <rect x="286" y="60" width="148" height="40" rx="4" fill="#f3f4f6"/>
             <circle cx="298" cy="80" r="5" fill="#2e8b57"/><text x="310" y="77" font-weight="600">The first room</text><text x="310" y="92" fill="#666">running</text>
@@ -274,7 +274,7 @@
           <!-- screen 3 -->
           <rect x="530" y="20" width="180" height="210" rx="8" fill="#f3f6fb" stroke="#1d3f72" stroke-width="1.5"/>
           <path d="M530 28 Q530 20 538 20 H702 Q710 20 710 28 V46 H530 Z" fill="#fff" stroke="#1d3f72" stroke-width="1.5" stroke-dasharray="7 5"/>
-          <text x="544" y="38" font-size="12" font-weight="600">Room B ▾</text><text x="696" y="38" font-size="12" text-anchor="end" fill="#666">My office</text>
+          <text x="544" y="38" font-size="12" font-weight="600">Room B ▾</text><text x="696" y="38" font-size="12" text-anchor="end" fill="#666">Lobby</text>
           <g fill="#fff" stroke="#c9ced6">
             <rect x="548" y="62" width="44" height="34" rx="3"/><rect x="598" y="62" width="44" height="34" rx="3"/><rect x="648" y="62" width="44" height="34" rx="3"/>
             <rect x="548" y="104" width="44" height="34" rx="3"/><rect x="598" y="104" width="44" height="34" rx="3"/><rect x="648" y="104" width="44" height="34" rx="3"/>
@@ -287,20 +287,20 @@
           </g>
           <g text-anchor="middle">
             <text x="100" y="256" font-weight="600">1 Sign in</text><text x="100" y="276" font-size="13" fill="#666">planned</text>
-            <text x="360" y="256" font-weight="600">2 My office</text><text x="360" y="276" font-size="13" fill="#666">planned</text>
+            <text x="360" y="256" font-weight="600">2 The lobby</text><text x="360" y="276" font-size="13" fill="#666">planned</text>
             <text x="620" y="256" font-weight="600">3 The room</text><text x="620" y="276" font-size="13" fill="#666">built, top bar planned</text>
           </g>
         </g>
       </svg>
-      <figcaption>From the front door to a room in two clicks. Dashed parts are planned. The room page is the one I use today. The room names and states here are an example.</figcaption>
+      <figcaption>From the lobby to a room in two clicks. Dashed parts are planned. The room page is the one I use today. The room names and states here are an example.</figcaption>
     </figure>
 
     <ol>
-      <li><strong>Sign in.</strong> The first thing at the front door, and the only thing a person sees before it.</li>
-      <li><strong>My office.</strong> One row for each room: its name, its repo, where it runs, and its state, such as running, starting, stopped or offline. The row also shows how many items wait on me, which version the room runs, and when it was last active. Each row has Open, and Stop or Start. The page gets each room's state from the health check that every room already has.</li>
-      <li><strong>The room.</strong> The room page I use today, at the room's own address, with one new thing: a thin bar on top. The bar switches to another room, goes back to my office, and signs out.</li>
+      <li><strong>Sign in.</strong> The desk at the front door of the lobby, and the only thing a person sees before it.</li>
+      <li><strong>The lobby.</strong> The directory board for my office, with one row for each room: its name, its repo, where it runs, and its state, such as running, starting, stopped or offline. The row also shows how many items wait on me, which version the room runs, and when it was last active. Each row has Open, and Stop or Start. The page gets each room's state from the health check that every room already has.</li>
+      <li><strong>The room.</strong> The room page I use today, at the room's own address, with one new thing: a thin bar on top. The bar switches to another room, goes back down to the lobby, and signs out.</li>
     </ol>
-    <p>The office page only links to rooms. When I open a room, the browser goes to that room's own address. The work, the chat and the sign-ins stay in the room, and the office page holds none of them. Each room keeps one owner and one repo, like the floors in the tower.</p>
+    <p>The lobby only points to rooms. When I open a room, the browser goes to that room's own address. The work, the chat and the sign-ins stay in the room, and the lobby holds none of them. Each room keeps one owner and one repo, like the floors in the tower.</p>
     <p>This part is done when I can do this from my phone: go to building58.ai, sign in, see each room with its correct state, open one, and switch to another without typing an address.</p>
     <p>The first version has one room in it, the one on the rented machine. Then the other floors can follow it off my laptop, one room per floor <span class="status idea">An idea</span>. A new room screen, where I pick a repo and a machine size and the room starts by itself, comes after that <span class="status idea">An idea</span>. When those are done, the building on the site will match a building that actually runs somewhere, with the lights on while I am away from my desk.</p>
     <p>I will write about what the first week shows.</p>
