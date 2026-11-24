@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="author" content="Bryan Falkowski">
-  <meta name="description" content="Building 58 has its own site at building58.ai. What the site holds, what the building mark and the tower stand for, and this week's plan: move my room off my laptop to a machine that stays on, then sign in at the lobby and go up to my office.">
+  <meta name="description" content="Building 58 has its own site at building58.ai. What the site holds, what the building mark and the tower stand for, how the room now runs remote on a machine that stays on, and the next step: sign in at the lobby and go up to my office.">
   <title>Building 58 Has a Front Door | Bryan Falkowski</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -76,11 +76,11 @@
 
   <article class="container">
     <h1>Building 58 Has a Front Door</h1>
-    <p class="byline">Bryan Falkowski · November 23, 2026 · Follows <a href="exhibit.html">Earning the Next Rung</a></p>
+    <p class="byline">Bryan Falkowski · November 23, 2026 · Updated November 24, 2026: the room now runs remote · Follows <a href="exhibit.html">Earning the Next Rung</a></p>
 
     <div class="tldr">
       <p>Building 58 has its own site at <a href="https://building58.ai">building58.ai</a>. I put it up last week and never wrote about it here. It shows how the office works, the 3D building you can walk into, the parts under the hood, the docs and the trailers.</p>
-      <p>This post explains the building mark and the tower on the site, and what each part stands for. Then it covers the next step. Today the office runs only on my laptop. This week I want to move my room to a machine that stays on, so it keeps working when I close the lid. Then I want to walk into the lobby at building58.ai, sign in, and go up to my office: every room I run, its state, and one click to open it.</p>
+      <p>This post explains the building mark and the tower on the site, and what each part stands for. Then it covers where the room runs. It no longer runs on my laptop. It runs on a machine that stays on, and I open it in a browser at a private address under building58.ai, so it keeps working when I close the lid. The next step is the lobby: sign in at building58.ai and go up to my office, with every room I run, its state, and one click to open it.</p>
     </div>
 
     <h2>What is on the site</h2>
@@ -92,7 +92,7 @@
       <li><a href="https://building58.ai/roadmap/">Roadmap</a>: what is built, what is in development, and what is only an idea.</li>
       <li><a href="https://docs.building58.ai">Docs</a> and <a href="https://building58.ai/start/">Run it</a>: how to start a room of your own.</li>
     </ul>
-    <p>The home page states what the project is trying to do: build a building where agents earn the right to work on their own. Each new power, such as letting the Lead merge a reviewed pull request, is a rung on the trust ladder that I turn on only when the evidence supports it.</p>
+    <p>The home page says what it is: a way to manage Claude Code sessions like a software team, not a stack of terminals. The building page says what the project is trying to do: build a building where agents earn the right to work on their own. Each new power, such as letting the room merge a reviewed pull request, is a level on the trust ladder that I turn on only when the evidence supports it.</p>
 
     <h2>The mark is an old machine works</h2>
     <p>The name comes from Kurt Vonnegut's <cite>Player Piano</cite>. In the novel, Building 58 is the oldest building at the Ilium Works. It is an old machine shop, where machines now do the work that people used to do. So the mark is a factory, not a robot or a face.</p>
@@ -180,69 +180,52 @@
     <p>The first floor is the lobby, which is the site. The second floor is the first room, which works on Building 58's own repo and restarts itself on each version it merges. Room B and Room C each work on a repo of their own. One of them is testing an old project of mine, as <a href="second-office.html">The Second Office's First User</a> described. Four floors are empty and wait for the next projects. The top floor is planned for an executive office, which would set goals for the suites below it.</p>
     <p>A building is more than one team. The tower shows where the project is going: from one room for one repo, to a set of rooms that each run on their own and a floor that coordinates them.</p>
 
-    <h2>Where it runs today</h2>
-    <p>All of this runs on my laptop. A room is one container, built from a published image, and I start it with one command. The browser opens the room on localhost. The sessions inside it reach out to GitHub and Anthropic, and nothing reaches in.</p>
-    <p>That setup works, but it has two problems:</p>
-    <ul>
-      <li>When the laptop sleeps, the room stops. Autopilot cannot start a ticket while my lid is closed.</li>
-      <li>A busy room slows the laptop, and I can only open the room from that laptop.</li>
-    </ul>
-    <p>The building page lists what has to be true before more floors open. The first item is that a suite recovers on its own, from a restart or from a closed laptop. A room that lives on my laptop cannot meet that.</p>
-
-    <h2>Next: my room on a machine that stays on</h2>
-    <p>The next step is my own office on a rented machine that stays on <span class="status planned">In development</span>. It runs the same image and the same setup command as my laptop. I open it at a private building58.ai address from my laptop or my phone. It is for me only, with my own Claude and GitHub sign-ins. There is no portal and no other user in this step.</p>
+    <h2>Where it runs now</h2>
+    <p>When I first put the site up, all of this ran on my laptop. A room is one container, built from a published image, and the browser opened it on localhost. That worked, but the room stopped when the laptop slept, a busy room slowed the laptop, and I could only open the room from that laptop. The building page lists what has to be true before more floors open, and the first item is that a suite recovers on its own, from a restart or from a closed laptop. A room on my laptop could not meet that.</p>
+    <p>Now my room runs 100% remote <span class="status">Built</span>. It runs on a rented machine that stays on, from the same image and the same setup command I used on my laptop. I open it in a browser at a private address under building58.ai, after I sign in. It is for me only, with my own Claude and GitHub sign-ins. My laptop can be closed, and the room keeps taking tickets.</p>
 
     <figure>
       <svg viewBox="0 0 720 250" role="img" aria-labelledby="move-title move-desc" xmlns="http://www.w3.org/2000/svg">
         <title id="move-title">From my laptop to a machine that stays on</title>
-        <desc id="move-desc">On the left, today: a room container runs on my laptop and the browser opens it on localhost. On the right, next: the same room container runs on a rented machine, and my laptop or phone opens it at a private building58.ai address. Both containers call GitHub and Anthropic.</desc>
+        <desc id="move-desc">On the left, before: a room container ran on my laptop and the browser opened it on localhost. On the right, now: the same room container runs on a rented machine, and a browser opens it at a private building58.ai address. Both call GitHub and Anthropic.</desc>
         <defs>
           <marker id="marr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1d3f72"/></marker>
+          <marker id="marr-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9aa0a6"/></marker>
         </defs>
         <g font-family="Source Sans 3, Source Sans Pro, sans-serif" font-size="14" fill="#2c2c2c" text-anchor="middle">
-          <text x="170" y="22" font-weight="700">Today <tspan font-weight="400" fill="#666">(built)</tspan></text>
-          <text x="530" y="22" font-weight="700">Next <tspan font-weight="400" fill="#666">(planned)</tspan></text>
-          <rect x="20" y="36" width="300" height="140" rx="6" fill="none" stroke="#1d3f72" stroke-width="1.5"/>
+          <text x="170" y="22" font-weight="700" fill="#666">Before</text>
+          <text x="530" y="22" font-weight="700">Now</text>
+          <g opacity="0.55">
+          <rect x="20" y="36" width="300" height="140" rx="6" fill="none" stroke="#9aa0a6" stroke-width="1.5"/>
           <text x="40" y="58" text-anchor="start" font-weight="600">My laptop</text>
-          <rect x="40" y="82" width="90" height="56" rx="6" fill="#fff" stroke="#1d3f72" stroke-width="1.5"/>
+          <rect x="40" y="82" width="90" height="56" rx="6" fill="#fff" stroke="#9aa0a6" stroke-width="1.5"/>
           <text x="85" y="106" font-weight="600">Browser</text><text x="85" y="124" font-size="12" fill="#666">localhost</text>
-          <rect x="160" y="72" width="140" height="76" rx="6" fill="#f3f6fb" stroke="#1d3f72" stroke-width="1.5"/>
+          <rect x="160" y="72" width="140" height="76" rx="6" fill="#f5f5f5" stroke="#9aa0a6" stroke-width="1.5"/>
           <text x="230" y="104" font-weight="600">Room</text><text x="230" y="122" font-size="12" fill="#666">one container</text>
-          <line x1="130" y1="110" x2="158" y2="110" stroke="#1d3f72" stroke-width="1.5" marker-end="url(#marr)"/>
+          <line x1="130" y1="110" x2="158" y2="110" stroke="#9aa0a6" stroke-width="1.5" marker-end="url(#marr-muted)"/>
+          <rect x="160" y="200" width="140" height="36" rx="6" fill="#fff" stroke="#9aa0a6"/>
+          <text x="230" y="223">GitHub, Anthropic</text>
+          <line x1="230" y1="148" x2="230" y2="198" stroke="#9aa0a6" stroke-width="1.5" marker-end="url(#marr-muted)"/>
+          </g>
           <rect x="380" y="36" width="140" height="56" rx="6" fill="#fff" stroke="#1d3f72" stroke-width="1.5"/>
-          <text x="450" y="60" font-weight="600">Laptop or phone</text><text x="450" y="78" font-size="12" fill="#666">a private address</text>
-          <rect x="540" y="36" width="160" height="140" rx="6" fill="none" stroke="#1d3f72" stroke-width="1.5" stroke-dasharray="7 5"/>
+          <text x="450" y="60" font-weight="600">Any browser</text><text x="450" y="78" font-size="12" fill="#666">a private address</text>
+          <rect x="540" y="36" width="160" height="140" rx="6" fill="none" stroke="#1d3f72" stroke-width="1.5"/>
           <text x="620" y="58" font-weight="600">Rented machine</text>
           <rect x="560" y="72" width="120" height="76" rx="6" fill="#f3f6fb" stroke="#1d3f72" stroke-width="1.5"/>
           <text x="620" y="104" font-weight="600">Room</text><text x="620" y="122" font-size="12" fill="#666">same image</text>
-          <path d="M450 92 L450 110 L558 110" fill="none" stroke="#1d3f72" stroke-width="1.5" stroke-dasharray="7 5" marker-end="url(#marr)"/>
-          <rect x="160" y="200" width="140" height="36" rx="6" fill="#fff" stroke="#8a8a8a"/>
-          <text x="230" y="223">GitHub, Anthropic</text>
-          <line x1="230" y1="148" x2="230" y2="198" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#marr)"/>
+          <path d="M450 92 L450 110 L558 110" fill="none" stroke="#1d3f72" stroke-width="1.5" marker-end="url(#marr)"/>
           <rect x="560" y="200" width="120" height="36" rx="6" fill="#fff" stroke="#8a8a8a"/>
           <text x="620" y="223">GitHub, Anthropic</text>
           <line x1="620" y1="148" x2="620" y2="198" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#marr)"/>
         </g>
       </svg>
-      <figcaption>The room does not change. Only the machine under it does. Solid lines are built, dashed lines are planned.</figcaption>
+      <figcaption>The room did not change. Only the machine under it did.</figcaption>
     </figure>
 
-    <p>The plan has three parts:</p>
-    <ol>
-      <li><strong>Rent the machine.</strong> A plain Linux server, with Docker and the Building 58 repo. I run the same setup command on it that I run on my laptop.</li>
-      <li><strong>Give it a private address.</strong> The room gets its own address under building58.ai. The public site stays as it is, and the room is not linked from it.</li>
-      <li><strong>Run real work for a week.</strong> The room takes real tickets, and I write down its CPU, memory and disk once a day, so I know what size of machine a room needs.</li>
-    </ol>
-    <p>The step is done when three things are true:</p>
-    <ul>
-      <li>I open the room from my phone and see the same Board I see on my laptop.</li>
-      <li>It runs for seven days with no restart by hand, and it comes back by itself after a reboot.</li>
-      <li>At least ten tickets go from start to a merged pull request on that machine.</li>
-    </ul>
-    <p>Most of the parts are already built. The image is published for both arm64 and amd64, and the release workflow smoke-tests it. The container has a health check, restarts after a reboot, and has limits on CPU and memory. Its volumes keep the room's state and repos through a new image. The one-command setup is merged.</p>
+    <p>The parts that made the move small were already in place. The image is published for arm64 and amd64, and the release workflow smoke-tests it. The container has a health check, restarts after a reboot, and has limits on CPU and memory. Its volumes keep the room's state and repos through a new image, and one setup command starts it on a new server. The room still updates itself after each merge, on the server, the same as it did on my laptop.</p>
 
     <h2>Then: the lobby</h2>
-    <p>A room on a rented machine solves the closed laptop. It does not give me one place to go. Each room has its own address, and I would have to remember which room runs where. So the second part of this week's plan is a front door for my rooms <span class="status planned">Planned</span>. I go to building58.ai, sign in, and go up to my office.</p>
+    <p>A room on a rented machine solved the closed laptop. It does not give me one place to go. Each room has its own address, and I would have to remember which room runs where. So the next step is a front door for my rooms <span class="status planned">Planned</span>. I go to building58.ai, sign in, and go up to my office.</p>
     <p>I did not plan it this way, but the tower already had a name for that front door. Floor 1 in the directory is the lobby, and the lobby is building58.ai. A real lobby has a sign-in desk and a directory board that shows who is on each floor. That is the page I need: you sign in at the lobby, read the board, and go up to a room. The rooms I own are my office, and each one is a floor. It needs three screens:</p>
 
     <figure>
@@ -302,9 +285,8 @@
     </ol>
     <p>The lobby only points to rooms. When I open a room, the browser goes to that room's own address. The work, the chat and the sign-ins stay in the room, and the lobby holds none of them. Each room keeps one owner and one repo, like the floors in the tower.</p>
     <p>This part is done when I can do this from my phone: go to building58.ai, sign in, see each room with its correct state, open one, and switch to another without typing an address.</p>
-    <p>The first version has one room in it, the one on the rented machine. Then the other floors can follow it off my laptop, one room per floor <span class="status idea">An idea</span>. A new room screen, where I pick a repo and a machine size and the room starts by itself, comes after that <span class="status idea">An idea</span>. When those are done, the building on the site will match a building that actually runs somewhere, with the lights on while I am away from my desk.</p>
-    <p>I will write about what the first week shows.</p>
-
+    <p>The first version has one room in it, the one on the rented machine. Then the other floors can follow it, one room per floor <span class="status idea">An idea</span>. A new room screen, where I pick a repo and a machine size and the room starts by itself, comes after that <span class="status idea">An idea</span>. When those are done, the building on the site will match a building that actually runs somewhere, with the lights on while I am away from my desk.</p>
+    
     <h2>References</h2>
     <ul>
       <li><a href="https://building58.ai">building58.ai</a>, the site</li>
